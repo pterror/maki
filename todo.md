@@ -1,0 +1,21 @@
+- flow should be controlled with a structural editor (node and/or block based)G
+- rpg style inventory management
+- message pre/postprocessing
+- optional append-only log mode
+- support for message trees out of the box
+  - this means messages need parent ids! figure out how to add support for that to the `ai` package.
+    maybe in metadata?
+- modular/extensible
+- optional comments for all the things! esp. lorebook entries (which technically already have a comment field, but sillytavern uses it wrongly), chat messages, cards themselves, lorebooks, and group chats.
+- ids (for overwriting) and (optionally) version history for cards
+- derived tags (anypov -> fempov + malepov + enbypov + futapov. rawtag:fempov to hide derived tags, switch -> dominant + submissive)
+  - this needs to be defined somewhere (ideally fully user configurable)
+    - but it should come with one or more sets of these. e.g. rp tagsets will be different than ones for other purposes
+    - aliases that work in search
+  - the ability to group tags for each character in a scenario. e.g. female+red hair, and the ability to use that fact in search
+  - the ability to save searches
+- catch and display errors on nodes
+- macros for pronouns! {{user_she}} {{user_her}} {{user_hers}} {{user_he}} {{user_him}} {{user_his}}. consider whether this will be possible to use for second/first person too
+- inventory (and stats)! useful for regular bots too so they can track clothing (+ closet), weather, days, dates, pregnancy etc. make sure the user can edit it arbitrarily! ideally with good ux
+- if/else node or switch case node??
+- a way to merge and split conversations between multiple characters
