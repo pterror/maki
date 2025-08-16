@@ -78,7 +78,7 @@ export const Sqlite3DatabaseNode = defineNode({
     path: () => textInterface("Path"),
   },
   outputs: {
-    database: () => nodeInterface("Database", null!, databaseInterfaceType),
+    database: () => nodeInterface("Database", undefined!, databaseInterfaceType),
   },
   async calculate(input) {
     const sqlite3Database = new Sqlite3Database(input.path, (error) => {

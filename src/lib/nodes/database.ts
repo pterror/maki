@@ -424,7 +424,7 @@ export const databaseDeleteCommandInterfaceType =
 export const DatabaseSelectNode = defineNode({
   type: "DatabaseSelectNode",
   inputs: {
-    database: () => nodeInterface("Database", null!, databaseInterfaceType),
+    database: () => nodeInterface("Database", undefined!, databaseInterfaceType),
     command: () =>
       nodeInterface("Command", {
         table: "",
@@ -446,7 +446,7 @@ export function registerDatabaseSelectNode(editor: Editor) {
 export const DatabaseInsertNode = defineNode({
   type: "DatabaseInsertNode",
   inputs: {
-    database: () => nodeInterface("Database", null!, databaseInterfaceType),
+    database: () => nodeInterface("Database", undefined!, databaseInterfaceType),
     command: () =>
       nodeInterface(
         "Command",
@@ -471,7 +471,7 @@ export function registerDatabaseInsertNode(editor: Editor) {
 export const DatabaseUpdateNode = defineNode({
   type: "DatabaseUpdateNode",
   inputs: {
-    database: () => nodeInterface("Database", null!, databaseInterfaceType),
+    database: () => nodeInterface("Database", undefined!, databaseInterfaceType),
     command: () =>
       nodeInterface(
         "Command",
@@ -496,7 +496,7 @@ export function registerDatabaseUpdateNode(editor: Editor) {
 export const DatabaseDeleteNode = defineNode({
   type: "DatabaseDeleteNode",
   inputs: {
-    database: () => nodeInterface("Database", null!, databaseInterfaceType),
+    database: () => nodeInterface("Database", undefined!, databaseInterfaceType),
     command: () =>
       nodeInterface(
         "Command",
