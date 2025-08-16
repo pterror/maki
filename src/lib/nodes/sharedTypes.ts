@@ -1,4 +1,5 @@
 import { z } from "zod/v4";
+import { listNodeInterfaceType, nodeInterfaceType, stringDictNodeInterfaceType } from "./interfaceTypes";
 
 export const zodShape = (schema: z.ZodType): Record<string, z.ZodType> =>
   schema instanceof z.ZodObject ? schema.shape : {};
@@ -13,3 +14,9 @@ export const Schema = z.custom<z.ZodType>().meta({
     "A schema that can be used to define the input and output schemas of tools.",
 });
 export type Schema = z.infer<typeof Schema>;
+
+export const schemaType = nodeInterfaceType<Schema>("Schema");
+export const schemaListType = listNodeInterfaceType<Schema>(schemaType);
+export const schemaStringDictType = stringDictNodeInterfaceType<Schema>(
+  schemaType
+);

@@ -3,7 +3,7 @@ import { zFunction } from "./sharedTypes";
 import { BaklavaInterfaceTypes, defineNode, Editor } from "baklavajs";
 import {
   anyType,
-  arrayNodeInterfaceType,
+  listNodeInterfaceType,
   nodeInterface,
   nodeInterfaceType,
   selectInterface,
@@ -230,7 +230,7 @@ const databaseQueryConditionType = nodeInterfaceType<DatabaseQueryCondition>(
   "DatabaseQueryCondition"
 );
 const databaseQueryConditionListType =
-  arrayNodeInterfaceType<DatabaseQueryCondition>(databaseQueryConditionType);
+  listNodeInterfaceType<DatabaseQueryCondition>(databaseQueryConditionType);
 
 databaseQueryConditionComparisonType.addConversion(
   databaseQueryConditionType,
@@ -433,7 +433,7 @@ export const DatabaseSelectNode = defineNode({
   },
   outputs: {
     rows: () =>
-      nodeInterface("Rows", [], arrayNodeInterfaceType<unknown>(anyType)),
+      nodeInterface("Rows", [], listNodeInterfaceType<unknown>(anyType)),
   },
   async calculate({ database, command }) {
     return { rows: await database.select(command) };

@@ -38,10 +38,21 @@ export function nodeInterfaceType<T>(name: string): NodeInterfaceType<T> {
   return interfaceType;
 }
 
-export function arrayNodeInterfaceType<T>(
+export function listNodeInterfaceType<T>(
   itemType: NodeInterfaceType<T>
 ): NodeInterfaceType<readonly T[]> {
   const interfaceType = nodeInterfaceType<readonly T[]>(`array[${itemType.name}]`);
+  interfaceType.addConversion(unknownType, (v) => v);
+  interfaceType.addConversion(anyType, (v) => v);
+  return interfaceType;
+}
+
+export function stringDictNodeInterfaceType<V>(
+  valueType: NodeInterfaceType<V>
+): NodeInterfaceType<Record<string, V>> {
+  const interfaceType = nodeInterfaceType<Record<string, V>>(
+    `stringDict[${valueType.name}]`
+  );
   interfaceType.addConversion(unknownType, (v) => v);
   interfaceType.addConversion(anyType, (v) => v);
   return interfaceType;
@@ -52,6 +63,11 @@ export const stringType = nodeInterfaceType<string>("string");
 export const integerType = nodeInterfaceType<Integer>("integer");
 export const numberType = nodeInterfaceType<number>("number");
 export const booleanType = nodeInterfaceType<boolean>("boolean");
+export const stringListType = listNodeInterfaceType(stringType);
+export const integerListType = listNodeInterfaceType(integerType);
+export const numberListType = listNodeInterfaceType(numberType);
+export const booleanListType = listNodeInterfaceType(booleanType);
+
 // Only `any` is allowed to have unsafe conversions.
 anyType.addConversion(undefinedType, (v) => {
   if (v !== undefined) {
@@ -91,12 +107,17 @@ export function registerCoreInterfaceTypes(
 ) {
   const nodeInterfaceTypes = new BaklavaInterfaceTypes(editor, { viewPlugin });
   nodeInterfaceTypes.addTypes(
+    undefinedType,
     stringType,
     integerType,
     numberType,
     booleanType,
     unknownType,
-    anyType
+    anyType,
+    stringListType,
+    integerListType,
+    numberListType,
+    booleanListType,
   );
   return nodeInterfaceTypes;
 }

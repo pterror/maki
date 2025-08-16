@@ -15,6 +15,8 @@ import {
   nodeInterface,
   numberInterface,
   sliderInterface,
+  stringDictNodeInterfaceType,
+  stringType,
   textInterface,
 } from "./interfaceTypes";
 
@@ -109,17 +111,17 @@ export function defineListNode<T>(
   const node = defineDynamicNode({
     type: "CoreListNode",
     inputs: {
-      length: () => nodeInterface("Length", Integer(0), integerType),
+      size: () => nodeInterface("Size", Integer(0), integerType),
     },
     outputs: {
       items: () => nodeInterface("Items", [], listType),
     },
-    onUpdate({ length }) {
+    onUpdate({ size }) {
       return {
         inputs: {
-          length: () => nodeInterface("Length", Integer(0), integerType),
+          size: () => nodeInterface("Size", Integer(0), integerType),
           ...Object.fromEntries(
-            Array.from({ length }, (_, i) => [
+            Array.from({ length: size }, (_, i) => [
               `element${i}`,
               nodeInterface(`${i}`, makeDefaultValue(), type),
             ])
@@ -129,13 +131,62 @@ export function defineListNode<T>(
     },
     calculate(inputs) {
       const items: readonly T[] = Array.from(
-        { length: inputs.length },
+        { length: inputs.size },
         (_, i) => inputs[`element${i}`] as T
       );
       return { items };
     },
   });
   const register = function registerCoreListNode(editor: Editor) {
+    editor.registerNodeType(node, options);
+  };
+  return { node, register };
+}
+
+export function defineStringDictNode<V>(
+  valueType: NodeInterfaceType<V>,
+  dictType: NodeInterfaceType<Record<string, V>>,
+  makeDefaultValue: () => V,
+  options: IRegisterNodeTypeOptions
+) {
+  const type = stringDictNodeInterfaceType(valueType);
+  const node = defineDynamicNode({
+    type: "CoreStringDictNode",
+    inputs: {
+      size: () => nodeInterface("Size", Integer(0), integerType),
+    },
+    outputs: {
+      items: () => nodeInterface("Items", {}, type),
+    },
+    onUpdate({ size }) {
+      return {
+        inputs: {
+          size: () => nodeInterface("Size", Integer(0), integerType),
+          ...Object.fromEntries(
+            Array(size)
+              .fill(null)
+              .flatMap((_, i) => [
+                [`key${i}`, nodeInterface(`Key ${i}`, "", stringType)],
+                [
+                  `value${i}`,
+                  nodeInterface(`Value ${i}`, makeDefaultValue(), valueType),
+                ],
+              ])
+          ),
+        },
+      };
+    },
+    calculate(inputs) {
+      const items: Record<string, V> = Object.fromEntries(
+        Array.from({ length: inputs.size }, (_, i) => [
+          inputs[`key${i}`] as string,
+          inputs[`value${i}`] as V,
+        ])
+      );
+      return { items };
+    },
+  });
+  const register = function registerCoreStringDictNode(editor: Editor) {
     editor.registerNodeType(node, options);
   };
   return { node, register };

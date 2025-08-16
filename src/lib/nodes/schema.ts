@@ -1,6 +1,13 @@
 import { z } from "zod/v4";
-import { createNodeDefinition } from "./node";
-import { Schema } from "./sharedTypes";
+import {
+  Schema,
+  schemaListType,
+  schemaStringDictType,
+  schemaType,
+} from "./sharedTypes";
+import { defineNode, Editor } from "baklavajs";
+import { nodeInterface, stringListType, unknownType } from "./interfaceTypes";
+import { defineListNode, defineStringDictNode } from "./core";
 
 export const Literal = z.union([
   z.string(),
@@ -12,96 +19,213 @@ export const Literal = z.union([
 ]);
 export type Literal = z.infer<typeof Literal>;
 
-export const literalSchemaNode = createNodeDefinition({
-  id: "schema-literal",
-  tags: ["schema.literal"],
-  input: z.object({ value: Literal }),
-  output: z.object({ value: Schema }),
-  function: async ({ value }) => ({ value: z.literal(value) }),
-});
+const unknownSchema = z.unknown();
+export const { node: SchemaListNode, register: registerSchemaListNode } =
+  defineListNode(schemaType, schemaListType, () => unknownSchema, {
+    category: "Schema",
+  });
 
-export const objectSchemaNode = createNodeDefinition({
-  id: "schema-object",
-  tags: ["schema.object"],
-  input: z.object({ properties: z.record(z.string(), Schema) }),
-  output: z.object({ value: Schema }),
-  function: async ({ properties }) => ({ value: z.object(properties) }),
-});
+export const {
+  node: SchemaStringDictNode,
+  register: registerSchemaStringDictNode,
+} = defineStringDictNode(
+  schemaType,
+  schemaStringDictType,
+  () => unknownSchema,
+  { category: "Schema" }
+);
 
-export const arraySchemaNode = createNodeDefinition({
-  id: "schema-array",
-  tags: ["schema.array"],
-  input: z.object({ itemSchema: Schema }),
-  output: z.object({ value: Schema }),
-  function: async ({ itemSchema }) => ({ value: z.array(itemSchema) }),
-});
+export function schemaInterfaceFactory(name: string) {
+  return () => nodeInterface(name, unknownSchema, schemaType);
+}
 
-export const unionSchemaNode = createNodeDefinition({
-  id: "schema-union",
-  tags: ["schema.union"],
-  input: z.object({ schemas: z.array(Schema) }),
-  output: z.object({ value: Schema }),
-  function: async ({ schemas }) => ({ value: z.union(schemas) }),
+export const LiteralSchemaNode = defineNode({
+  type: "LiteralSchemaNode",
+  inputs: {
+    value: () => nodeInterface("Value", null, unknownType),
+  },
+  outputs: {
+    schema: schemaInterfaceFactory("Schema"),
+  },
+  calculate({ value }) {
+    return { schema: z.literal(value as Literal) };
+  },
 });
+export function registerLiteralSchemaNode(editor: Editor) {
+  editor.registerNodeType(LiteralSchemaNode, { category: "Schema" });
+}
 
-export const intersectionSchemaNode = createNodeDefinition({
-  id: "schema-intersection",
-  tags: ["schema.intersection"],
-  input: z.object({ firstSchema: Schema, secondSchema: Schema }),
-  output: z.object({ value: Schema }),
-  function: async ({ firstSchema, secondSchema }) => ({
-    value: z.intersection(firstSchema, secondSchema),
-  }),
+export const ObjectSchemaNode = defineNode({
+  type: "ObjectSchemaNode",
+  inputs: {
+    properties: () => nodeInterface("Properties", {}, schemaStringDictType),
+  },
+  outputs: {
+    schema: schemaInterfaceFactory("Schema"),
+  },
+  calculate({ properties }) {
+    return { schema: z.object(properties) };
+  },
 });
+export function registerObjectSchemaNode(editor: Editor) {
+  editor.registerNodeType(ObjectSchemaNode, { category: "Schema" });
+}
 
-export const tupleSchemaNode = createNodeDefinition({
-  id: "schema-tuple",
-  tags: ["schema.tuple"],
-  input: z.object({ itemSchemas: z.array(Schema) }),
-  output: z.object({ value: Schema }),
-  function: async ({ itemSchemas }) => ({
-    value: z.tuple(itemSchemas as [Schema, ...Schema[]]),
-  }),
+export const ArraySchemaNode = defineNode({
+  type: "ArraySchemaNode",
+  inputs: {
+    itemSchema: schemaInterfaceFactory("Item Schema"),
+  },
+  outputs: {
+    schema: schemaInterfaceFactory("Schema"),
+  },
+  calculate({ itemSchema }) {
+    return { schema: z.array(itemSchema) };
+  },
 });
+export function registerArraySchemaNode(editor: Editor) {
+  editor.registerNodeType(ArraySchemaNode, { category: "Schema" });
+}
 
-export const recordSchemaNode = createNodeDefinition({
-  id: "schema-record",
-  tags: ["schema.record"],
-  input: z.object({ valueSchema: Schema }),
-  output: z.object({ value: Schema }),
-  function: async ({ valueSchema }) => ({
-    value: z.record(z.string(), valueSchema),
-  }),
+export const UnionSchemaNode = defineNode({
+  type: "UnionSchemaNode",
+  inputs: {
+    schemas: () => nodeInterface("Schemas", [], schemaListType),
+  },
+  outputs: {
+    schema: schemaInterfaceFactory("Schema"),
+  },
+  calculate({ schemas }) {
+    return { schema: z.union(schemas) };
+  },
 });
+export function registerUnionSchemaNode(editor: Editor) {
+  editor.registerNodeType(UnionSchemaNode, { category: "Schema" });
+}
 
-export const enumSchemaNode = createNodeDefinition({
-  id: "schema-enum",
-  tags: ["schema.enum"],
-  input: z.object({ values: z.array(z.string()) }),
-  output: z.object({ value: Schema }),
-  function: async ({ values }) => ({ value: z.enum(values) }),
+export const IntersectionSchemaNode = defineNode({
+  type: "IntersectionSchemaNode",
+  inputs: {
+    firstSchema: schemaInterfaceFactory("Schema"),
+    secondSchema: schemaInterfaceFactory("Schema"),
+  },
+  outputs: {
+    schema: schemaInterfaceFactory("Schema"),
+  },
+  calculate({ firstSchema, secondSchema }) {
+    return { schema: z.intersection(firstSchema, secondSchema) };
+  },
 });
+export function registerIntersectionSchemaNode(editor: Editor) {
+  editor.registerNodeType(IntersectionSchemaNode, { category: "Schema" });
+}
 
-export const unknownSchemaNode = createNodeDefinition({
-  id: "schema-unknown",
-  tags: ["schema.unknown"],
-  input: z.object({}),
-  output: z.object({ value: Schema }),
-  function: async () => ({ value: z.unknown() }),
+export const TupleSchemaNode = defineNode({
+  type: "TupleSchemaNode",
+  inputs: {
+    itemSchemas: () => nodeInterface("Schemas", [], schemaListType),
+  },
+  outputs: {
+    schema: schemaInterfaceFactory("Schema"),
+  },
+  calculate({ itemSchemas }) {
+    return { schema: z.tuple(itemSchemas as [Schema, ...Schema[]]) };
+  },
 });
+export function registerTupleSchemaNode(editor: Editor) {
+  editor.registerNodeType(TupleSchemaNode, { category: "Schema" });
+}
 
-export const optionalSchemaNode = createNodeDefinition({
-  id: "schema-optional",
-  tags: ["schema.optional"],
-  input: z.object({ value: Schema }),
-  output: z.object({ value: Schema }),
-  function: async ({ value }) => ({ value: value.optional() }),
+export const RecordSchemaNode = defineNode({
+  type: "RecordSchemaNode",
+  inputs: {
+    valueSchema: schemaInterfaceFactory("Value Schema"),
+  },
+  outputs: {
+    schema: schemaInterfaceFactory("Schema"),
+  },
+  calculate({ valueSchema }) {
+    return { schema: z.record(z.string(), valueSchema) };
+  },
 });
+export function registerRecordSchemaNode(editor: Editor) {
+  editor.registerNodeType(RecordSchemaNode, { category: "Schema" });
+}
 
-export const nullableSchemaNode = createNodeDefinition({
-  id: "schema-nullable",
-  tags: ["schema.nullable"],
-  input: z.object({ value: Schema }),
-  output: z.object({ value: Schema }),
-  function: async ({ value }) => ({ value: value.nullable() }),
+export const EnumSchemaNode = defineNode({
+  type: "EnumSchemaNode",
+  inputs: {
+    values: () => nodeInterface("Values", [], stringListType),
+  },
+  outputs: {
+    schema: schemaInterfaceFactory("Schema"),
+  },
+  calculate({ values }) {
+    return { schema: z.enum(values) };
+  },
 });
+export function registerEnumSchemaNode(editor: Editor) {
+  editor.registerNodeType(EnumSchemaNode, { category: "Schema" });
+}
+
+export const UnknownSchemaNode = defineNode({
+  type: "UnknownSchemaNode",
+  inputs: {},
+  outputs: {
+    schema: schemaInterfaceFactory("Schema"),
+  },
+  calculate() {
+    return { schema: z.unknown() };
+  },
+});
+export function registerUnknownSchemaNode(editor: Editor) {
+  editor.registerNodeType(UnknownSchemaNode, { category: "Schema" });
+}
+
+export const OptionalSchemaNode = defineNode({
+  type: "OptionalSchemaNode",
+  inputs: {
+    schema: schemaInterfaceFactory("Schema"),
+  },
+  outputs: {
+    schema: schemaInterfaceFactory("Schema"),
+  },
+  calculate({ schema }) {
+    return { schema: schema.optional() };
+  },
+});
+export function registerOptionalSchemaNode(editor: Editor) {
+  editor.registerNodeType(OptionalSchemaNode, { category: "Schema" });
+}
+
+export const NullableSchemaNode = defineNode({
+  type: "NullableSchemaNode",
+  inputs: {
+    schema: schemaInterfaceFactory("Schema"),
+  },
+  outputs: {
+    schema: schemaInterfaceFactory("Schema"),
+  },
+  calculate({ schema }) {
+    return { schema: schema.nullable() };
+  },
+});
+export function registerNullableSchemaNode(editor: Editor) {
+  editor.registerNodeType(NullableSchemaNode, { category: "Schema" });
+}
+
+export function registerSchemaNodes(editor: Editor) {
+  registerLiteralSchemaNode(editor);
+  registerObjectSchemaNode(editor);
+  registerArraySchemaNode(editor);
+  registerUnionSchemaNode(editor);
+  registerIntersectionSchemaNode(editor);
+  registerTupleSchemaNode(editor);
+  registerRecordSchemaNode(editor);
+  registerEnumSchemaNode(editor);
+  registerUnknownSchemaNode(editor);
+  registerOptionalSchemaNode(editor);
+  registerNullableSchemaNode(editor);
+  registerSchemaListNode(editor);
+  registerSchemaStringDictNode(editor);
+}
