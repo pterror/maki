@@ -1,6 +1,16 @@
 import { z } from "zod/v4";
-import { createNodeDefinition } from "./node";
 import { zFunction } from "./sharedTypes";
+import { BaklavaInterfaceTypes, defineNode, Editor } from "baklavajs";
+import {
+  anyType,
+  arrayNodeInterfaceType,
+  nodeInterface,
+  nodeInterfaceType,
+  selectInterface,
+  stringType,
+  textInterface,
+} from "./interfaceTypes";
+import { defineListNode } from "./core";
 
 export const DatabaseQueryConditionComparison = z
   .object({
@@ -28,6 +38,7 @@ export const DatabaseQueryConditionAnd = z
     get conditions() {
       return z
         .array(DatabaseQueryCondition)
+        .readonly()
         .describe("Conditions to combine with AND");
     },
   })
@@ -46,6 +57,7 @@ export const DatabaseQueryConditionOr = z
     get conditions() {
       return z
         .array(DatabaseQueryCondition)
+        .readonly()
         .describe("Conditions to combine with OR");
     },
   })
@@ -176,7 +188,7 @@ export const Database = z
   .object({
     type: z.string().describe("Type of the database"),
     select: zFunction<
-      (query: DatabaseSelectCommand) => Promise<AsyncIterable<unknown>>
+      (query: DatabaseSelectCommand) => Promise<readonly unknown[]>
     >().describe("Function to execute a SELECT query against the database"),
     insert: zFunction<
       (query: DatabaseInsertCommand) => Promise<void>
@@ -195,138 +207,311 @@ export const Database = z
   });
 export type Database = z.infer<typeof Database>;
 
-export const databaseQueryConditionComparisonNode = createNodeDefinition({
-  id: "database-condition-comparison",
-  tags: ["database.condition.comparison"],
-  input: z.object({
-    column: z.string().describe("Column to filter on"),
-    operator: z
-      .literal(["=", "!=", ">", "<", ">=", "<=", "LIKE"])
-      .describe("Comparison operator"),
-    value: z
-      .union([z.string(), z.number(), z.boolean()])
-      .describe("Value to compare against"),
-  }),
-  output: z.object({
-    condition: DatabaseQueryConditionComparison,
-  }),
-  function: async (input) => {
+const DatabaseComparisonOperator = z
+  .literal(["=", "!=", ">", "<", ">=", "<=", "LIKE"])
+  .describe("Comparison operator");
+type DatabaseComparisonOperator = z.infer<typeof DatabaseComparisonOperator>;
+
+const databaseComparisonOperatorType =
+  nodeInterfaceType<DatabaseComparisonOperator>("DatabaseComparisonOperator");
+databaseComparisonOperatorType.addConversion(stringType, (v) => v);
+const databaseQueryConditionComparisonType =
+  nodeInterfaceType<DatabaseQueryConditionComparison>(
+    "DatabaseQueryConditionComparison"
+  );
+
+const databaseQueryConditionAndType =
+  nodeInterfaceType<DatabaseQueryConditionAnd>("DatabaseQueryConditionAnd");
+const databaseQueryConditionOrType =
+  nodeInterfaceType<DatabaseQueryConditionOr>("DatabaseQueryConditionOr");
+const databaseQueryConditionNotType =
+  nodeInterfaceType<DatabaseQueryConditionNot>("DatabaseQueryConditionNot");
+const databaseQueryConditionType = nodeInterfaceType<DatabaseQueryCondition>(
+  "DatabaseQueryCondition"
+);
+const databaseQueryConditionListType =
+  arrayNodeInterfaceType<DatabaseQueryCondition>(databaseQueryConditionType);
+
+databaseQueryConditionComparisonType.addConversion(
+  databaseQueryConditionType,
+  (v) => v
+);
+databaseQueryConditionAndType.addConversion(
+  databaseQueryConditionType,
+  (v) => v
+);
+databaseQueryConditionOrType.addConversion(
+  databaseQueryConditionType,
+  (v) => v
+);
+databaseQueryConditionNotType.addConversion(
+  databaseQueryConditionType,
+  (v) => v
+);
+
+export function registerDatabaseInterfaceTypes(types: BaklavaInterfaceTypes) {
+  types.addTypes(
+    databaseComparisonOperatorType,
+    databaseQueryConditionComparisonType,
+    databaseQueryConditionAndType,
+    databaseQueryConditionOrType,
+    databaseQueryConditionNotType
+  );
+}
+
+export const DatabaseQueryConditionComparisonNode = defineNode({
+  type: "DatabaseQueryConditionComparisonNode",
+  inputs: {
+    column: () => textInterface("Column"),
+    operator: () =>
+      selectInterface<DatabaseComparisonOperator>(
+        "Operator",
+        "=",
+        databaseComparisonOperatorType,
+        ["=", "!=", ">", "<", ">=", "<=", "LIKE"]
+      ),
+    value: () => nodeInterface("Value", "", anyType),
+  },
+  outputs: {
+    condition: () =>
+      nodeInterface(
+        "Condition",
+        {
+          type: "comparison",
+          column: "",
+          operator: "=",
+          value: "",
+        },
+        databaseQueryConditionComparisonType
+      ),
+  },
+  calculate({ column, operator, value }) {
     return {
       condition: {
         type: "comparison" as const,
-        column: input.column,
-        operator: input.operator,
-        value: input.value,
+        column,
+        operator,
+        // TODO: Ensure value is of the correct type
+        value: value as string | number | boolean,
       },
     };
   },
 });
+export function registerDatabaseQueryConditionComparisonNode(editor: Editor) {
+  editor.registerNodeType(DatabaseQueryConditionComparisonNode, {
+    category: "Database Condition",
+  });
+}
 
-export const databaseConditionAndNode = createNodeDefinition({
-  id: "database-condition-and",
-  tags: ["database.condition.and"],
-  input: z.object({
-    conditions: z
-      .array(DatabaseQueryCondition)
-      .describe("Conditions to combine with AND"),
-  }),
-  output: z.object({
-    condition: DatabaseQueryConditionAnd,
-  }),
-  function: async (input) => {
-    return {
-      condition: { type: "and" as const, conditions: input.conditions },
-    };
+export const DatabaseQueryConditionAndNode = defineNode({
+  type: "DatabaseQueryConditionAndNode",
+  inputs: {
+    conditions: () =>
+      nodeInterface("Conditions", [], databaseQueryConditionListType),
+  },
+  outputs: {
+    condition: () =>
+      nodeInterface(
+        "Condition",
+        { type: "and", conditions: [] },
+        databaseQueryConditionAndType
+      ),
+  },
+  calculate({ conditions }) {
+    return { condition: { type: "and" as const, conditions } };
   },
 });
+export function registerDatabaseQueryConditionAndNode(editor: Editor) {
+  editor.registerNodeType(DatabaseQueryConditionAndNode, {
+    category: "Database Condition",
+  });
+}
 
-export const databaseConditionOrNode = createNodeDefinition({
-  id: "database-condition-or",
-  tags: ["database.condition.or"],
-  input: z.object({
-    conditions: z
-      .array(DatabaseQueryCondition)
-      .describe("Conditions to combine with OR"),
-  }),
-  output: z.object({
-    condition: DatabaseQueryConditionOr,
-  }),
-  function: async (input) => {
-    return { condition: { type: "or" as const, conditions: input.conditions } };
+export const DatabaseQueryConditionOrNode = defineNode({
+  type: "DatabaseQueryConditionOrNode",
+  inputs: {
+    conditions: () =>
+      nodeInterface("Conditions", [], databaseQueryConditionListType),
+  },
+  outputs: {
+    condition: () =>
+      nodeInterface(
+        "Condition",
+        { type: "or", conditions: [] },
+        databaseQueryConditionOrType
+      ),
+  },
+  calculate({ conditions }) {
+    return { condition: { type: "or" as const, conditions } };
   },
 });
+export function registerDatabaseQueryConditionOrNode(editor: Editor) {
+  editor.registerNodeType(DatabaseQueryConditionOrNode, {
+    category: "Database Condition",
+  });
+}
 
-export const databaseConditionNotNode = createNodeDefinition({
-  id: "database-condition-not",
-  tags: ["database.condition.not"],
-  input: z.object({
-    condition: DatabaseQueryCondition.describe("Condition to negate"),
-  }),
-  output: z.object({
-    condition: DatabaseQueryConditionNot,
-  }),
-  function: async (input) => {
-    return { condition: { type: "not" as const, condition: input.condition } };
+export const DatabaseQueryConditionNotNode = defineNode({
+  type: "DatabaseQueryConditionNotNode",
+  inputs: {
+    condition: () =>
+      nodeInterface(
+        "Condition",
+        { type: "comparison", column: "", operator: "=", value: "" },
+        databaseQueryConditionType
+      ),
+  },
+  outputs: {
+    condition: () =>
+      nodeInterface(
+        "Condition",
+        {
+          type: "not",
+          condition: {
+            type: "comparison",
+            column: "",
+            operator: "=",
+            value: "",
+          },
+        },
+        databaseQueryConditionNotType
+      ),
+  },
+  calculate({ condition }) {
+    return { condition: { type: "not" as const, condition } };
   },
 });
+export function registerDatabaseQueryConditionNotNode(editor: Editor) {
+  editor.registerNodeType(DatabaseQueryConditionNotNode, {
+    category: "Database Condition",
+  });
+}
 
-export const databaseSelectNode = createNodeDefinition({
-  id: "database-select",
-  tags: ["database.select"],
-  input: z.object({
-    database: Database,
-    command: DatabaseSelectCommand,
+export const {
+  node: DatabaseQueryConditionListNode,
+  register: registerDatabaseQueryConditionListNode,
+} = defineListNode(
+  databaseQueryConditionType,
+  databaseQueryConditionListType,
+  () => ({
+    type: "comparison" as const,
+    column: "",
+    operator: "=" as const,
+    value: "",
   }),
-  output: z.object({
-    rows: z
-      .custom<AsyncIterable<unknown>>()
-      .describe("An iterable of rows returned by the query"),
-  }),
-  function: async (input) => {
-    return {
-      rows: await input.database.select(input.command),
-    };
+  { category: "Database Condition" }
+);
+
+export function registerDatabaseNodes(editor: Editor) {
+  registerDatabaseQueryConditionComparisonNode(editor);
+  registerDatabaseQueryConditionAndNode(editor);
+  registerDatabaseQueryConditionOrNode(editor);
+  registerDatabaseQueryConditionNotNode(editor);
+  registerDatabaseQueryConditionListNode(editor);
+  registerDatabaseSelectNode(editor);
+}
+
+export const databaseInterfaceType = nodeInterfaceType<Database>("Database");
+export const databaseSelectCommandInterfaceType =
+  nodeInterfaceType<DatabaseSelectCommand>("DatabaseSelectCommand");
+export const databaseInsertCommandInterfaceType =
+  nodeInterfaceType<DatabaseInsertCommand>("DatabaseInsertCommand");
+export const databaseUpdateCommandInterfaceType =
+  nodeInterfaceType<DatabaseUpdateCommand>("DatabaseUpdateCommand");
+export const databaseDeleteCommandInterfaceType =
+  nodeInterfaceType<DatabaseDeleteCommand>("DatabaseDeleteCommand");
+
+export const DatabaseSelectNode = defineNode({
+  type: "DatabaseSelectNode",
+  inputs: {
+    database: () => nodeInterface("Database", null!, databaseInterfaceType),
+    command: () =>
+      nodeInterface("Command", {
+        table: "",
+        columns: [],
+      }, databaseSelectCommandInterfaceType),
+  },
+  outputs: {
+    rows: () =>
+      nodeInterface("Rows", [], arrayNodeInterfaceType<unknown>(anyType)),
+  },
+  async calculate({ database, command }) {
+    return { rows: await database.select(command) };
   },
 });
+export function registerDatabaseSelectNode(editor: Editor) {
+  editor.registerNodeType(DatabaseSelectNode, { category: "Database Query" });
+}
 
-export const databaseInsertNode = createNodeDefinition({
-  id: "database-insert",
-  tags: ["database.insert"],
-  input: z.object({
-    database: Database,
-    command: DatabaseInsertCommand,
-  }),
-  output: z.object({}),
-  function: async (input) => {
-    await input.database.insert(input.command);
+export const DatabaseInsertNode = defineNode({
+  type: "DatabaseInsertNode",
+  inputs: {
+    database: () => nodeInterface("Database", null!, databaseInterfaceType),
+    command: () =>
+      nodeInterface(
+        "Command",
+        {
+          table: "",
+          columns: [],
+          values: [],
+        },
+        databaseInsertCommandInterfaceType
+      ),
+  },
+  outputs: {},
+  async calculate({ database, command }) {
+    await database.insert(command);
     return {};
   },
 });
+export function registerDatabaseInsertNode(editor: Editor) {
+  editor.registerNodeType(DatabaseInsertNode, { category: "Database Command" });
+}
 
-export const databaseUpdateNode = createNodeDefinition({
-  id: "database-update",
-  tags: ["database.update"],
-  input: z.object({
-    database: Database,
-    command: DatabaseUpdateCommand,
-  }),
-  output: z.object({}),
-  function: async (input) => {
-    await input.database.update(input.command);
+export const DatabaseUpdateNode = defineNode({
+  type: "DatabaseUpdateNode",
+  inputs: {
+    database: () => nodeInterface("Database", null!, databaseInterfaceType),
+    command: () =>
+      nodeInterface(
+        "Command",
+        {
+          table: "",
+          columns: [],
+          set: {},
+        },
+        databaseUpdateCommandInterfaceType
+      ),
+  },
+  outputs: {},
+  async calculate({ database, command }) {
+    await database.update(command);
     return {};
   },
 });
+export function registerDatabaseUpdateNode(editor: Editor) {
+  editor.registerNodeType(DatabaseUpdateNode, { category: "Database Command" });
+}
 
-export const databaseDeleteNode = createNodeDefinition({
-  id: "database-delete",
-  tags: ["database.delete"],
-  input: z.object({
-    database: Database,
-    command: DatabaseDeleteCommand,
-  }),
-  output: z.object({}),
-  function: async (input) => {
-    await input.database.delete(input.command);
+export const DatabaseDeleteNode = defineNode({
+  type: "DatabaseDeleteNode",
+  inputs: {
+    database: () => nodeInterface("Database", null!, databaseInterfaceType),
+    command: () =>
+      nodeInterface(
+        "Command",
+        {
+          table: "",
+        },
+        databaseDeleteCommandInterfaceType
+      ),
+  },
+  outputs: {},
+  async calculate({ database, command }) {
+    await database.delete(command);
     return {};
   },
 });
+export function registerDatabaseDeleteNode(editor: Editor) {
+  editor.registerNodeType(DatabaseDeleteNode, { category: "Database Command" });
+}

@@ -1,14 +1,15 @@
 import { Database as Sqlite3Database } from "sqlite3";
-import { z } from "zod/v4";
-import { createNodeDefinition } from "./node";
 import {
   Database,
+  databaseInterfaceType,
   type DatabaseQueryCondition,
   type DatabaseQueryConditionAnd,
   type DatabaseQueryConditionComparison,
   type DatabaseQueryConditionNot,
   type DatabaseQueryConditionOr,
 } from "./database";
+import { defineNode, Editor } from "baklavajs";
+import { nodeInterface, textInterface } from "./interfaceTypes";
 
 function sqlite3StringifyDatabaseQueryConditionComparison(
   condition: DatabaseQueryConditionComparison,
@@ -71,14 +72,15 @@ function sqlite3StringifyDatabaseQueryCondition(
   }
 }
 
-export const createSqlite3DatabaseNode = createNodeDefinition({
-  id: "database-sqlite3",
-  tags: ["database.sqlite3"],
-  input: z.object({
-    path: z.string().describe("Path to the SQLite3 database file"),
-  }),
-  output: z.object({ database: Database }),
-  function: async (input) => {
+export const Sqlite3DatabaseNode = defineNode({
+  type: "Sqlite3DatabaseNope",
+  inputs: {
+    path: () => textInterface("Path"),
+  },
+  outputs: {
+    database: () => nodeInterface("Database", null!, databaseInterfaceType),
+  },
+  async calculate(input) {
     const sqlite3Database = new Sqlite3Database(input.path, (error) => {
       if (error) {
         throw new Error(
@@ -103,11 +105,7 @@ export const createSqlite3DatabaseNode = createNodeDefinition({
             if (error) {
               reject(new Error(`Failed to execute query: ${error.message}`));
             } else {
-              resolve({
-                async *[Symbol.asyncIterator]() {
-                  yield* rows;
-                },
-              });
+              resolve(rows);
             }
           });
         });
@@ -173,3 +171,6 @@ export const createSqlite3DatabaseNode = createNodeDefinition({
     return { database };
   },
 });
+export function registerDatabaseSqliteNode(editor: Editor) {
+  editor.registerNodeType(Sqlite3DatabaseNode, { category: "Database" });
+}

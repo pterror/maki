@@ -1,79 +1,150 @@
-import { z } from "zod/v4";
-import { createNodeDefinition } from "./node";
+import {
+  defineDynamicNode,
+  defineNode,
+  Editor,
+  NodeInterfaceType,
+  type IRegisterNodeTypeOptions,
+} from "baklavajs";
+import {
+  anyType,
+  booleanType,
+  checkboxInterface,
+  Integer,
+  integerInterface,
+  integerType,
+  nodeInterface,
+  numberInterface,
+  sliderInterface,
+  textInterface,
+} from "./interfaceTypes";
 
-// FIXME: Actually implement.
-const intrinsicGetInput = (s: string) => null!;
-const intrinsicSetOutput = (s: string, v: unknown) => {
-  console.warn(`Setting output '${s}' to value '${v}' is not implemented.`);
-};
-
-export const coreInputNode = createNodeDefinition({
-  id: "core-input",
-  tags: ["core"],
-  input: z.object({ name: z.string() }),
-  output: z.object({ value: z.unknown() }),
-  function: async ({ name }) => ({ value: intrinsicGetInput(name) }),
-});
-
-export const coreOutputNode = createNodeDefinition({
-  id: "core-output",
-  tags: ["core"],
-  input: z.object({ name: z.string(), value: z.unknown() }),
-  output: z.object({}),
-  function: async ({ name, value }) => {
-    intrinsicSetOutput(name, value);
-    return {};
+// Note that inputs can be inlined, so these are not strictly necessary for the core functionality,
+// but they are useful for literals that need to stay in sync across multiple nodes.
+export const CoreBooleanNode = defineNode({
+  type: "CoreBooleanNode",
+  inputs: {
+    value: () => checkboxInterface("Value"),
+  },
+  outputs: {
+    value: () => nodeInterface("Value", false, booleanType),
+  },
+  calculate(args) {
+    return args;
   },
 });
+export function registerCoreBooleanNode(editor: Editor) {
+  editor.registerNodeType(CoreBooleanNode, { category: "Constants" });
+}
 
-// TODO: Note that literal inputs should implicitly be allowed to be inlined,
-// so these are not strictly necessary for the core functionality,
-// but they are useful for literals that need to stay in sync for multiple nodes.
-
-export const coreUndefinedLiteralNode = createNodeDefinition({
-  id: "core-literal-undefined",
-  tags: ["core.literal.undefined"],
-  input: z.object({}),
-  output: z.object({ value: z.undefined() }),
-  function: async () => ({ value: undefined }),
+export const CoreStringNode = defineNode({
+  type: "CoreTextNode",
+  inputs: {
+    value: () => textInterface("Value"),
+  },
+  outputs: {
+    value: () => nodeInterface("Value", "", anyType),
+  },
+  calculate(args) {
+    return args;
+  },
 });
+export function registerCoreStringNode(editor: Editor) {
+  editor.registerNodeType(CoreStringNode, { category: "Constants" });
+}
 
-export const coreNullLiteralNode = createNodeDefinition({
-  id: "core-literal-null",
-  tags: ["core.literal.null"],
-  input: z.object({}),
-  output: z.object({ value: z.null() }),
-  function: async () => ({ value: null }),
+export const CoreIntegerNode = defineNode({
+  type: "CoreIntegerNode",
+  inputs: {
+    value: () => integerInterface("Value"),
+  },
+  outputs: {
+    value: () => nodeInterface("Value", 0, anyType),
+  },
+  calculate(args) {
+    return args;
+  },
 });
+export function registerCoreIntegerNode(editor: Editor) {
+  editor.registerNodeType(CoreIntegerNode, { category: "Constants" });
+}
 
-export const coreTruthLiteralNode = createNodeDefinition({
-  id: "core-literal-truth",
-  tags: ["core.literal.truth"],
-  input: z.object({ value: z.boolean() }),
-  output: z.object({ value: z.boolean() }),
-  function: async ({ value }) => ({ value }),
+export const CoreNumberNode = defineNode({
+  type: "CoreNumberNode",
+  inputs: {
+    value: () => numberInterface("Value"),
+  },
+  outputs: {
+    value: () => nodeInterface("Value", 0, anyType),
+  },
+  calculate(args) {
+    return args;
+  },
 });
+export function registerCoreNumberNode(editor: Editor) {
+  editor.registerNodeType(CoreNumberNode, { category: "Constants" });
+}
 
-export const coreIntegerLiteralNode = createNodeDefinition({
-  id: "core-literal-integer",
-  tags: ["core.literal.number.integer"],
-  input: z.object({ value: z.number().int() }),
-  output: z.object({ value: z.number().int() }),
-  function: async ({ value }) => ({ value }),
+export const CoreSliderNode = defineNode({
+  type: "CoreSliderNode",
+  inputs: {
+    value: () => sliderInterface("Value"),
+  },
+  outputs: {
+    value: () => nodeInterface("Value", 0, anyType),
+  },
+  calculate(args) {
+    return args;
+  },
 });
+export function registerCoreSliderNode(editor: Editor) {
+  editor.registerNodeType(CoreSliderNode, { category: "Constants" });
+}
 
-export const coreNumberLiteralNode = createNodeDefinition({
-  id: "core-literal-number",
-  tags: ["core.literal.number"],
-  input: z.object({ value: z.number() }),
-  output: z.object({ value: z.number() }),
-  function: async ({ value }) => ({ value }),
-});
+export function defineListNode<T>(
+  type: NodeInterfaceType<T>,
+  listType: NodeInterfaceType<readonly T[]>,
+  makeDefaultValue: () => T,
+  options: IRegisterNodeTypeOptions
+) {
+  const node = defineDynamicNode({
+    type: "CoreListNode",
+    inputs: {
+      length: () => nodeInterface("Length", Integer(0), integerType),
+    },
+    outputs: {
+      items: () => nodeInterface("Items", [], listType),
+    },
+    onUpdate({ length }) {
+      return {
+        inputs: {
+          length: () => nodeInterface("Length", Integer(0), integerType),
+          ...Object.fromEntries(
+            Array.from({ length }, (_, i) => [
+              `element${i}`,
+              nodeInterface(`${i}`, makeDefaultValue(), type),
+            ])
+          ),
+        },
+      };
+    },
+    calculate(inputs) {
+      const items: readonly T[] = Array.from(
+        { length: inputs.length },
+        (_, i) => inputs[`element${i}`] as T
+      );
+      return { items };
+    },
+  });
+  const register = function registerCoreListNode(editor: Editor) {
+    editor.registerNodeType(node, options);
+  };
+  return { node, register };
+}
 
-export const coreTextLiteralNode = createNodeDefinition({
-  id: "core-literal-text",
-  tags: ["core.literal.text"],
-  input: z.object({ value: z.string() }),
-  output: z.object({ value: z.string() }),
-  function: async ({ value }) => ({ value }),
-});
+export function registerCoreNodes(editor: Editor) {
+  registerCoreBooleanNode(editor);
+  registerCoreStringNode(editor);
+  registerCoreIntegerNode(editor);
+  registerCoreNumberNode(editor);
+  registerCoreSliderNode(editor);
+}
