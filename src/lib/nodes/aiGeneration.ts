@@ -38,24 +38,49 @@ import { assertStrict } from "../core";
 import { defineNode, Editor } from "baklavajs";
 import {
   checkboxInterface,
+  Integer,
+  integerType,
   nodeInterface,
+  selectInterface,
+  stringListType,
+  stringType,
   textInterface,
+  unsafeAsOptionalNodeInterfaceType,
 } from "./interfaceTypes";
 import {
-  attributeValueStringDictInterfaceType,
-  attributeValueInterfaceType,
+  attributeValueStringDictType,
+  attributeValueType,
   languageModelType,
   stopConditionListType,
   stopConditionType,
   telemetrySettingsType,
   toolChoiceType,
-  toolSetType,
   imageModelType,
   textEmbeddingModelType,
   transcriptionModelType,
   speechModelType,
+  outputType,
+  prepareStepFunctionType,
+  toolCallRepairFunctionType,
+  generateTextOnStepFinishCallbackType,
+  toolStringDictType,
+  toolType,
+  toolChoiceKindType,
+  contentPartListType,
+  reasoningPartListType,
+  generatedFileListType,
+  contentPartSourceListType,
+  contentPartToolCallListType,
+  contentPartToolResultListType,
+  finishReasonType,
+  languageModelUsageType,
 } from "./aiGenerationTypes";
 import { defineListNode, defineStringDictNode } from "./core";
+import { jsonValueStringDictStringDictType } from "./sharedTypes";
+import {
+  unsafeReplaceNumberWithInteger,
+  unsafeReplaceOptionalWithUndefined,
+} from "../object";
 
 // TODO: Add rest of inputs for `generateImage`, `generateSpeech` , and `transcribe`
 
@@ -70,13 +95,20 @@ export const {
   node: AttributeValueStringDictNode,
   register: registerAttributeValueStringDictNode,
 } = defineStringDictNode(
-  attributeValueInterfaceType,
-  attributeValueStringDictInterfaceType,
-  () => 0,
+  attributeValueType,
+  attributeValueStringDictType,
+  () => undefined!,
   {
     category: "AI Generation Utilities",
   }
 );
+
+export const {
+  node: ToolStringDictNode,
+  register: registerToolStringDictNode,
+} = defineStringDictNode(toolType, toolStringDictType, () => undefined!, {
+  category: "AI Generation Utilities",
+});
 
 export const TelemetrySettingsNode = defineNode({
   type: "TelemetrySettingsNode",
@@ -86,11 +118,7 @@ export const TelemetrySettingsNode = defineNode({
     recordOutputs: () => checkboxInterface("Record Outputs", undefined!),
     functionId: () => textInterface("Function Id", undefined!),
     metadata: () =>
-      nodeInterface(
-        "Metadata",
-        undefined!,
-        attributeValueStringDictInterfaceType
-      ),
+      nodeInterface("Metadata", undefined!, attributeValueStringDictType),
   },
   outputs: {
     telemetry: () =>
@@ -109,12 +137,107 @@ export const TelemetrySettingsNode = defineNode({
   },
 });
 
-// GenerateTextParameters, GenerateTextResult
+export const ToolChoiceNode = defineNode({
+  type: "ToolChoiceNode",
+  inputs: {
+    type: () =>
+      selectInterface("Type", "auto", toolChoiceKindType, [
+        "auto",
+        "none",
+        "required",
+        "tool",
+      ]),
+    toolName: () => textInterface("Tool Name", ""),
+  },
+  outputs: {
+    toolChoice: () => nodeInterface("Tool Choice", "auto", toolChoiceType),
+  },
+  calculate({ type, toolName }) {
+    if (type === "tool") {
+      if (!toolName) {
+        throw new Error("Tool name must be provided when type is 'tool'");
+      }
+      return { toolChoice: { type: "tool" as const, toolName } };
+    }
+    return { toolChoice: type };
+  },
+});
+
+export const DeconstructLanguageModelUsageNode = defineNode({
+  type: "DeconstructLanguageModelUsageNode",
+  inputs: {
+    usage: () => nodeInterface("Usage", undefined!, languageModelUsageType),
+  },
+  outputs: {
+    inputTokens: () =>
+      nodeInterface(
+        "Input Tokens",
+        undefined,
+        unsafeAsOptionalNodeInterfaceType(integerType)
+      ),
+    outputTokens: () =>
+      nodeInterface(
+        "Output Tokens",
+        undefined,
+        unsafeAsOptionalNodeInterfaceType(integerType)
+      ),
+    totalTokens: () =>
+      nodeInterface(
+        "Total Tokens",
+        undefined,
+        unsafeAsOptionalNodeInterfaceType(integerType)
+      ),
+    reasoningTokens: () =>
+      nodeInterface(
+        "Reasoning Tokens",
+        undefined,
+        unsafeAsOptionalNodeInterfaceType(integerType)
+      ),
+    cachedInputTokens: () =>
+      nodeInterface(
+        "Cached Input Tokens",
+        undefined,
+        unsafeAsOptionalNodeInterfaceType(integerType)
+      ),
+  },
+  calculate({ usage }) {
+    return unsafeReplaceOptionalWithUndefined(
+      unsafeReplaceNumberWithInteger(usage)
+    );
+  },
+});
+export function registerDeconstructLanguageModelUsageNode(editor: Editor) {
+  editor.registerNodeType(DeconstructLanguageModelUsageNode, {
+    category: "AI Generation Utilities",
+  });
+}
+
+/*
+    warnings: z
+      .array(CallWarning)
+      .optional()
+      .describe(
+        "Warnings from the model provider (e.g. unsupported settings)."
+      ),
+    request: LanguageModelRequestMetadata,
+    response: LanguageModelResponseMetadataWithMessagesAndBody,
+    providerMetadata: ProviderMetadata.optional(),
+
+  totalUsage: LanguageModelUsage,
+  steps: z.array(StepResult).readonly(),
+  experimental_output: z
+    .unknown()
+    .describe(
+      "The generated structured output. It uses the `experimental_output` specification."
+    ),
+*/
+
+// GenerateTextResult
 export const GenerateTextNode = defineNode({
   type: "GenerateTextNode",
   inputs: {
     model: () => nodeInterface("Model", undefined!, languageModelType),
-    tools: () => nodeInterface("Tool Set", undefined!, toolSetType),
+    tools: () => nodeInterface("Tool Set", undefined!, toolStringDictType),
     toolChoice: () => nodeInterface("Tool Choice", undefined!, toolChoiceType),
     stopWhen: () =>
       nodeInterface("Stop Condition", undefined!, stopConditionType),
@@ -122,9 +245,63 @@ export const GenerateTextNode = defineNode({
       nodeInterface("Extra Stop Conditions", undefined!, stopConditionListType),
     telemetry: () =>
       nodeInterface("Telemetry", undefined!, telemetrySettingsType),
+    providerOptions: () =>
+      nodeInterface(
+        "Provider Options",
+        undefined!,
+        jsonValueStringDictStringDictType
+      ),
+    activeTools: () =>
+      nodeInterface("Active Tools", undefined!, stringListType),
+    output: () => nodeInterface("Output", undefined!, outputType),
+    prepareStep: () =>
+      nodeInterface("Prepare Step", undefined!, prepareStepFunctionType),
+    repairToolCall: () =>
+      nodeInterface("Repair Tool Call", undefined!, toolCallRepairFunctionType),
+    onStepFinish: () =>
+      nodeInterface(
+        "On Step Finish",
+        undefined!,
+        generateTextOnStepFinishCallbackType
+      ),
   },
-  outputs: {},
-  async calculate({ stopWhen, extraStopWhens, telemetry, ...rest }) {
+  outputs: {
+    content: () => nodeInterface("Content", [], contentPartListType),
+    text: () => nodeInterface("Text", "", stringType),
+    reasoning: () => nodeInterface("Reasoning", [], reasoningPartListType),
+    reasoningText: () =>
+      nodeInterface(
+        "Reasoning Text",
+        undefined,
+        unsafeAsOptionalNodeInterfaceType(stringType)
+      ),
+    files: () => nodeInterface("Files", [], generatedFileListType),
+    sources: () => nodeInterface("Sources", [], contentPartSourceListType),
+    toolCalls: () =>
+      nodeInterface("Tool Calls", [], contentPartToolCallListType),
+    staticToolCalls: () =>
+      nodeInterface("Static Tool Calls", [], contentPartToolCallListType),
+    dynamicToolCalls: () =>
+      nodeInterface("Dynamic Tool Calls", [], contentPartToolCallListType),
+    toolResults: () =>
+      nodeInterface("Tool Results", [], contentPartToolResultListType),
+    staticToolResults: () =>
+      nodeInterface("Static Tool Results", [], contentPartToolResultListType),
+    dynamicToolResults: () =>
+      nodeInterface("Dynamic Tool Results", [], contentPartToolResultListType),
+    finishReason: () =>
+      nodeInterface("Finish Reason", "unknown", finishReasonType),
+    usage: () => nodeInterface("Usage", {}, languageModelUsageType),
+    totalUsage: () => nodeInterface("Total Usage", {}, languageModelUsageType),
+  },
+  async calculate({
+    stopWhen,
+    extraStopWhens,
+    telemetry,
+    output,
+    repairToolCall,
+    ...rest
+  }) {
     return await generateText({
       ...rest,
       // @ts-expect-error This is intentional, this input is `null` by default
@@ -132,6 +309,10 @@ export const GenerateTextNode = defineNode({
         stopWhen: [...(stopWhen ? [stopWhen] : []), ...extraStopWhens],
       }),
       ...(telemetry && { experimental_telemetry: telemetry }),
+      ...(output && { experimental_output: output }),
+      ...(repairToolCall && {
+        experimental_repairToolCall: repairToolCall,
+      }),
     });
   },
 });
@@ -3083,11 +3264,15 @@ export function registerAiXaiProviderNodes(editor: Editor) {
 export function registerAiGenerationNodes(editor: Editor) {
   registerStopConditionListNode(editor);
   registerAttributeValueStringDictNode(editor);
+  registerToolStringDictNode(editor);
+  registerDeconstructLanguageModelUsageNode(editor);
+
   registerGenerateTextNode(editor);
   registerTextEmbeddingNode(editor);
   registerGenerateImageNode(editor);
   registerGenerateSpeechNode(editor);
   registerTranscribeNode(editor);
+
   registerAiBedrockProviderNodes(editor);
   registerAiAnthropicProviderNodes(editor);
   registerAiAssemblyaiProviderNodes(editor);

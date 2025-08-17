@@ -6,7 +6,17 @@ import {
   schemaType,
 } from "./sharedTypes";
 import { defineNode, Editor } from "baklavajs";
-import { nodeInterface, stringListType, unknownType } from "./interfaceTypes";
+import {
+  bigintType,
+  booleanType,
+  nodeInterface,
+  nodeInterfaceType,
+  numberType,
+  stringListType,
+  stringType,
+  undefinedType,
+  unknownType,
+} from "./interfaceTypes";
 import { defineListNode, defineStringDictNode } from "./core";
 
 export const Literal = z.union([
@@ -18,6 +28,13 @@ export const Literal = z.union([
   z.undefined(),
 ]);
 export type Literal = z.infer<typeof Literal>;
+
+export const literalType = nodeInterfaceType<Literal>("Literal");
+stringType.addConversion(literalType, (v) => v);
+numberType.addConversion(literalType, (v) => v);
+bigintType.addConversion(literalType, (v) => v);
+booleanType.addConversion(literalType, (v) => v);
+undefinedType.addConversion(literalType, (v) => v);
 
 const unknownSchema = z.unknown();
 export const { node: SchemaListNode, register: registerSchemaListNode } =
@@ -32,7 +49,7 @@ export const {
   schemaType,
   schemaStringDictType,
   () => unknownSchema,
-  { category: "Schema" }
+  { category: "Schema" },
 );
 
 export function schemaInterfaceFactory(name: string) {

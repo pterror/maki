@@ -17,12 +17,18 @@ import {
   type SelectInterfaceItem,
 } from "baklavajs";
 
-type Integer = number & { __integer: true };
+export type Integer = number & { __integer: true };
 export function Integer(value: number) {
   if (!Number.isInteger(value)) {
     throw new Error(`Value ${value} is not an integer`);
   }
   return value as Integer;
+}
+
+export function unsafeAsOptionalNodeInterfaceType<T>(
+  type: NodeInterfaceType<T>
+): NodeInterfaceType<T | undefined> {
+  return type as NodeInterfaceType<T | undefined>;
 }
 
 export const unknownType = new NodeInterfaceType<unknown>("unknown");
@@ -40,8 +46,8 @@ export function nodeInterfaceType<T>(name: string): NodeInterfaceType<T> {
 
 export function listNodeInterfaceType<T>(
   itemType: NodeInterfaceType<T>
-): NodeInterfaceType<readonly T[]> {
-  const interfaceType = nodeInterfaceType<readonly T[]>(`array[${itemType.name}]`);
+): NodeInterfaceType<T[]> {
+  const interfaceType = nodeInterfaceType<T[]>(`array[${itemType.name}]`);
   interfaceType.addConversion(unknownType, (v) => v);
   interfaceType.addConversion(anyType, (v) => v);
   return interfaceType;
@@ -62,6 +68,7 @@ export const undefinedType = nodeInterfaceType<undefined>("undefined");
 export const stringType = nodeInterfaceType<string>("string");
 export const integerType = nodeInterfaceType<Integer>("integer");
 export const numberType = nodeInterfaceType<number>("number");
+export const bigintType = nodeInterfaceType<bigint>("bigint");
 export const booleanType = nodeInterfaceType<boolean>("boolean");
 export const stringListType = listNodeInterfaceType(stringType);
 export const integerListType = listNodeInterfaceType(integerType);
@@ -93,6 +100,12 @@ anyType.addConversion(numberType, (v) => {
   }
   return v;
 });
+anyType.addConversion(bigintType, (v) => {
+  if (typeof v !== "bigint") {
+    throw new Error(`Cannot convert value '${JSON.stringify(v)}' to bigint`);
+  }
+  return v;
+});
 anyType.addConversion(booleanType, (v) => {
   if (typeof v !== "boolean") {
     throw new Error(`Cannot convert value '${JSON.stringify(v)}' to boolean`);
@@ -117,7 +130,7 @@ export function registerCoreInterfaceTypes(
     stringListType,
     integerListType,
     numberListType,
-    booleanListType,
+    booleanListType
   );
   return nodeInterfaceTypes;
 }

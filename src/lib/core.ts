@@ -1,9 +1,10 @@
 /** Whether two types are exactly equal. */
-export type IsEqual<X, Y> = (<T>() => T extends X ? true : false) extends <
-  T
->() => T extends Y ? true : false
-  ? true
-  : false;
+export type IsEqual<X, Y> =
+  (<T>() => T extends X ? true : false) extends <T>() => T extends Y
+    ? true
+    : false
+    ? true
+    : false;
 
 type RemoveUndefinedFromOptionalProperties<T> = {
   [K in keyof T]: Exclude<
@@ -13,7 +14,7 @@ type RemoveUndefinedFromOptionalProperties<T> = {
 };
 
 export const removeUndefinedFromOptionalProperties = <T extends object>(
-  object: T
+  object: T,
 ): RemoveUndefinedFromOptionalProperties<T> => object as never;
 
 /** Assert that a value is not `null` or `undefined`. */
@@ -33,14 +34,14 @@ export const assertStrict = <T>(
   ...[message]: null extends T
     ? [message?: string] // Okay, type contains `null`
     : undefined extends T
-    ? [message?: string] // Okay, type contains `undefined`
-    : // Type does not contain `null` or `undefined`
-      [
-        message: string | undefined, // Do not error on the `message` parameter
-        Error: "The type",
-        t: T,
-        _: "already cannot be `null` or `undefined`"
-      ]
+      ? [message?: string] // Okay, type contains `undefined`
+      : // Type does not contain `null` or `undefined`
+        [
+          message: string | undefined, // Do not error on the `message` parameter
+          Error: "The type",
+          t: T,
+          _: "already cannot be `null` or `undefined`",
+        ]
 ): NonNullable<T> => {
   if (value == null) {
     throw new Error(message ?? "Value must not be `null` or `undefined`");
@@ -54,7 +55,7 @@ export const assertStrict = <T>(
  * defined in the type.
  */
 export const unsafeKeys = <T extends object>(
-  object: T
+  object: T,
 ): readonly (keyof T)[] => {
   return Object.keys(object) as never;
 };
@@ -65,7 +66,7 @@ export const unsafeKeys = <T extends object>(
  * defined in the type.
  */
 export const unsafeValues = <T extends object>(
-  object: T
+  object: T,
 ): readonly T[keyof T][] => {
   return Object.values(object) as never;
 };
@@ -76,7 +77,7 @@ export const unsafeValues = <T extends object>(
  * defined in the type.
  */
 export const unsafeEntries = <T extends object>(
-  object: T
+  object: T,
 ): readonly NonNullable<{ [K in keyof T]: readonly [K, T[K]] }[keyof T]>[] => {
   return Object.entries(object) as never;
 };

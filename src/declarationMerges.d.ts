@@ -18,7 +18,7 @@ declare module "baklavajs" {
      */
     addConversion<O>(
       to: NodeInterfaceType<O>,
-      transformationFunction?: (value: T) => O
+      transformationFunction?: (value: T) => O,
     ): this;
   }
 }

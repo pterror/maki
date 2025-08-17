@@ -12,8 +12,18 @@ import {
   InvalidToolInputError,
 } from "ai";
 import { z } from "zod/v4";
-import { zFunction } from "./sharedTypes";
-import { listNodeInterfaceType, nodeInterfaceType, stringDictNodeInterfaceType } from "./interfaceTypes";
+import { JSONArray, JSONValue, zFunction } from "./sharedTypes";
+import {
+  booleanListType,
+  booleanType,
+  listNodeInterfaceType,
+  nodeInterfaceType,
+  numberListType,
+  numberType,
+  stringDictNodeInterfaceType,
+  stringListType,
+  stringType,
+} from "./interfaceTypes";
 import type { BaklavaInterfaceTypes } from "baklavajs";
 
 export const LanguageModel = z
@@ -68,32 +78,6 @@ export const TranscriptionModel = z
 export type TranscriptionModel = z.infer<typeof TranscriptionModel>;
 export const transcriptionModelType =
   nodeInterfaceType<TranscriptionModel>("TranscriptionModel");
-
-export const JSONValue = z
-  .union([
-    z.null(),
-    z.string(),
-    z.number(),
-    z.boolean(),
-    z.record(
-      z.string(),
-      z.lazy((): z.ZodType<JSONValue> => JSONValue)
-    ),
-    z.array(z.lazy((): z.ZodType<JSONValue> => JSONValue)),
-  ])
-  .describe(
-    "A JSON value can be a string, number, boolean, object, array, or `null`. JSON values can be serialized and deserialized by the `JSON.stringify` and `JSON.parse` methods."
-  );
-export type JSONValue =
-  | null
-  | string
-  | number
-  | boolean
-  | { [key: string]: JSONValue }
-  | JSONValue[];
-
-export const JSONArray = z.array(JSONValue);
-export type JSONArray = z.infer<typeof JSONArray>;
 
 export const ProviderMetadata = z
   .record(z.string(), z.record(z.string(), JSONValue))
@@ -202,6 +186,9 @@ export const GeneratedFile = z
     description: "A generated file.",
   });
 export type GeneratedFile = z.infer<typeof GeneratedFile>;
+export const generatedFileType =
+  nodeInterfaceType<GeneratedFile>("GeneratedFile");
+export const generatedFileListType = listNodeInterfaceType(generatedFileType);
 
 export const ContentPartText = z
   .object({
@@ -234,6 +221,11 @@ It can be a URL or a document.
 Sources are used to provide context to the model and can be referenced in the generated text.`,
   });
 export type ContentPartSource = z.infer<typeof ContentPartSource>;
+export const contentPartSourceType =
+  nodeInterfaceType<ContentPartSource>("ContentPartSource");
+export const contentPartSourceListType = listNodeInterfaceType(
+  contentPartSourceType
+);
 
 export const ContentPartFile = z
   .object({
@@ -258,6 +250,12 @@ export const ContentPartToolCall = z
   })
   .meta({ title: "ContentPartToolCall" });
 export type ContentPartToolCall = z.infer<typeof ContentPartToolCall>;
+export const contentPartToolCallType = nodeInterfaceType<ContentPartToolCall>(
+  "ContentPartToolCall"
+);
+export const contentPartToolCallListType = listNodeInterfaceType(
+  contentPartToolCallType
+);
 
 export const ContentPartToolResult = z
   .object({
@@ -272,6 +270,11 @@ export const ContentPartToolResult = z
   })
   .meta({ title: "ContentPartToolResult" });
 export type ContentPartToolResult = z.infer<typeof ContentPartToolResult>;
+export const contentPartToolResultType =
+  nodeInterfaceType<ContentPartToolResult>("ContentPartToolResult");
+export const contentPartToolResultListType = listNodeInterfaceType(
+  contentPartToolResultType
+);
 
 export const ContentPartToolError = z
   .object({
@@ -301,6 +304,8 @@ export const ContentPart = z
   ])
   .meta({ title: "ContentPart" });
 export type ContentPart = z.infer<typeof ContentPart>;
+export const contentPartType = nodeInterfaceType<ContentPart>("ContentPart");
+export const contentPartListType = listNodeInterfaceType(contentPartType);
 
 export const DataContent = z
   .union([
@@ -377,6 +382,9 @@ export const ReasoningPart = z
   })
   .meta({ title: "ReasoningPart" });
 export type ReasoningPart = z.infer<typeof ReasoningPart>;
+export const reasoningPartType =
+  nodeInterfaceType<ReasoningPart>("ReasoningPart");
+export const reasoningPartListType = listNodeInterfaceType(reasoningPartType);
 
 export const ToolCallPart = z
   .object({
@@ -503,7 +511,7 @@ export const ToolResultPart = z
 export type ToolResultPart = z.infer<typeof ToolResultPart>;
 
 export const FinishReason = z
-  .enum([
+  .literal([
     "stop",
     "length",
     "content-filter",
@@ -527,6 +535,7 @@ Can be one of the following:
 - \`unknown\`: the model has not transmitted a finish reason`,
   });
 export type FinishReason = z.infer<typeof FinishReason>;
+export const finishReasonType = nodeInterfaceType<FinishReason>("FinishReason");
 
 export const AssistantContent = z
   .union([
@@ -618,6 +627,8 @@ Usage information for a language model call.
 If your API return additional usage information, you can add it to the provider metadata under your provider's key.`,
   });
 export type LanguageModelUsage = z.infer<typeof LanguageModelUsage>;
+export const languageModelUsageType =
+  nodeInterfaceType<LanguageModelUsage>("LanguageModelUsage");
 
 export const LanguageModelRequestMetadata = z
   .object({
@@ -843,6 +854,7 @@ export const StepResult = z
     description: "The result of a single step in the generation process.",
   });
 export type StepResult = z.infer<typeof StepResult>;
+export const stepResultType = nodeInterfaceType<StepResult>("StepResult");
 
 export const GenerateTextResult = StepResult.extend({
   totalUsage: LanguageModelUsage,
@@ -859,6 +871,9 @@ The result of a \`generateText\` call.
 It contains the generated text, the tool calls that were made during the generation, and the results of the tool calls.`,
 });
 export type GenerateTextResult = z.infer<typeof GenerateTextResult>;
+export const generateTextResultType =
+  nodeInterfaceType<GenerateTextResult>("GenerateTextResult");
+generateTextResultType.addConversion(stepResultType, (v) => v);
 
 export const Embedding = z.array(z.number()).meta({
   title: "Embedding",
@@ -966,14 +981,7 @@ export type ImageModelResponseMetadata = z.infer<
 >;
 
 export const ImageModelProviderMetadata = z
-  .record(
-    z.string(),
-    z
-      .object({
-        images: JSONArray,
-      })
-      .and(JSONValue)
-  )
+  .record(z.string(), z.object({ images: JSONArray }).and(JSONValue))
   .meta({
     title: "ImageModelProviderMetadata",
     description:
@@ -1295,6 +1303,11 @@ export const Prompt = z
   });
 export type Prompt = z.infer<typeof Prompt>;
 
+export const ToolChoiceKind = z.literal(["auto", "none", "required", "tool"]);
+export type ToolChoiceKind = z.infer<typeof ToolChoiceKind>;
+export const toolChoiceKindType =
+  nodeInterfaceType<ToolChoiceKind>("ToolChoiceKind");
+
 export const ToolChoice = z
   .union([
     z.literal("auto"),
@@ -1312,8 +1325,7 @@ Tool choice for the generation. It supports the following settings:
 - \`{ type: 'tool', toolName: string (typed) }\`: the model must call the specified tool`,
   });
 export type ToolChoice = z.infer<typeof ToolChoice>;
-export const toolChoiceType =
-  nodeInterfaceType<ToolChoice>("ToolChoice");
+export const toolChoiceType = nodeInterfaceType<ToolChoice>("ToolChoice");
 
 export const StopCondition = zFunction<
   (options: { steps: Array<StepResult> }) => PromiseLike<boolean> | boolean
@@ -1343,10 +1355,16 @@ export const AttributeValue = z
       "Attribute values may be any non-nullish primitive value except an object.\n\n`null` or `undefined` attribute values are invalid and will result in undefined behavior.",
   });
 export type AttributeValue = z.infer<typeof AttributeValue>;
-export const attributeValueInterfaceType = nodeInterfaceType<AttributeValue>("AttributeValue");
-export const attributeValueStringDictInterfaceType = stringDictNodeInterfaceType<
-  AttributeValue
->(attributeValueInterfaceType);
+export const attributeValueType =
+  nodeInterfaceType<AttributeValue>("AttributeValue");
+export const attributeValueStringDictType =
+  stringDictNodeInterfaceType<AttributeValue>(attributeValueType);
+stringType.addConversion(attributeValueType, (v) => v);
+numberType.addConversion(attributeValueType, (v) => v);
+booleanType.addConversion(attributeValueType, (v) => v);
+stringListType.addConversion(attributeValueType, (v) => v);
+numberListType.addConversion(attributeValueType, (v) => v);
+booleanListType.addConversion(attributeValueType, (v) => v);
 
 export const Tracer = z.custom<UpstreamTelemetrySettings["tracer"]>().meta({
   title: "Tracer",
@@ -1402,6 +1420,7 @@ export const Output = z.custom<UpstreamOutput.Output<unknown, unknown>>().meta({
   id: "Output",
 });
 export type Output = z.infer<typeof Output>;
+export const outputType = nodeInterfaceType<Output>("Output");
 
 export type PrepareStepResult =
   | {
@@ -1426,6 +1445,9 @@ export const PrepareStepFunction = zFunction<
     "A function that is called before each step to prepare the settings for the step.",
 });
 export type PrepareStepFunction = z.infer<typeof PrepareStepFunction>;
+export const prepareStepFunctionType = nodeInterfaceType<PrepareStepFunction>(
+  "PrepareStepFunction"
+);
 
 export const ToolCallOptions = z
   .object({
@@ -1453,12 +1475,15 @@ export const ToolCallOptions = z
   });
 export type ToolCallOptions = z.infer<typeof ToolCallOptions>;
 
+// TODO: Add the proper structure for `Tool`.
 export const Tool = z.custom<UpstreamTool>().meta({
   title: "Tool",
   description:
     "A tool that can be called by the language model. It can be a function tool or a provider-defined tool.",
 });
 export type Tool = z.infer<typeof Tool>;
+export const toolType = nodeInterfaceType<Tool>("Tool");
+export const toolStringDictType = stringDictNodeInterfaceType<Tool>(toolType);
 
 export const ToolSet = z.record(z.string(), Tool).meta({
   title: "ToolSet",
@@ -1466,7 +1491,6 @@ export const ToolSet = z.record(z.string(), Tool).meta({
     "A set of tools that can be called by the language model. It is a record of tool names to tool definitions.",
 });
 export type ToolSet = z.infer<typeof ToolSet>;
-export const toolSetType = nodeInterfaceType<ToolSet>("ToolSet");
 
 export const ToolCallRepairFunction = zFunction<
   (options: {
@@ -1483,6 +1507,8 @@ export const ToolCallRepairFunction = zFunction<
     "A function that attempts to repair a tool call that failed to parse.\n\nIt receives the error and the context as arguments and returns the repaired tool call JSON as text.",
 });
 export type ToolCallRepairFunction = z.infer<typeof ToolCallRepairFunction>;
+export const toolCallRepairFunctionType =
+  nodeInterfaceType<ToolCallRepairFunction>("ToolCallRepairFunction");
 
 export const GenerateTextOnStepFinishCallback = zFunction<
   (stepResult: StepResult) => Promise<void> | void
@@ -1494,6 +1520,10 @@ export const GenerateTextOnStepFinishCallback = zFunction<
 export type GenerateTextOnStepFinishCallback = z.infer<
   typeof GenerateTextOnStepFinishCallback
 >;
+export const generateTextOnStepFinishCallbackType =
+  nodeInterfaceType<GenerateTextOnStepFinishCallback>(
+    "GenerateTextOnStepFinishCallback"
+  );
 
 export const GenerateTextParameters = CallSettings.extend(Prompt.shape)
   .extend({
@@ -1565,13 +1595,35 @@ export function registerAiGenerationInterfaceTypes(
   types: BaklavaInterfaceTypes
 ) {
   types.addTypes(
-    languageModelType,
-    textEmbeddingModelType,
+    attributeValueStringDictType,
+    attributeValueType,
+    generateTextOnStepFinishCallbackType,
     imageModelType,
+    languageModelType,
+    outputType,
+    prepareStepFunctionType,
     speechModelType,
-    transcriptionModelType,
-    toolChoiceType,
+    stopConditionListType,
     stopConditionType,
-    toolSetType
+    telemetrySettingsType,
+    textEmbeddingModelType,
+    toolCallRepairFunctionType,
+    toolChoiceType,
+    toolType,
+    toolStringDictType,
+    transcriptionModelType,
+    generatedFileType,
+    generatedFileListType,
+    contentPartSourceListType,
+    contentPartSourceType,
+    contentPartListType,
+    contentPartType,
+    reasoningPartListType,
+    reasoningPartType,
+    contentPartToolCallListType,
+    contentPartToolCallType,
+    contentPartToolResultListType,
+    contentPartToolResultType,
+    finishReasonType
   );
 }

@@ -13,7 +13,7 @@ import { nodeInterface, textInterface } from "./interfaceTypes";
 
 function sqlite3StringifyDatabaseQueryConditionComparison(
   condition: DatabaseQueryConditionComparison,
-  parameters: unknown[]
+  parameters: unknown[],
 ): string {
   parameters.push(condition.value);
   return `${condition.column} ${condition.operator} ?`;
@@ -21,44 +21,44 @@ function sqlite3StringifyDatabaseQueryConditionComparison(
 
 function sqlite3StringifyDatabaseQueryConditionAnd(
   condition: DatabaseQueryConditionAnd,
-  parameters: unknown[]
+  parameters: unknown[],
 ): string {
   return condition.conditions
     .map(
       (condition) =>
-        `(${sqlite3StringifyDatabaseQueryCondition(condition, parameters)})`
+        `(${sqlite3StringifyDatabaseQueryCondition(condition, parameters)})`,
     )
     .join(" AND ");
 }
 
 function sqlite3StringifyDatabaseQueryConditionOr(
   condition: DatabaseQueryConditionOr,
-  parameters: unknown[]
+  parameters: unknown[],
 ): string {
   return condition.conditions
     .map(
       (condition) =>
-        `(${sqlite3StringifyDatabaseQueryCondition(condition, parameters)})`
+        `(${sqlite3StringifyDatabaseQueryCondition(condition, parameters)})`,
     )
     .join(" OR ");
 }
 
 function sqlite3StringifyDatabaseQueryConditionNot(
   condition: DatabaseQueryConditionNot,
-  parameters: unknown[]
+  parameters: unknown[],
 ): string {
   return `NOT (${sqlite3StringifyDatabaseQueryCondition(condition.condition, parameters)})`;
 }
 
 function sqlite3StringifyDatabaseQueryCondition(
   condition: DatabaseQueryCondition,
-  parameters: unknown[]
+  parameters: unknown[],
 ): string {
   switch (condition.type) {
     case "comparison":
       return sqlite3StringifyDatabaseQueryConditionComparison(
         condition,
-        parameters
+        parameters,
       );
     case "and":
       return sqlite3StringifyDatabaseQueryConditionAnd(condition, parameters);
@@ -78,13 +78,14 @@ export const Sqlite3DatabaseNode = defineNode({
     path: () => textInterface("Path"),
   },
   outputs: {
-    database: () => nodeInterface("Database", undefined!, databaseInterfaceType),
+    database: () =>
+      nodeInterface("Database", undefined!, databaseInterfaceType),
   },
   async calculate(input) {
     const sqlite3Database = new Sqlite3Database(input.path, (error) => {
       if (error) {
         throw new Error(
-          `Failed to open SQLite3 database at ${input.path}: ${error.message}`
+          `Failed to open SQLite3 database at ${input.path}: ${error.message}`,
         );
       }
     });
@@ -113,7 +114,7 @@ export const Sqlite3DatabaseNode = defineNode({
       insert: async (command) => {
         const placeholders = command.values.map(() => "?").join(", ");
         const query = `INSERT INTO ${command.table} (${command.columns.join(
-          ", "
+          ", ",
         )}) VALUES (${placeholders})`;
 
         return new Promise((resolve, reject) => {
@@ -131,7 +132,7 @@ export const Sqlite3DatabaseNode = defineNode({
           .map((column) => `${column} = ?`)
           .join(", ");
         const parameters: unknown[] = command.columns.map(
-          (column) => command.set[column]
+          (column) => command.set[column],
         );
         const query = `UPDATE ${command.table} SET ${setClause}${
           command.where

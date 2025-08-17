@@ -15,7 +15,6 @@ import {
   nodeInterface,
   numberInterface,
   sliderInterface,
-  stringDictNodeInterfaceType,
   stringType,
   textInterface,
 } from "./interfaceTypes";
@@ -104,7 +103,7 @@ export function registerCoreSliderNode(editor: Editor) {
 
 export function defineListNode<T>(
   type: NodeInterfaceType<T>,
-  listType: NodeInterfaceType<readonly T[]>,
+  listType: NodeInterfaceType<T[]>,
   makeDefaultValue: () => T,
   options: IRegisterNodeTypeOptions
 ) {
@@ -130,11 +129,12 @@ export function defineListNode<T>(
       };
     },
     calculate(inputs) {
-      const items: readonly T[] = Array.from(
-        { length: inputs.size },
-        (_, i) => inputs[`element${i}`] as T
-      );
-      return { items };
+      return {
+        items: Array.from(
+          { length: inputs.size },
+          (_, i) => inputs[`element${i}`] as T
+        ),
+      };
     },
   });
   const register = function registerCoreListNode(editor: Editor) {
@@ -149,14 +149,13 @@ export function defineStringDictNode<V>(
   makeDefaultValue: () => V,
   options: IRegisterNodeTypeOptions
 ) {
-  const type = stringDictNodeInterfaceType(valueType);
   const node = defineDynamicNode({
     type: "CoreStringDictNode",
     inputs: {
       size: () => nodeInterface("Size", Integer(0), integerType),
     },
     outputs: {
-      items: () => nodeInterface("Items", {}, type),
+      items: () => nodeInterface("Items", {}, dictType),
     },
     onUpdate({ size }) {
       return {

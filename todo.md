@@ -19,3 +19,4 @@
 - inventory (and stats)! useful for regular bots too so they can track clothing (+ closet), weather, days, dates, pregnancy etc. make sure the user can edit it arbitrarily! ideally with good ux
 - if/else node or switch case node??
 - a way to merge and split conversations between multiple characters
+- node to get the n-th element of a list (needs to be implemented per list type), or a key of a stringdict, and the n-th last element of a list (defaults to 0)

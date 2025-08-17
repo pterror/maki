@@ -188,7 +188,7 @@ export const Database = z
   .object({
     type: z.string().describe("Type of the database"),
     select: zFunction<
-      (query: DatabaseSelectCommand) => Promise<readonly unknown[]>
+      (query: DatabaseSelectCommand) => Promise<unknown[]>
     >().describe("Function to execute a SELECT query against the database"),
     insert: zFunction<
       (query: DatabaseInsertCommand) => Promise<void>
@@ -424,12 +424,17 @@ export const databaseDeleteCommandInterfaceType =
 export const DatabaseSelectNode = defineNode({
   type: "DatabaseSelectNode",
   inputs: {
-    database: () => nodeInterface("Database", undefined!, databaseInterfaceType),
+    database: () =>
+      nodeInterface("Database", undefined!, databaseInterfaceType),
     command: () =>
-      nodeInterface("Command", {
-        table: "",
-        columns: [],
-      }, databaseSelectCommandInterfaceType),
+      nodeInterface(
+        "Command",
+        {
+          table: "",
+          columns: [],
+        },
+        databaseSelectCommandInterfaceType
+      ),
   },
   outputs: {
     rows: () =>
@@ -446,7 +451,8 @@ export function registerDatabaseSelectNode(editor: Editor) {
 export const DatabaseInsertNode = defineNode({
   type: "DatabaseInsertNode",
   inputs: {
-    database: () => nodeInterface("Database", undefined!, databaseInterfaceType),
+    database: () =>
+      nodeInterface("Database", undefined!, databaseInterfaceType),
     command: () =>
       nodeInterface(
         "Command",
@@ -471,7 +477,8 @@ export function registerDatabaseInsertNode(editor: Editor) {
 export const DatabaseUpdateNode = defineNode({
   type: "DatabaseUpdateNode",
   inputs: {
-    database: () => nodeInterface("Database", undefined!, databaseInterfaceType),
+    database: () =>
+      nodeInterface("Database", undefined!, databaseInterfaceType),
     command: () =>
       nodeInterface(
         "Command",
@@ -496,7 +503,8 @@ export function registerDatabaseUpdateNode(editor: Editor) {
 export const DatabaseDeleteNode = defineNode({
   type: "DatabaseDeleteNode",
   inputs: {
-    database: () => nodeInterface("Database", undefined!, databaseInterfaceType),
+    database: () =>
+      nodeInterface("Database", undefined!, databaseInterfaceType),
     command: () =>
       nodeInterface(
         "Command",
