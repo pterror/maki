@@ -1,22 +1,53 @@
-import type { IBaklavaViewModel } from "baklavajs";
-import { registerCoreInterfaceTypes } from "./interfaceTypes";
+import {
+  applyResult,
+  DependencyEngine,
+  useBaklava,
+  type BaklavaInterfaceTypesOptions,
+  type IBaklavaViewModel,
+} from "baklavajs";
+import {
+  registerCoreInterfaceTypes,
+  registerDerivedInterfaceTypes,
+} from "./interfaceTypes";
 import {
   registerDatabaseInterfaceTypes,
   registerDatabaseNodes,
 } from "./database";
-import { registerCoreNodes } from "./core";
+import { registerCoreNodes, registerDerivedNodes } from "./core";
 import { registerAiGenerationNodes } from "./aiGeneration";
 import { registerAiGenerationInterfaceTypes } from "./aiGenerationTypes";
-import {
-  registerSharedTypesInterfaceTypes,
-  registerSharedTypesNodes,
-} from "./sharedTypes";
+import { registerSharedTypesInterfaceTypes } from "./sharedTypes";
 
-export function setupBaklava(baklava: IBaklavaViewModel) {
+export function useFullBaklava() {
+  const baklava = useBaklava();
+  const engine = new DependencyEngine(baklava.editor);
+
+  const { interfaceTypes } = setupBaklava(baklava, {
+    engine,
+    viewPlugin: baklava,
+  });
+
+  const token = Symbol();
+  engine.events.afterRun.subscribe(token, (result) => {
+    engine.pause();
+    applyResult(result, baklava.editor);
+    engine.resume();
+  });
+  engine.start();
+
+  return { baklava, engine, interfaceTypes };
+}
+
+export function setupBaklava(
+  baklava: IBaklavaViewModel,
+  options: Required<BaklavaInterfaceTypesOptions>
+) {
   registerCoreNodes(baklava.editor);
-  const interfaceTypes = registerCoreInterfaceTypes(baklava.editor);
+  const interfaceTypes = registerCoreInterfaceTypes(baklava.editor, options);
 
-  registerSharedTypesNodes(baklava.editor);
+  registerDerivedNodes(baklava.editor);
+  registerDerivedInterfaceTypes(interfaceTypes);
+
   registerSharedTypesInterfaceTypes(interfaceTypes);
 
   registerDatabaseNodes(baklava.editor);

@@ -1,18 +1,14 @@
 import { z } from "zod/v4";
-import {
-  Schema,
-  schemaListType,
-  schemaStringDictType,
-  schemaType,
-} from "./sharedTypes";
+import { Schema, schemaType } from "./sharedTypes";
 import { defineNode, Editor } from "baklavajs";
 import {
   bigintType,
   booleanType,
+  listType,
   nodeInterface,
   nodeInterfaceType,
   numberType,
-  stringListType,
+  stringDictType,
   stringType,
   undefinedType,
   unknownType,
@@ -38,19 +34,14 @@ undefinedType.addConversion(literalType, (v) => v);
 
 const unknownSchema = z.unknown();
 export const { node: SchemaListNode, register: registerSchemaListNode } =
-  defineListNode(schemaType, schemaListType, () => unknownSchema, {
-    category: "Schema",
-  });
+  defineListNode(schemaType, listType(schemaType), { category: "Schema" });
 
 export const {
   node: SchemaStringDictNode,
   register: registerSchemaStringDictNode,
-} = defineStringDictNode(
-  schemaType,
-  schemaStringDictType,
-  () => unknownSchema,
-  { category: "Schema" },
-);
+} = defineStringDictNode(schemaType, stringDictType(schemaType), {
+  category: "Schema",
+});
 
 export function schemaInterfaceFactory(name: string) {
   return () => nodeInterface(name, unknownSchema, schemaType);
@@ -75,7 +66,8 @@ export function registerLiteralSchemaNode(editor: Editor) {
 export const ObjectSchemaNode = defineNode({
   type: "ObjectSchemaNode",
   inputs: {
-    properties: () => nodeInterface("Properties", {}, schemaStringDictType),
+    properties: () =>
+      nodeInterface("Properties", {}, stringDictType(schemaType)),
   },
   outputs: {
     schema: schemaInterfaceFactory("Schema"),
@@ -107,7 +99,7 @@ export function registerArraySchemaNode(editor: Editor) {
 export const UnionSchemaNode = defineNode({
   type: "UnionSchemaNode",
   inputs: {
-    schemas: () => nodeInterface("Schemas", [], schemaListType),
+    schemas: () => nodeInterface("Schemas", [], listType(schemaType)),
   },
   outputs: {
     schema: schemaInterfaceFactory("Schema"),
@@ -140,7 +132,7 @@ export function registerIntersectionSchemaNode(editor: Editor) {
 export const TupleSchemaNode = defineNode({
   type: "TupleSchemaNode",
   inputs: {
-    itemSchemas: () => nodeInterface("Schemas", [], schemaListType),
+    itemSchemas: () => nodeInterface("Schemas", [], listType(schemaType)),
   },
   outputs: {
     schema: schemaInterfaceFactory("Schema"),
@@ -172,7 +164,7 @@ export function registerRecordSchemaNode(editor: Editor) {
 export const EnumSchemaNode = defineNode({
   type: "EnumSchemaNode",
   inputs: {
-    values: () => nodeInterface("Values", [], stringListType),
+    values: () => nodeInterface("Values", [], listType(stringType)),
   },
   outputs: {
     schema: schemaInterfaceFactory("Schema"),

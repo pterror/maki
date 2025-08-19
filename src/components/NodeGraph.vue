@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import "@baklavajs/themes/dist/syrup-dark.css";
-import { BaklavaEditor, useBaklava } from "baklavajs";
-import { setupBaklava } from "../lib/nodes/full";
+import { BaklavaEditor } from "baklavajs";
+import { useFullBaklava } from "../lib/nodes/full";
 
-const baklava = useBaklava();
-const { interfaceTypes } = setupBaklava(baklava);
+const { baklava } = useFullBaklava();
 </script>
 
 <template>

@@ -3,14 +3,13 @@ import { zFunction } from "./sharedTypes";
 import { BaklavaInterfaceTypes, defineNode, Editor } from "baklavajs";
 import {
   anyType,
-  listNodeInterfaceType,
+  listType,
   nodeInterface,
   nodeInterfaceType,
   selectInterface,
   stringType,
   textInterface,
 } from "./interfaceTypes";
-import { defineListNode } from "./core";
 
 export const DatabaseQueryConditionComparison = z
   .object({
@@ -229,8 +228,9 @@ const databaseQueryConditionNotType =
 const databaseQueryConditionType = nodeInterfaceType<DatabaseQueryCondition>(
   "DatabaseQueryCondition"
 );
-const databaseQueryConditionListType =
-  listNodeInterfaceType<DatabaseQueryCondition>(databaseQueryConditionType);
+const databaseQueryConditionListType = listType<DatabaseQueryCondition>(
+  databaseQueryConditionType
+);
 
 databaseQueryConditionComparisonType.addConversion(
   databaseQueryConditionType,
@@ -387,27 +387,11 @@ export function registerDatabaseQueryConditionNotNode(editor: Editor) {
   });
 }
 
-export const {
-  node: DatabaseQueryConditionListNode,
-  register: registerDatabaseQueryConditionListNode,
-} = defineListNode(
-  databaseQueryConditionType,
-  databaseQueryConditionListType,
-  () => ({
-    type: "comparison" as const,
-    column: "",
-    operator: "=" as const,
-    value: "",
-  }),
-  { category: "Database Condition" }
-);
-
 export function registerDatabaseNodes(editor: Editor) {
   registerDatabaseQueryConditionComparisonNode(editor);
   registerDatabaseQueryConditionAndNode(editor);
   registerDatabaseQueryConditionOrNode(editor);
   registerDatabaseQueryConditionNotNode(editor);
-  registerDatabaseQueryConditionListNode(editor);
   registerDatabaseSelectNode(editor);
 }
 
@@ -437,8 +421,7 @@ export const DatabaseSelectNode = defineNode({
       ),
   },
   outputs: {
-    rows: () =>
-      nodeInterface("Rows", [], listNodeInterfaceType<unknown>(anyType)),
+    rows: () => nodeInterface("Rows", [], listType<unknown>(anyType)),
   },
   async calculate({ database, command }) {
     return { rows: await database.select(command) };

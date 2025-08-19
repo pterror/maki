@@ -19,6 +19,8 @@ import {
   textInterface,
 } from "./interfaceTypes";
 
+const allEditorsNeedingDerivedNodes = new Set<WeakRef<Editor>>();
+
 // Note that inputs can be inlined, so these are not strictly necessary for the core functionality,
 // but they are useful for literals that need to stay in sync across multiple nodes.
 export const CoreBooleanNode = defineNode({
@@ -101,10 +103,11 @@ export function registerCoreSliderNode(editor: Editor) {
   editor.registerNodeType(CoreSliderNode, { category: "Constants" });
 }
 
+const allListNodeRegisterFunctions = new Set<(editor: Editor) => void>();
+
 export function defineListNode<T>(
   type: NodeInterfaceType<T>,
   listType: NodeInterfaceType<T[]>,
-  makeDefaultValue: () => T,
   options: IRegisterNodeTypeOptions
 ) {
   const node = defineDynamicNode({
@@ -122,7 +125,7 @@ export function defineListNode<T>(
           ...Object.fromEntries(
             Array.from({ length: size }, (_, i) => [
               `element${i}`,
-              nodeInterface(`${i}`, makeDefaultValue(), type),
+              nodeInterface(`${i}`, undefined!, type),
             ])
           ),
         },
@@ -140,13 +143,20 @@ export function defineListNode<T>(
   const register = function registerCoreListNode(editor: Editor) {
     editor.registerNodeType(node, options);
   };
+  allListNodeRegisterFunctions.add(register);
+  for (const editorRef of allEditorsNeedingDerivedNodes) {
+    const editor = editorRef.deref();
+    if (!editor) continue;
+    register(editor);
+  }
   return { node, register };
 }
+
+const allStringDictNodeRegisterFunctions = new Set<(editor: Editor) => void>();
 
 export function defineStringDictNode<V>(
   valueType: NodeInterfaceType<V>,
   dictType: NodeInterfaceType<Record<string, V>>,
-  makeDefaultValue: () => V,
   options: IRegisterNodeTypeOptions
 ) {
   const node = defineDynamicNode({
@@ -168,7 +178,7 @@ export function defineStringDictNode<V>(
                 [`key${i}`, nodeInterface(`Key ${i}`, "", stringType)],
                 [
                   `value${i}`,
-                  nodeInterface(`Value ${i}`, makeDefaultValue(), valueType),
+                  nodeInterface(`Value ${i}`, undefined!, valueType),
                 ],
               ])
           ),
@@ -188,7 +198,23 @@ export function defineStringDictNode<V>(
   const register = function registerCoreStringDictNode(editor: Editor) {
     editor.registerNodeType(node, options);
   };
+  allStringDictNodeRegisterFunctions.add(register);
+  for (const editorRef of allEditorsNeedingDerivedNodes) {
+    const editor = editorRef.deref();
+    if (!editor) continue;
+    register(editor);
+  }
   return { node, register };
+}
+
+export function registerDerivedNodes(editor: Editor) {
+  allEditorsNeedingDerivedNodes.add(new WeakRef(editor));
+  for (const register of allListNodeRegisterFunctions) {
+    register(editor);
+  }
+  for (const register of allStringDictNodeRegisterFunctions) {
+    register(editor);
+  }
 }
 
 export function registerCoreNodes(editor: Editor) {

@@ -14,14 +14,9 @@ import {
 import { z } from "zod/v4";
 import { JSONArray, JSONValue, zFunction } from "./sharedTypes";
 import {
-  booleanListType,
   booleanType,
-  listNodeInterfaceType,
   nodeInterfaceType,
-  numberListType,
   numberType,
-  stringDictNodeInterfaceType,
-  stringListType,
   stringType,
 } from "./interfaceTypes";
 import type { BaklavaInterfaceTypes } from "baklavajs";
@@ -188,7 +183,6 @@ export const GeneratedFile = z
 export type GeneratedFile = z.infer<typeof GeneratedFile>;
 export const generatedFileType =
   nodeInterfaceType<GeneratedFile>("GeneratedFile");
-export const generatedFileListType = listNodeInterfaceType(generatedFileType);
 
 export const ContentPartText = z
   .object({
@@ -223,9 +217,6 @@ Sources are used to provide context to the model and can be referenced in the ge
 export type ContentPartSource = z.infer<typeof ContentPartSource>;
 export const contentPartSourceType =
   nodeInterfaceType<ContentPartSource>("ContentPartSource");
-export const contentPartSourceListType = listNodeInterfaceType(
-  contentPartSourceType
-);
 
 export const ContentPartFile = z
   .object({
@@ -253,9 +244,6 @@ export type ContentPartToolCall = z.infer<typeof ContentPartToolCall>;
 export const contentPartToolCallType = nodeInterfaceType<ContentPartToolCall>(
   "ContentPartToolCall"
 );
-export const contentPartToolCallListType = listNodeInterfaceType(
-  contentPartToolCallType
-);
 
 export const ContentPartToolResult = z
   .object({
@@ -272,9 +260,6 @@ export const ContentPartToolResult = z
 export type ContentPartToolResult = z.infer<typeof ContentPartToolResult>;
 export const contentPartToolResultType =
   nodeInterfaceType<ContentPartToolResult>("ContentPartToolResult");
-export const contentPartToolResultListType = listNodeInterfaceType(
-  contentPartToolResultType
-);
 
 export const ContentPartToolError = z
   .object({
@@ -305,7 +290,6 @@ export const ContentPart = z
   .meta({ title: "ContentPart" });
 export type ContentPart = z.infer<typeof ContentPart>;
 export const contentPartType = nodeInterfaceType<ContentPart>("ContentPart");
-export const contentPartListType = listNodeInterfaceType(contentPartType);
 
 export const DataContent = z
   .union([
@@ -321,6 +305,15 @@ export const DataContent = z
       "Data content that can be used in image or file parts of a prompt. It can be a base64-encoded string, a Uint8Array, an ArrayBuffer.",
   });
 export type DataContent = z.infer<typeof DataContent>;
+export const dataContentType = nodeInterfaceType<DataContent>("DataContent");
+
+export const urlType = nodeInterfaceType<URL>("URL");
+
+export const dataContentOrUrlType = nodeInterfaceType<DataContent | URL>(
+  "DataContentOrURL"
+);
+dataContentType.addConversion(dataContentOrUrlType, (v) => v);
+urlType.addConversion(dataContentOrUrlType, (v) => v);
 
 export const TextPart = z
   .object({
@@ -384,7 +377,6 @@ export const ReasoningPart = z
 export type ReasoningPart = z.infer<typeof ReasoningPart>;
 export const reasoningPartType =
   nodeInterfaceType<ReasoningPart>("ReasoningPart");
-export const reasoningPartListType = listNodeInterfaceType(reasoningPartType);
 
 export const ToolCallPart = z
   .object({
@@ -645,6 +637,10 @@ export const LanguageModelRequestMetadata = z
 export type LanguageModelRequestMetadata = z.infer<
   typeof LanguageModelRequestMetadata
 >;
+export const languageModelRequestMetadataType =
+  nodeInterfaceType<LanguageModelRequestMetadata>(
+    "LanguageModelRequestMetadata"
+  );
 
 export const LanguageModelResponseMetadata = z
   .object({
@@ -672,6 +668,10 @@ export const LanguageModelResponseMetadata = z
 export type LanguageModelResponseMetadata = z.infer<
   typeof LanguageModelResponseMetadata
 >;
+export const languageModelResponseMetadataType =
+  nodeInterfaceType<LanguageModelResponseMetadata>(
+    "LanguageModelResponseMetadata"
+  );
 
 export const LanguageModelResponseMetadataWithMessagesAndBody =
   LanguageModelResponseMetadata.extend({
@@ -695,6 +695,14 @@ When there are tool results, there is an additional tool message with the tool r
 export type LanguageModelResponseMetadataWithMessagesAndBody = z.infer<
   typeof LanguageModelResponseMetadataWithMessagesAndBody
 >;
+export const languageModelResponseMetadataWithMessagesAndBodyType =
+  nodeInterfaceType<LanguageModelResponseMetadataWithMessagesAndBody>(
+    "LanguageModelResponseMetadataWithMessagesAndBody"
+  );
+languageModelResponseMetadataWithMessagesAndBodyType.addConversion(
+  languageModelResponseMetadataType,
+  (v) => v
+);
 
 export const JSONSchema7 = z.custom<UpstreamJSONSchema7>().meta({
   id: "JSONSchema7",
@@ -791,6 +799,7 @@ export const CallWarning = z
       "Warning from the model provider for this call. The call will proceed, but e.g. some settings might not be supported, which can lead to suboptimal results.",
   });
 export type CallWarning = z.infer<typeof CallWarning>;
+export const callWarningType = nodeInterfaceType<CallWarning>("CallWarning");
 
 export const StepResult = z
   .object({
@@ -894,8 +903,22 @@ export const EmbeddingModelUsage = z
     description: "Represents the number of tokens used in an embedding.",
   });
 export type EmbeddingModelUsage = z.infer<typeof EmbeddingModelUsage>;
+export const embeddingModelUsageType = nodeInterfaceType<EmbeddingModelUsage>(
+  "EmbeddingModelUsage"
+);
 
-export const TextEmbeddingResult = z
+export const TextEmbeddingResponse = z.object({
+  headers: z
+    .record(z.string(), z.string())
+    .optional()
+    .describe("The response headers."),
+  body: z.unknown().optional().describe("The response body."),
+});
+export type TextEmbeddingResponse = z.infer<typeof TextEmbeddingResponse>;
+export const textEmbeddingResponseType =
+  nodeInterfaceType<TextEmbeddingResponse>("TextEmbeddingResponse");
+
+const TextEmbeddingResult = z
   .object({
     // This is the generic parameter `VALUE` of the `EmbedResult` interface.
     // For text embeddings, it is always a string.
@@ -903,16 +926,9 @@ export const TextEmbeddingResult = z
     embedding: Embedding,
     usage: EmbeddingModelUsage,
     providerMetadata: ProviderMetadata.optional(),
-    response: z
-      .object({
-        headers: z
-          .record(z.string(), z.string())
-          .optional()
-          .describe("The response headers."),
-        body: z.unknown().optional().describe("The response body."),
-      })
-      .optional()
-      .describe("Optional response data."),
+    response: TextEmbeddingResponse.optional().describe(
+      "Optional response data."
+    ),
   })
   .meta({
     title: "TextEmbeddingResult",
@@ -1337,8 +1353,6 @@ export const StopCondition = zFunction<
 export type StopCondition = z.infer<typeof StopCondition>;
 export const stopConditionType =
   nodeInterfaceType<StopCondition>("StopCondition");
-export const stopConditionListType =
-  listNodeInterfaceType<StopCondition>(stopConditionType);
 
 export const AttributeValue = z
   .union([
@@ -1357,14 +1371,9 @@ export const AttributeValue = z
 export type AttributeValue = z.infer<typeof AttributeValue>;
 export const attributeValueType =
   nodeInterfaceType<AttributeValue>("AttributeValue");
-export const attributeValueStringDictType =
-  stringDictNodeInterfaceType<AttributeValue>(attributeValueType);
 stringType.addConversion(attributeValueType, (v) => v);
 numberType.addConversion(attributeValueType, (v) => v);
 booleanType.addConversion(attributeValueType, (v) => v);
-stringListType.addConversion(attributeValueType, (v) => v);
-numberListType.addConversion(attributeValueType, (v) => v);
-booleanListType.addConversion(attributeValueType, (v) => v);
 
 export const Tracer = z.custom<UpstreamTelemetrySettings["tracer"]>().meta({
   title: "Tracer",
@@ -1483,7 +1492,6 @@ export const Tool = z.custom<UpstreamTool>().meta({
 });
 export type Tool = z.infer<typeof Tool>;
 export const toolType = nodeInterfaceType<Tool>("Tool");
-export const toolStringDictType = stringDictNodeInterfaceType<Tool>(toolType);
 
 export const ToolSet = z.record(z.string(), Tool).meta({
   title: "ToolSet",
@@ -1560,6 +1568,8 @@ export const GenerateTextParameters = CallSettings.extend(Prompt.shape)
   });
 export type GenerateTextParameters = z.infer<typeof GenerateTextParameters>;
 
+export const abortSignalType = nodeInterfaceType<AbortSignal>("AbortSignal");
+
 export const TextEmbedParameters = z
   .object({
     model: TextEmbeddingModel,
@@ -1595,7 +1605,6 @@ export function registerAiGenerationInterfaceTypes(
   types: BaklavaInterfaceTypes
 ) {
   types.addTypes(
-    attributeValueStringDictType,
     attributeValueType,
     generateTextOnStepFinishCallbackType,
     imageModelType,
@@ -1603,27 +1612,22 @@ export function registerAiGenerationInterfaceTypes(
     outputType,
     prepareStepFunctionType,
     speechModelType,
-    stopConditionListType,
     stopConditionType,
     telemetrySettingsType,
     textEmbeddingModelType,
     toolCallRepairFunctionType,
     toolChoiceType,
     toolType,
-    toolStringDictType,
     transcriptionModelType,
     generatedFileType,
-    generatedFileListType,
-    contentPartSourceListType,
     contentPartSourceType,
-    contentPartListType,
     contentPartType,
-    reasoningPartListType,
     reasoningPartType,
-    contentPartToolCallListType,
     contentPartToolCallType,
-    contentPartToolResultListType,
     contentPartToolResultType,
-    finishReasonType
+    finishReasonType,
+    dataContentType,
+    urlType,
+    dataContentOrUrlType
   );
 }

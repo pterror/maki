@@ -1,12 +1,9 @@
 import { z } from "zod/v4";
 import {
   Integer as UpstreamInteger,
-  listNodeInterfaceType,
   nodeInterfaceType,
-  stringDictNodeInterfaceType,
 } from "./interfaceTypes";
-import { defineListNode, defineStringDictNode } from "./core";
-import type { BaklavaInterfaceTypes, Editor } from "baklavajs";
+import type { BaklavaInterfaceTypes } from "baklavajs";
 
 export const zodShape = (schema: z.ZodType): Record<string, z.ZodType> =>
   schema instanceof z.ZodObject ? schema.shape : {};
@@ -27,9 +24,6 @@ export const Schema = z.custom<z.ZodType>().meta({
 export type Schema = z.infer<typeof Schema>;
 
 export const schemaType = nodeInterfaceType<Schema>("Schema");
-export const schemaListType = listNodeInterfaceType<Schema>(schemaType);
-export const schemaStringDictType =
-  stringDictNodeInterfaceType<Schema>(schemaType);
 
 export const JSONValue = z
   .union([
@@ -54,55 +48,12 @@ export type JSONValue =
   | { [key: string]: JSONValue }
   | JSONValue[];
 export const jsonValueType = nodeInterfaceType<JSONValue>("JSONValue");
-export const jsonValueStringDictType =
-  stringDictNodeInterfaceType<JSONValue>(jsonValueType);
-export const jsonValueStringDictStringDictType = stringDictNodeInterfaceType<
-  Record<string, JSONValue>
->(jsonValueStringDictType);
 
 export const JSONArray = z.array(JSONValue);
 export type JSONArray = z.infer<typeof JSONArray>;
-export const jsonValueListType =
-  listNodeInterfaceType<JSONValue>(jsonValueType);
-
-export const { node: JSONValueListNode, register: registerJSONValueListNode } =
-  defineListNode(jsonValueType, jsonValueListType, () => null, {
-    category: "JSON",
-  });
-
-export const {
-  node: JSONValueStringDictNode,
-  register: registerJSONValueStringDictNode,
-} = defineStringDictNode(jsonValueType, jsonValueStringDictType, () => null, {
-  category: "JSON",
-});
-
-export const {
-  node: JSONValueStringDictStringDictNode,
-  register: registerJSONValueStringDictStringDictNode,
-} = defineStringDictNode(
-  jsonValueStringDictType,
-  jsonValueStringDictStringDictType,
-  () => ({}),
-  { category: "JSON" }
-);
 
 export function registerSharedTypesInterfaceTypes(
   types: BaklavaInterfaceTypes
 ) {
-  types.addTypes(
-    schemaType,
-    schemaListType,
-    schemaStringDictType,
-    jsonValueType,
-    jsonValueListType,
-    jsonValueStringDictType,
-    jsonValueStringDictStringDictType
-  );
-}
-
-export function registerSharedTypesNodes(editor: Editor) {
-  registerJSONValueListNode(editor);
-  registerJSONValueStringDictNode(editor);
-  registerJSONValueStringDictStringDictNode(editor);
+  types.addTypes(schemaType, jsonValueType);
 }

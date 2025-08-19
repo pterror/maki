@@ -13,9 +13,14 @@ import {
   TextareaInputInterface,
   TextInputInterface,
   TextInterface,
-  type IBaklavaViewModel,
+  type BaklavaInterfaceTypesOptions,
   type SelectInterfaceItem,
 } from "baklavajs";
+import { defineListNode, defineStringDictNode } from "./core";
+
+const allInterfaceTypesRegistriesNeedingDerivedTypes = new Set<
+  WeakRef<BaklavaInterfaceTypes>
+>();
 
 export type Integer = number & { __integer: true };
 export function Integer(value: number) {
@@ -44,24 +49,99 @@ export function nodeInterfaceType<T>(name: string): NodeInterfaceType<T> {
   return interfaceType;
 }
 
-export function listNodeInterfaceType<T>(
+const listTypeMapping = new WeakMap<
+  NodeInterfaceType<any>,
+  NodeInterfaceType<any[]>
+>();
+// This is useful to keep the keys around as long as the values are used.
+const listTypeReverseMapping = new WeakMap<
+  NodeInterfaceType<any[]>,
+  NodeInterfaceType<any>
+>();
+const allListTypes = new Set<WeakRef<NodeInterfaceType<any[]>>>();
+
+export function listType<T>(
   itemType: NodeInterfaceType<T>
-): NodeInterfaceType<T[]> {
+): NoInfer<NodeInterfaceType<T[]>> {
+  const cached = listTypeMapping.get(itemType);
+  if (cached) {
+    return cached as NodeInterfaceType<T[]>;
+  }
   const interfaceType = nodeInterfaceType<T[]>(`array[${itemType.name}]`);
-  interfaceType.addConversion(unknownType, (v) => v);
-  interfaceType.addConversion(anyType, (v) => v);
+  listTypeMapping.set(itemType, interfaceType);
+  listTypeReverseMapping.set(interfaceType, itemType);
+  allListTypes.add(new WeakRef(interfaceType));
+  for (const typesRef of allInterfaceTypesRegistriesNeedingDerivedTypes) {
+    const types = typesRef.deref();
+    if (!types) continue;
+    types.addTypes(interfaceType);
+  }
+  defineListNode(itemType, interfaceType, { category: "Derived Types" });
   return interfaceType;
 }
 
-export function stringDictNodeInterfaceType<V>(
+export function lookupBaseTypeOfListType<T>(
+  listType: NodeInterfaceType<T[]>
+): NodeInterfaceType<T> {
+  // The base type must exist because we created it when creating the list type.
+  return listTypeReverseMapping.get(listType)!;
+}
+
+export function getAllListTypes(): NodeInterfaceType<any[]>[] {
+  return [...allListTypes].flatMap((ref) => {
+    const value = ref.deref();
+    return value ? [value] : [];
+  });
+}
+
+const stringDictTypeMapping = new WeakMap<
+  NodeInterfaceType<any>,
+  NodeInterfaceType<Record<string, any>>
+>();
+const stringDictTypeReverseMapping = new WeakMap<
+  NodeInterfaceType<Record<string, any>>,
+  NodeInterfaceType<any>
+>();
+const allStringDictTypes = new Set<
+  WeakRef<NodeInterfaceType<Record<string, any>>>
+>();
+
+export function stringDictType<V>(
   valueType: NodeInterfaceType<V>
-): NodeInterfaceType<Record<string, V>> {
+): NoInfer<NodeInterfaceType<Record<string, V>>> {
+  const cached = stringDictTypeMapping.get(valueType);
+  if (cached) {
+    return cached as NodeInterfaceType<Record<string, V>>;
+  }
   const interfaceType = nodeInterfaceType<Record<string, V>>(
     `stringDict[${valueType.name}]`
   );
-  interfaceType.addConversion(unknownType, (v) => v);
-  interfaceType.addConversion(anyType, (v) => v);
+  stringDictTypeMapping.set(valueType, interfaceType);
+  stringDictTypeReverseMapping.set(interfaceType, valueType);
+  allStringDictTypes.add(new WeakRef(interfaceType));
+  for (const typesRef of allInterfaceTypesRegistriesNeedingDerivedTypes) {
+    const types = typesRef.deref();
+    if (!types) continue;
+    types.addTypes(interfaceType);
+  }
+  defineStringDictNode(valueType, interfaceType, { category: "Derived Types" });
   return interfaceType;
+}
+
+export function lookupBaseTypeOfStringDictType<V>(
+  dictType: NodeInterfaceType<Record<string, V>>
+): NodeInterfaceType<V> {
+  // The base type must exist because we created it when creating the dict type.
+  return stringDictTypeReverseMapping.get(dictType)!;
+}
+
+export function getAllStringDictTypes(): NodeInterfaceType<
+  Record<string, any>
+>[] {
+  return [...allStringDictTypes].flatMap((ref) => {
+    const value = ref.deref();
+    return value ? [value] : [];
+  });
 }
 
 export const undefinedType = nodeInterfaceType<undefined>("undefined");
@@ -70,10 +150,6 @@ export const integerType = nodeInterfaceType<Integer>("integer");
 export const numberType = nodeInterfaceType<number>("number");
 export const bigintType = nodeInterfaceType<bigint>("bigint");
 export const booleanType = nodeInterfaceType<boolean>("boolean");
-export const stringListType = listNodeInterfaceType(stringType);
-export const integerListType = listNodeInterfaceType(integerType);
-export const numberListType = listNodeInterfaceType(numberType);
-export const booleanListType = listNodeInterfaceType(booleanType);
 
 // Only `any` is allowed to have unsafe conversions.
 anyType.addConversion(undefinedType, (v) => {
@@ -116,9 +192,9 @@ integerType.addConversion(numberType, (v) => v);
 
 export function registerCoreInterfaceTypes(
   editor: Editor,
-  viewPlugin?: IBaklavaViewModel
+  options: Required<BaklavaInterfaceTypesOptions>
 ) {
-  const nodeInterfaceTypes = new BaklavaInterfaceTypes(editor, { viewPlugin });
+  const nodeInterfaceTypes = new BaklavaInterfaceTypes(editor, options);
   nodeInterfaceTypes.addTypes(
     undefinedType,
     stringType,
@@ -126,13 +202,23 @@ export function registerCoreInterfaceTypes(
     numberType,
     booleanType,
     unknownType,
-    anyType,
-    stringListType,
-    integerListType,
-    numberListType,
-    booleanListType
+    anyType
   );
   return nodeInterfaceTypes;
+}
+
+export function registerDerivedInterfaceTypes(
+  interfaceTypes: BaklavaInterfaceTypes
+): void {
+  for (const type of getAllListTypes()) {
+    interfaceTypes.addTypes(type);
+  }
+  for (const type of getAllStringDictTypes()) {
+    interfaceTypes.addTypes(type);
+  }
+  allInterfaceTypesRegistriesNeedingDerivedTypes.add(
+    new WeakRef(interfaceTypes)
+  );
 }
 
 export function buttonInterface(name: string, callback: () => void) {
@@ -180,7 +266,7 @@ export function checkboxInterface(name: string, defaultValue = false) {
 
 export function selectInterface<T>(
   name: string,
-  defaultValue: T,
+  defaultValue: NoInfer<T>,
   type: NodeInterfaceType<T>,
   options: SelectInterfaceItem<T>[]
 ) {
@@ -189,7 +275,7 @@ export function selectInterface<T>(
 
 export function nodeInterface<T>(
   name: string,
-  defaultValue: T,
+  defaultValue: NoInfer<T>,
   type: NodeInterfaceType<T>
 ) {
   return new NodeInterface(name, defaultValue).use(setType, type);
