@@ -33,16 +33,16 @@ import {
   experimental_transcribe as transcribe,
   experimental_generateSpeech as generateSpeech,
 } from "ai";
-import { z } from "zod/v4";
 import { assertStrict } from "../core";
 import { defineNode, Editor } from "baklavajs";
 import {
   checkboxInterface,
-  Integer,
+  dateType,
   integerInterface,
   integerType,
   listType,
   nodeInterface,
+  numberInterface,
   numberType,
   selectInterface,
   stringDictType,
@@ -83,6 +83,11 @@ import {
   embeddingModelUsageType,
   textEmbeddingResponseType,
   dataContentOrUrlType,
+  generationWarningType,
+  imageModelResponseMetadataType,
+  imageModelProviderMetadataType,
+  generatedAudioFileType,
+  speechModelResponseMetadataType,
 } from "./aiGenerationTypes";
 import { jsonValueType } from "./sharedTypes";
 import {
@@ -144,6 +149,80 @@ export const ToolChoiceNode = defineNode({
     return { toolChoice: type };
   },
 });
+
+export const DeconstructGeneratedFileNode = defineNode({
+  type: "DeconstructGeneratedFileNode",
+  inputs: {
+    file: () => nodeInterface("File", undefined!, generatedFileType),
+  },
+  outputs: {
+    base64: () => nodeInterface("Base64", undefined!, stringType),
+    uint8Array: () =>
+      nodeInterface("Uint8Array", undefined!, listType(numberType)),
+    mediaType: () => nodeInterface("Media Type", undefined!, stringType),
+  },
+});
+export function registerDeconstructGeneratedFileNode(editor: Editor) {
+  editor.registerNodeType(DeconstructGeneratedFileNode, {
+    category: "AI Generation Utilities",
+  });
+}
+
+export const DeconstructGeneratedAudioFileNode = defineNode({
+  type: "DeconstructGeneratedAudioFileNode",
+  inputs: {
+    file: () => nodeInterface("File", undefined!, generatedAudioFileType),
+  },
+  outputs: {
+    base64: () => nodeInterface("Base64", undefined!, stringType),
+    uint8Array: () =>
+      nodeInterface("Uint8Array", undefined!, listType(numberType)),
+    mediaType: () => nodeInterface("Media Type", undefined!, stringType),
+    format: () => nodeInterface("Format", undefined!, stringType),
+  },
+});
+export function registerDeconstructGeneratedAudioFileNode(editor: Editor) {
+  editor.registerNodeType(DeconstructGeneratedAudioFileNode, {
+    category: "AI Generation Utilities",
+  });
+}
+
+export const DeconstructSpeechModelResponseMetadataNode = defineNode({
+  type: "DeconstructSpeechModelResponseMetadataNode",
+  inputs: {
+    response: () =>
+      nodeInterface("Response", undefined!, speechModelResponseMetadataType),
+  },
+  outputs: {
+    timestamp: () =>
+      nodeInterface(
+        "Timestamp",
+        undefined,
+        unsafeAsOptionalNodeInterfaceType(dateType)
+      ),
+    modelId: () =>
+      nodeInterface(
+        "Model Id",
+        undefined,
+        unsafeAsOptionalNodeInterfaceType(stringType)
+      ),
+    headers: () =>
+      nodeInterface(
+        "Headers",
+        undefined,
+        unsafeAsOptionalNodeInterfaceType(stringDictType(stringType))
+      ),
+    body: () => nodeInterface("Body", undefined, unknownType),
+  },
+  calculate({ response }) {
+    return unsafeReplaceOptionalWithUndefined(response);
+  },
+});
+export function registerDeconstructSpeechModelResponseNode(editor: Editor) {
+  editor.registerNodeType(DeconstructSpeechModelResponseMetadataNode, {
+    category: "AI Generation Utilities",
+  });
+}
 
 export const DeconstructLanguageModelUsageNode = defineNode({
   type: "DeconstructLanguageModelUsageNode",
@@ -381,7 +460,7 @@ export const TextEmbeddingNode = defineNode({
   inputs: {
     model: () => nodeInterface("Model", undefined!, textEmbeddingModelType),
     value: () => textInterface("Value"),
-    maxRetries: () => integerInterface("Max Retries", Integer(0)),
+    maxRetries: () => integerInterface("Max Retries", undefined!),
     abortSignal: () =>
       nodeInterface("Abort Signal", undefined!, abortSignalType),
     headers: () =>
@@ -430,10 +509,53 @@ export const GenerateImageNode = defineNode({
   inputs: {
     model: () => nodeInterface("Model", undefined!, imageModelType),
     prompt: () => textInterface("Prompt"),
-    // TODO: Add the rest of the inputs for `generateImage`.
+    n: () => integerInterface("Number of Images", undefined!),
+    width: () => integerInterface("Width", undefined!),
+    height: () => integerInterface("Height", undefined!),
+    aspectRatioWidth: () => integerInterface("Aspect Ratio Width", undefined!),
+    aspectRatioHeight: () =>
+      integerInterface("Aspect Ratio Height", undefined!),
+    seed: () => integerInterface("Seed", undefined!),
+    providerOptions: () =>
+      nodeInterface(
+        "Provider Options",
+        undefined!,
+        stringDictType(stringDictType(jsonValueType))
+      ),
+    maxRetries: () => integerInterface("Max Retries", undefined!),
+    abortSignal: () =>
+      nodeInterface("Abort Signal", undefined!, abortSignalType),
+    headers: () =>
+      nodeInterface("Headers", undefined!, stringDictType(stringType)),
   },
-  outputs: GenerateImageResult,
-  calculate: generateImage,
+  outputs: {
+    image: () => nodeInterface("Image", undefined!, generatedFileType),
+    images: () =>
+      nodeInterface("Images", undefined!, listType(generatedFileType)),
+    warnings: () =>
+      nodeInterface("Warnings", [], listType(generationWarningType)),
+    responses: () =>
+      nodeInterface("Responses", [], listType(imageModelResponseMetadataType)),
+    providerMetadata: () =>
+      nodeInterface("Provider Metadata", {}, imageModelProviderMetadataType),
+  },
+  async calculate({
+    width,
+    height,
+    aspectRatioWidth,
+    aspectRatioHeight,
+    ...rest
+  }) {
+    return generateImage({
+      ...rest,
+      ...(width !== undefined &&
+        height !== undefined && { size: `${width}x${height}` }),
+      ...(aspectRatioWidth !== undefined &&
+        aspectRatioHeight !== undefined && {
+          aspectRatio: `${aspectRatioWidth}:${aspectRatioHeight}`,
+        }),
+    });
+  },
 });
 export function registerGenerateImageNode(editor: Editor) {
   editor.registerNodeType(GenerateImageNode, {
@@ -446,9 +568,34 @@ export const GenerateSpeechNode = defineNode({
   inputs: {
     model: () => nodeInterface("Model", undefined!, speechModelType),
     text: () => textInterface("Text"),
-    // TODO: Add the rest of the inputs for `generateSpeech`.
+    voice: () => textInterface("Voice", undefined!),
+    speed: () => numberInterface("Speed", undefined!),
+    language: () => textInterface("Language", undefined!),
+    providerOptions: () =>
+      nodeInterface(
+        "Provider Options",
+        undefined!,
+        stringDictType(stringDictType(jsonValueType))
+      ),
+    maxRetries: () => integerInterface("Max Retries", undefined!),
+    abortSignal: () =>
+      nodeInterface("Abort Signal", undefined!, abortSignalType),
+    headers: () =>
+      nodeInterface("Headers", undefined!, stringDictType(stringType)),
   },
-  outputs: GenerateSpeechResult,
+  outputs: {
+    audio: () => nodeInterface("Audio", undefined!, generatedAudioFileType),
+    warnings: () =>
+      nodeInterface("Warnings", [], listType(generationWarningType)),
+    responses: () =>
+      nodeInterface("Responses", [], listType(speechModelResponseMetadataType)),
+    providerMetadata: () =>
+      nodeInterface(
+        "Provider Metadata",
+        {},
+        stringDictType(stringDictType(jsonValueType))
+      ),
+  },
   calculate: generateSpeech,
 });
 export function registerGenerateSpeechNode(editor: Editor) {
@@ -3358,6 +3505,9 @@ export function registerAiGenerationNodes(editor: Editor) {
   registerDeconstructLanguageModelUsageNode(editor);
   registerDeconstructEmbeddingModelUsageNode(editor);
   registerDeconstructTextEmbeddingResponseNode(editor);
+  registerDeconstructGeneratedFileNode(editor);
+  registerDeconstructGeneratedAudioFileNode(editor);
+  registerDeconstructSpeechModelResponseNode(editor);
 
   registerGenerateTextNode(editor);
   registerTextEmbeddingNode(editor);

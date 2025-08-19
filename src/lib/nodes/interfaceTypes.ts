@@ -150,6 +150,8 @@ export const integerType = nodeInterfaceType<Integer>("integer");
 export const numberType = nodeInterfaceType<number>("number");
 export const bigintType = nodeInterfaceType<bigint>("bigint");
 export const booleanType = nodeInterfaceType<boolean>("boolean");
+export const dateType = nodeInterfaceType<Date>("date");
+export const regexType = nodeInterfaceType<RegExp>("regex");
 
 // Only `any` is allowed to have unsafe conversions.
 anyType.addConversion(undefinedType, (v) => {
@@ -196,13 +198,15 @@ export function registerCoreInterfaceTypes(
 ) {
   const nodeInterfaceTypes = new BaklavaInterfaceTypes(editor, options);
   nodeInterfaceTypes.addTypes(
+    unknownType,
+    anyType,
     undefinedType,
     stringType,
     integerType,
     numberType,
     booleanType,
-    unknownType,
-    anyType
+    dateType,
+    regexType
   );
   return nodeInterfaceTypes;
 }

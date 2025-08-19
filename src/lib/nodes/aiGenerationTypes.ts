@@ -918,7 +918,7 @@ export type TextEmbeddingResponse = z.infer<typeof TextEmbeddingResponse>;
 export const textEmbeddingResponseType =
   nodeInterfaceType<TextEmbeddingResponse>("TextEmbeddingResponse");
 
-const TextEmbeddingResult = z
+export const TextEmbeddingResult = z
   .object({
     // This is the generic parameter `VALUE` of the `EmbedResult` interface.
     // For text embeddings, it is always a string.
@@ -971,6 +971,8 @@ export const GenerationWarning = z
       "A warning from the model provider for this call. The call will proceed, but e.g. some settings might not be supported, which can lead to suboptimal results.",
   });
 export type GenerationWarning = z.infer<typeof GenerationWarning>;
+export const generationWarningType =
+  nodeInterfaceType<GenerationWarning>("GenerationWarning");
 
 export const ImageModelResponseMetadata = z
   .object({
@@ -995,6 +997,8 @@ export const ImageModelResponseMetadata = z
 export type ImageModelResponseMetadata = z.infer<
   typeof ImageModelResponseMetadata
 >;
+export const imageModelResponseMetadataType =
+  nodeInterfaceType<ImageModelResponseMetadata>("ImageModelResponseMetadata");
 
 export const ImageModelProviderMetadata = z
   .record(z.string(), z.object({ images: JSONArray }).and(JSONValue))
@@ -1006,6 +1010,60 @@ export const ImageModelProviderMetadata = z
 export type ImageModelProviderMetadata = z.infer<
   typeof ImageModelProviderMetadata
 >;
+export const imageModelProviderMetadataType =
+  nodeInterfaceType<ImageModelProviderMetadata>("ImageModelProviderMetadata");
+
+export const GenerateImageParameters = z
+  .object({
+    model: ImageModel.describe("The image model to use for generating images."),
+    prompt: z
+      .string()
+      .describe("The prompt that should be used to generate the image."),
+    n: z
+      .int()
+      .optional()
+      .default(1)
+      .describe("Number of images to generate. Default: 1."),
+    size: z
+      .string()
+      .optional()
+      .describe(
+        "Size of the images to generate. Must have the format `{width}x{height}`. If not provided, the default size will be used."
+      ),
+    aspectRatio: z
+      .string()
+      .optional()
+      .describe(
+        "Aspect ratio of the images to generate. Must have the format `{width}:{height}`. If not provided, the default aspect ratio will be used."
+      ),
+    seed: z
+      .int()
+      .optional()
+      .describe(
+        "Seed for the image generation. If not provided, the default seed will be used."
+      ),
+    providerOptions: ProviderOptions.optional(),
+    maxRetries: z
+      .int()
+      .optional()
+      .default(2)
+      .describe(
+        "Maximum number of retries per image generation call. Set to 0 to disable retries."
+      ),
+    abortSignal: z.instanceof(AbortSignal),
+    headers: z
+      .record(z.string(), z.string())
+      .optional()
+      .describe(
+        "Additional headers to include in the request. Only applicable for HTTP-based providers."
+      ),
+  })
+  .meta({
+    title: "GenerateImageParameters",
+    description:
+      "Parameters for the `generateImage` call. It contains the model, prompt, and additional options.",
+  });
+export type GenerateImageParameters = z.infer<typeof GenerateImageParameters>;
 
 export const GenerateImageResult = z
   .object({
@@ -1039,6 +1097,9 @@ export const GeneratedAudioFile = GeneratedFile.extend({
   description: "A generated audio file.",
 });
 export type GeneratedAudioFile = z.infer<typeof GeneratedAudioFile>;
+export const generatedAudioFileType =
+  nodeInterfaceType<GeneratedAudioFile>("GeneratedAudioFile");
+generatedAudioFileType.addConversion(generatedFileType, (v) => v);
 
 export const SpeechModelResponseMetadata = z
   .object({
@@ -1067,6 +1128,63 @@ export const SpeechModelResponseMetadata = z
 export type SpeechModelResponseMetadata = z.infer<
   typeof SpeechModelResponseMetadata
 >;
+export const speechModelResponseMetadataType =
+  nodeInterfaceType<SpeechModelResponseMetadata>("SpeechModelResponseMetadata");
+
+export const GenerateSpeechParameters = z
+  .object({
+    model: SpeechModel.describe(
+      "The speech model to use for generating speech."
+    ),
+    text: z.string().describe("The text to convert to speech."),
+    voice: z
+      .string()
+      .optional()
+      .describe("The voice to use for speech generation."),
+    outputFormat: z
+      .string()
+      .optional()
+      .describe(
+        "The desired output format for the audio e.g. 'mp3', 'wav', etc."
+      ),
+    instructions: z
+      .string()
+      .optional()
+      .describe(
+        "Instructions for the speech generation e.g. 'Speak in a slow and steady tone'."
+      ),
+    speed: z
+      .number()
+      .optional()
+      .describe("The speed of the speech generation."),
+    language: z
+      .string()
+      .optional()
+      .describe(
+        "The language for speech generation. This should be an ISO 639-1 language code (e.g. 'en', 'es', 'fr') or 'auto' for automatic language detection. Provider support varies."
+      ),
+    providerOptions: ProviderOptions.optional(),
+    maxRetries: z
+      .int()
+      .optional()
+      .default(2)
+      .describe(
+        "Maximum number of retries per speech model call. Set to 0 to disable retries."
+      ),
+    abortSignal: z.instanceof(AbortSignal).optional(),
+    headers: z
+      .record(z.string(), z.string())
+      .optional()
+      .describe(
+        "Additional headers to include in the request. Only applicable for HTTP-based providers."
+      ),
+  })
+  .meta({
+    title: "GenerateSpeechParameters",
+    description:
+      "Parameters for the `generateSpeech` call. It contains the model, text, and additional options.",
+  });
+export type GenerateSpeechParameters = z.infer<typeof GenerateSpeechParameters>;
 
 export const GenerateSpeechResult = z
   .object({
@@ -1570,7 +1688,7 @@ export type GenerateTextParameters = z.infer<typeof GenerateTextParameters>;
 
 export const abortSignalType = nodeInterfaceType<AbortSignal>("AbortSignal");
 
-export const TextEmbedParameters = z
+export const TextEmbeddingParameters = z
   .object({
     model: TextEmbeddingModel,
     value: z.string().describe("The value that should be embedded."),
@@ -1595,11 +1713,11 @@ export const TextEmbedParameters = z
     experimental_telemetry: TelemetrySettings.optional(),
   })
   .meta({
-    title: "TextEmbedParameters",
+    title: "TextEmbeddingParameters",
     description:
       "Parameters for the `embed` function for text embeddings. It includes the model, value, and additional options.",
   });
-export type TextEmbedParameters = z.infer<typeof TextEmbedParameters>;
+export type TextEmbeddingParameters = z.infer<typeof TextEmbeddingParameters>;
 
 export function registerAiGenerationInterfaceTypes(
   types: BaklavaInterfaceTypes
@@ -1628,6 +1746,20 @@ export function registerAiGenerationInterfaceTypes(
     finishReasonType,
     dataContentType,
     urlType,
-    dataContentOrUrlType
+    dataContentOrUrlType,
+    generationWarningType,
+    imageModelResponseMetadataType,
+    imageModelProviderMetadataType,
+    embeddingModelUsageType,
+    textEmbeddingResponseType,
+    callWarningType,
+    generateTextResultType,
+    stepResultType,
+    languageModelUsageType,
+    languageModelRequestMetadataType,
+    toolChoiceKindType,
+    abortSignalType,
+    generatedAudioFileType,
+    speechModelResponseMetadataType
   );
 }
