@@ -49,7 +49,7 @@ import {
   stringType,
   textInterface,
   unknownType,
-  unsafeAsOptionalNodeInterfaceType,
+  unsafeAsOptionalNodeInterfaceType as unsafeOptionalType,
 } from "./interfaceTypes";
 import {
   attributeValueType,
@@ -88,6 +88,8 @@ import {
   imageModelProviderMetadataType,
   generatedAudioFileType,
   speechModelResponseMetadataType,
+  transcriptionSegmentType,
+  transcriptionModelResponseMetadataType,
 } from "./aiGenerationTypes";
 import { jsonValueType } from "./sharedTypes";
 import {
@@ -100,16 +102,15 @@ import {
 export const TelemetrySettingsNode = defineNode({
   type: "TelemetrySettingsNode",
   inputs: {
-    isEnabled: () => checkboxInterface("Enabled", undefined!),
-    recordInputs: () => checkboxInterface("Record Inputs", undefined!),
-    recordOutputs: () => checkboxInterface("Record Outputs", undefined!),
-    functionId: () => textInterface("Function Id", undefined!),
+    isEnabled: () => checkboxInterface("Enabled"),
+    recordInputs: () => checkboxInterface("Record Inputs"),
+    recordOutputs: () => checkboxInterface("Record Outputs"),
+    functionId: () => textInterface("Function Id"),
     metadata: () =>
-      nodeInterface("Metadata", undefined!, stringDictType(attributeValueType)),
+      nodeInterface("Metadata", stringDictType(attributeValueType)),
   },
   outputs: {
-    telemetry: () =>
-      nodeInterface("Telemetry", undefined!, telemetrySettingsType),
+    telemetry: () => nodeInterface("Telemetry", telemetrySettingsType),
   },
   calculate({ isEnabled, recordInputs, recordOutputs, functionId, metadata }) {
     return {
@@ -128,16 +129,16 @@ export const ToolChoiceNode = defineNode({
   type: "ToolChoiceNode",
   inputs: {
     type: () =>
-      selectInterface("Type", "auto", toolChoiceKindType, [
+      selectInterface("Type", toolChoiceKindType, [
         "auto",
         "none",
         "required",
         "tool",
       ]),
-    toolName: () => textInterface("Tool Name", ""),
+    toolName: () => textInterface("Tool Name"),
   },
   outputs: {
-    toolChoice: () => nodeInterface("Tool Choice", "auto", toolChoiceType),
+    toolChoice: () => nodeInterface("Tool Choice", toolChoiceType),
   },
   calculate({ type, toolName }) {
     if (type === "tool") {
@@ -153,13 +154,12 @@ export const ToolChoiceNode = defineNode({
 export const DeconstructGeneratedFileNode = defineNode({
   type: "DeconstructGeneratedFileNode",
   inputs: {
-    file: () => nodeInterface("File", undefined!, generatedFileType),
+    file: () => nodeInterface("File", generatedFileType),
   },
   outputs: {
-    base64: () => nodeInterface("Base64", undefined!, stringType),
-    uint8Array: () =>
-      nodeInterface("Uint8Array", undefined!, listType(numberType)),
-    mediaType: () => nodeInterface("Media Type", undefined!, stringType),
+    base64: () => nodeInterface("Base64", stringType),
+    uint8Array: () => nodeInterface("Uint8Array", listType(numberType)),
+    mediaType: () => nodeInterface("Media Type", stringType),
   },
 });
 export function registerDeconstructGeneratedFileNode(editor: Editor) {
@@ -171,14 +171,13 @@ export function registerDeconstructGeneratedFileNode(editor: Editor) {
 export const DeconstructGeneratedAudioFileNode = defineNode({
   type: "DeconstructGeneratedAudioFileNode",
   inputs: {
-    file: () => nodeInterface("File", undefined!, generatedAudioFileType),
+    file: () => nodeInterface("File", generatedAudioFileType),
   },
   outputs: {
-    base64: () => nodeInterface("Base64", undefined!, stringType),
-    uint8Array: () =>
-      nodeInterface("Uint8Array", undefined!, listType(numberType)),
-    mediaType: () => nodeInterface("Media Type", undefined!, stringType),
-    format: () => nodeInterface("Format", undefined!, stringType),
+    base64: () => nodeInterface("Base64", stringType),
+    uint8Array: () => nodeInterface("Uint8Array", listType(numberType)),
+    mediaType: () => nodeInterface("Media Type", stringType),
+    format: () => nodeInterface("Format", stringType),
   },
 });
 export function registerDeconstructGeneratedAudioFileNode(editor: Editor) {
@@ -190,36 +189,67 @@ export function registerDeconstructGeneratedAudioFileNode(editor: Editor) {
 export const DeconstructSpeechModelResponseMetadataNode = defineNode({
   type: "DeconstructSpeechModelResponseMetadataNode",
   inputs: {
-    response: () =>
-      nodeInterface("Response", undefined!, speechModelResponseMetadataType),
+    response: () => nodeInterface("Response", speechModelResponseMetadataType),
   },
   outputs: {
-    timestamp: () =>
-      nodeInterface(
-        "Timestamp",
-        undefined,
-        unsafeAsOptionalNodeInterfaceType(dateType)
-      ),
-    modelId: () =>
-      nodeInterface(
-        "Model Id",
-        undefined,
-        unsafeAsOptionalNodeInterfaceType(stringType)
-      ),
+    timestamp: () => nodeInterface("Timestamp", unsafeOptionalType(dateType)),
+    modelId: () => nodeInterface("Model Id", unsafeOptionalType(stringType)),
     headers: () =>
-      nodeInterface(
-        "Headers",
-        undefined,
-        unsafeAsOptionalNodeInterfaceType(stringDictType(stringType))
-      ),
-    body: () => nodeInterface("Body", undefined, unknownType),
+      nodeInterface("Headers", unsafeOptionalType(stringDictType(stringType))),
+    body: () => nodeInterface("Body", unknownType),
   },
   calculate({ response }) {
     return unsafeReplaceOptionalWithUndefined(response);
   },
 });
-export function registerDeconstructSpeechModelResponseNode(editor: Editor) {
+export function registerDeconstructSpeechModelResponseMetadataNode(
+  editor: Editor
+) {
   editor.registerNodeType(DeconstructSpeechModelResponseMetadataNode, {
+    category: "AI Generation Utilities",
+  });
+}
+
+export const DeconstructTranscriptionModelResponseMetadataNode = defineNode({
+  type: "DeconstructTranscriptionModelResponseMetadataNode",
+  inputs: {
+    response: () =>
+      nodeInterface("Response", transcriptionModelResponseMetadataType),
+  },
+  outputs: {
+    timestamp: () => nodeInterface("Timestamp", dateType),
+    modelId: () => nodeInterface("Model Id", stringType),
+    headers: () =>
+      nodeInterface("Headers", unsafeOptionalType(stringDictType(stringType))),
+  },
+  calculate({ response }) {
+    return unsafeReplaceOptionalWithUndefined(response);
+  },
+});
+export function registerDeconstructTranscriptionModelResponseMetadataNode(
+  editor: Editor
+) {
+  editor.registerNodeType(DeconstructTranscriptionModelResponseMetadataNode, {
+    category: "AI Generation Utilities",
+  });
+}
+
+export const DeconstructTranscriptionSegmentNode = defineNode({
+  type: "DeconstructTranscriptionSegmentNode",
+  inputs: {
+    segment: () => nodeInterface("Segment", transcriptionSegmentType),
+  },
+  outputs: {
+    text: () => nodeInterface("Text", stringType),
+    startSecond: () => nodeInterface("Start Second", numberType),
+    endSecond: () => nodeInterface("End Second", numberType),
+  },
+  calculate({ segment }) {
+    return segment;
+  },
+});
+export function registerDeconstructTranscriptionSegmentNode(editor: Editor) {
+  editor.registerNodeType(DeconstructTranscriptionSegmentNode, {
     category: "AI Generation Utilities",
   });
 }
@@ -227,39 +257,19 @@ export function registerDeconstructSpeechModelResponseNode(editor: Editor) {
 export const DeconstructLanguageModelUsageNode = defineNode({
   type: "DeconstructLanguageModelUsageNode",
   inputs: {
-    usage: () => nodeInterface("Usage", undefined!, languageModelUsageType),
+    usage: () => nodeInterface("Usage", languageModelUsageType),
   },
   outputs: {
     inputTokens: () =>
-      nodeInterface(
-        "Input Tokens",
-        undefined,
-        unsafeAsOptionalNodeInterfaceType(integerType)
-      ),
+      nodeInterface("Input Tokens", unsafeOptionalType(integerType)),
     outputTokens: () =>
-      nodeInterface(
-        "Output Tokens",
-        undefined,
-        unsafeAsOptionalNodeInterfaceType(integerType)
-      ),
+      nodeInterface("Output Tokens", unsafeOptionalType(integerType)),
     totalTokens: () =>
-      nodeInterface(
-        "Total Tokens",
-        undefined,
-        unsafeAsOptionalNodeInterfaceType(integerType)
-      ),
+      nodeInterface("Total Tokens", unsafeOptionalType(integerType)),
     reasoningTokens: () =>
-      nodeInterface(
-        "Reasoning Tokens",
-        undefined,
-        unsafeAsOptionalNodeInterfaceType(integerType)
-      ),
+      nodeInterface("Reasoning Tokens", unsafeOptionalType(integerType)),
     cachedInputTokens: () =>
-      nodeInterface(
-        "Cached Input Tokens",
-        undefined,
-        unsafeAsOptionalNodeInterfaceType(integerType)
-      ),
+      nodeInterface("Cached Input Tokens", unsafeOptionalType(integerType)),
   },
   calculate({ usage }) {
     return unsafeReplaceOptionalWithUndefined(
@@ -276,15 +286,10 @@ export function registerDeconstructLanguageModelUsageNode(editor: Editor) {
 export const DeconstructEmbeddingModelUsageNode = defineNode({
   type: "DeconstructEmbeddingModelUsageNode",
   inputs: {
-    usage: () => nodeInterface("Usage", undefined!, embeddingModelUsageType),
+    usage: () => nodeInterface("Usage", embeddingModelUsageType),
   },
   outputs: {
-    tokens: () =>
-      nodeInterface(
-        "Tokens",
-        undefined,
-        unsafeAsOptionalNodeInterfaceType(integerType)
-      ),
+    tokens: () => nodeInterface("Tokens", unsafeOptionalType(integerType)),
   },
   calculate({ usage }) {
     return unsafeReplaceOptionalWithUndefined(
@@ -302,20 +307,12 @@ export const DeconstructTextEmbeddingResponseType = defineNode({
   type: "DeconstructTextEmbeddingResponseType",
   inputs: {
     response: () =>
-      nodeInterface(
-        "Response",
-        undefined,
-        unsafeAsOptionalNodeInterfaceType(textEmbeddingResponseType)
-      ),
+      nodeInterface("Response", unsafeOptionalType(textEmbeddingResponseType)),
   },
   outputs: {
     headers: () =>
-      nodeInterface(
-        "Headers",
-        undefined,
-        unsafeAsOptionalNodeInterfaceType(stringDictType(stringType))
-      ),
-    body: () => nodeInterface("Body", undefined, unknownType),
+      nodeInterface("Headers", unsafeOptionalType(stringDictType(stringType))),
+    body: () => nodeInterface("Body", unknownType),
   },
   calculate({ response }) {
     return unsafeReplaceOptionalWithUndefined(response);
@@ -330,111 +327,84 @@ export function registerDeconstructTextEmbeddingResponseNode(editor: Editor) {
 export const GenerateTextNode = defineNode({
   type: "GenerateTextNode",
   inputs: {
-    model: () => nodeInterface("Model", undefined!, languageModelType),
-    tools: () =>
-      nodeInterface("Tool Set", undefined!, stringDictType(toolType)),
-    toolChoice: () => nodeInterface("Tool Choice", undefined!, toolChoiceType),
-    stopWhen: () =>
-      nodeInterface("Stop Condition", undefined!, stopConditionType),
+    model: () => nodeInterface("Model", languageModelType),
+    tools: () => nodeInterface("Tool Set", stringDictType(toolType)),
+    toolChoice: () => nodeInterface("Tool Choice", toolChoiceType),
+    stopWhen: () => nodeInterface("Stop Condition", stopConditionType),
     extraStopWhens: () =>
       nodeInterface(
         "Extra Stop Conditions",
-        undefined!,
+
         listType(stopConditionType)
       ),
     experimental_telemetry: () =>
-      nodeInterface("Telemetry", undefined!, telemetrySettingsType),
+      nodeInterface("Telemetry", telemetrySettingsType),
     providerOptions: () =>
       nodeInterface(
         "Provider Options",
-        undefined!,
+
         stringDictType(stringDictType(jsonValueType))
       ),
-    activeTools: () =>
-      nodeInterface("Active Tools", undefined!, listType(stringType)),
-    experimental_output: () => nodeInterface("Output", undefined!, outputType),
-    prepareStep: () =>
-      nodeInterface("Prepare Step", undefined!, prepareStepFunctionType),
+    activeTools: () => nodeInterface("Active Tools", listType(stringType)),
+    experimental_output: () => nodeInterface("Output", outputType),
+    prepareStep: () => nodeInterface("Prepare Step", prepareStepFunctionType),
     repairToolCall: () =>
-      nodeInterface("Repair Tool Call", undefined!, toolCallRepairFunctionType),
+      nodeInterface("Repair Tool Call", toolCallRepairFunctionType),
     onStepFinish: () =>
       nodeInterface(
         "On Step Finish",
-        undefined!,
+
         generateTextOnStepFinishCallbackType
       ),
   },
   outputs: {
-    content: () => nodeInterface("Content", [], listType(contentPartType)),
-    text: () => nodeInterface("Text", "", stringType),
-    reasoning: () =>
-      nodeInterface("Reasoning", [], listType(reasoningPartType)),
+    content: () => nodeInterface("Content", listType(contentPartType)),
+    text: () => nodeInterface("Text", stringType),
+    reasoning: () => nodeInterface("Reasoning", listType(reasoningPartType)),
     reasoningText: () =>
-      nodeInterface(
-        "Reasoning Text",
-        undefined,
-        unsafeAsOptionalNodeInterfaceType(stringType)
-      ),
-    files: () => nodeInterface("Files", [], listType(generatedFileType)),
-    sources: () =>
-      nodeInterface("Sources", [], listType(contentPartSourceType)),
+      nodeInterface("Reasoning Text", unsafeOptionalType(stringType)),
+    files: () => nodeInterface("Files", listType(generatedFileType)),
+    sources: () => nodeInterface("Sources", listType(contentPartSourceType)),
     toolCalls: () =>
-      nodeInterface("Tool Calls", [], listType(contentPartToolCallType)),
+      nodeInterface("Tool Calls", listType(contentPartToolCallType)),
     staticToolCalls: () =>
-      nodeInterface("Static Tool Calls", [], listType(contentPartToolCallType)),
+      nodeInterface("Static Tool Calls", listType(contentPartToolCallType)),
     dynamicToolCalls: () =>
-      nodeInterface(
-        "Dynamic Tool Calls",
-        [],
-        listType(contentPartToolCallType)
-      ),
+      nodeInterface("Dynamic Tool Calls", listType(contentPartToolCallType)),
     toolResults: () =>
-      nodeInterface("Tool Results", [], listType(contentPartToolResultType)),
+      nodeInterface("Tool Results", listType(contentPartToolResultType)),
     staticToolResults: () =>
-      nodeInterface(
-        "Static Tool Results",
-        [],
-        listType(contentPartToolResultType)
-      ),
+      nodeInterface("Static Tool Results", listType(contentPartToolResultType)),
     dynamicToolResults: () =>
       nodeInterface(
         "Dynamic Tool Results",
-        [],
         listType(contentPartToolResultType)
       ),
-    finishReason: () =>
-      nodeInterface("Finish Reason", "unknown", finishReasonType),
-    usage: () => nodeInterface("Usage", {}, languageModelUsageType),
-    totalUsage: () => nodeInterface("Total Usage", {}, languageModelUsageType),
+    finishReason: () => nodeInterface("Finish Reason", finishReasonType),
+    usage: () => nodeInterface("Usage", languageModelUsageType),
+    totalUsage: () => nodeInterface("Total Usage", languageModelUsageType),
     warnings: () =>
-      nodeInterface(
-        "Warnings",
-        undefined,
-        unsafeAsOptionalNodeInterfaceType(listType(callWarningType))
-      ),
+      nodeInterface("Warnings", unsafeOptionalType(listType(callWarningType))),
     request: () =>
       nodeInterface(
         "Request Metadata",
-        undefined!,
+
         languageModelRequestMetadataType
       ),
     response: () =>
       nodeInterface(
         "Response Metadata",
-        undefined!,
+
         languageModelResponseMetadataWithMessagesAndBodyType
       ),
     providerMetadata: () =>
       nodeInterface(
         "Provider Metadata",
-        undefined,
-        unsafeAsOptionalNodeInterfaceType(
-          stringDictType(stringDictType(jsonValueType))
-        )
+        unsafeOptionalType(stringDictType(stringDictType(jsonValueType)))
       ),
-    steps: () => nodeInterface("Steps", [], listType(stepResultType)),
+    steps: () => nodeInterface("Steps", listType(stepResultType)),
     experimental_output: () =>
-      nodeInterface("Output (Experimental)", undefined!, unknownType),
+      nodeInterface("Output (Experimental)", unknownType),
   },
   async calculate({ stopWhen, extraStopWhens, repairToolCall, ...rest }) {
     return await generateText({
@@ -458,41 +428,31 @@ export function registerGenerateTextNode(editor: Editor) {
 export const TextEmbeddingNode = defineNode({
   type: "TextEmbeddingNode",
   inputs: {
-    model: () => nodeInterface("Model", undefined!, textEmbeddingModelType),
+    model: () => nodeInterface("Model", textEmbeddingModelType),
     value: () => textInterface("Value"),
-    maxRetries: () => integerInterface("Max Retries", undefined!),
-    abortSignal: () =>
-      nodeInterface("Abort Signal", undefined!, abortSignalType),
-    headers: () =>
-      nodeInterface("Headers", undefined!, stringDictType(stringType)),
+    maxRetries: () => integerInterface("Max Retries"),
+    abortSignal: () => nodeInterface("Abort Signal", abortSignalType),
+    headers: () => nodeInterface("Headers", stringDictType(stringType)),
     providerOptions: () =>
       nodeInterface(
         "Provider Options",
-        undefined!,
+
         stringDictType(stringDictType(jsonValueType))
       ),
     experimental_telemetry: () =>
-      nodeInterface("Telemetry", undefined!, telemetrySettingsType),
+      nodeInterface("Telemetry", telemetrySettingsType),
   },
   outputs: {
-    value: () => nodeInterface("Value", undefined!, stringType),
-    embedding: () =>
-      nodeInterface("Embedding", undefined!, listType(numberType)),
-    usage: () => nodeInterface("Usage", undefined!, embeddingModelUsageType),
+    value: () => nodeInterface("Value", stringType),
+    embedding: () => nodeInterface("Embedding", listType(numberType)),
+    usage: () => nodeInterface("Usage", embeddingModelUsageType),
     providerMetadata: () =>
       nodeInterface(
         "Provider Metadata",
-        undefined,
-        unsafeAsOptionalNodeInterfaceType(
-          stringDictType(stringDictType(jsonValueType))
-        )
+        unsafeOptionalType(stringDictType(stringDictType(jsonValueType)))
       ),
     response: () =>
-      nodeInterface(
-        "Response",
-        undefined,
-        unsafeAsOptionalNodeInterfaceType(textEmbeddingResponseType)
-      ),
+      nodeInterface("Response", unsafeOptionalType(textEmbeddingResponseType)),
   },
   async calculate(args) {
     return unsafeReplaceOptionalWithUndefined(await embed<string>(args));
@@ -507,37 +467,31 @@ export function registerTextEmbeddingNode(editor: Editor) {
 export const GenerateImageNode = defineNode({
   type: "GenerateImageNode",
   inputs: {
-    model: () => nodeInterface("Model", undefined!, imageModelType),
+    model: () => nodeInterface("Model", imageModelType),
     prompt: () => textInterface("Prompt"),
-    n: () => integerInterface("Number of Images", undefined!),
-    width: () => integerInterface("Width", undefined!),
-    height: () => integerInterface("Height", undefined!),
-    aspectRatioWidth: () => integerInterface("Aspect Ratio Width", undefined!),
-    aspectRatioHeight: () =>
-      integerInterface("Aspect Ratio Height", undefined!),
-    seed: () => integerInterface("Seed", undefined!),
+    n: () => integerInterface("Number of Images"),
+    width: () => integerInterface("Width"),
+    height: () => integerInterface("Height"),
+    aspectRatioWidth: () => integerInterface("Aspect Ratio Width"),
+    aspectRatioHeight: () => integerInterface("Aspect Ratio Height"),
+    seed: () => integerInterface("Seed"),
     providerOptions: () =>
       nodeInterface(
         "Provider Options",
-        undefined!,
         stringDictType(stringDictType(jsonValueType))
       ),
-    maxRetries: () => integerInterface("Max Retries", undefined!),
-    abortSignal: () =>
-      nodeInterface("Abort Signal", undefined!, abortSignalType),
-    headers: () =>
-      nodeInterface("Headers", undefined!, stringDictType(stringType)),
+    maxRetries: () => integerInterface("Max Retries"),
+    abortSignal: () => nodeInterface("Abort Signal", abortSignalType),
+    headers: () => nodeInterface("Headers", stringDictType(stringType)),
   },
   outputs: {
-    image: () => nodeInterface("Image", undefined!, generatedFileType),
-    images: () =>
-      nodeInterface("Images", undefined!, listType(generatedFileType)),
-    warnings: () =>
-      nodeInterface("Warnings", [], listType(generationWarningType)),
+    image: () => nodeInterface("Image", generatedFileType),
+    images: () => nodeInterface("Images", listType(generatedFileType)),
+    warnings: () => nodeInterface("Warnings", listType(generationWarningType)),
     responses: () =>
-      nodeInterface("Responses", [], listType(imageModelResponseMetadataType)),
+      nodeInterface("Responses", listType(imageModelResponseMetadataType)),
     providerMetadata: () =>
-      nodeInterface("Provider Metadata", {}, imageModelProviderMetadataType),
+      nodeInterface("Provider Metadata", imageModelProviderMetadataType),
   },
   async calculate({
     width,
@@ -566,33 +520,29 @@ export function registerGenerateImageNode(editor: Editor) {
 export const GenerateSpeechNode = defineNode({
   type: "GenerateSpeechNode",
   inputs: {
-    model: () => nodeInterface("Model", undefined!, speechModelType),
+    model: () => nodeInterface("Model", speechModelType),
     text: () => textInterface("Text"),
-    voice: () => textInterface("Voice", undefined!),
-    speed: () => numberInterface("Speed", undefined!),
-    language: () => textInterface("Language", undefined!),
+    voice: () => textInterface("Voice"),
+    speed: () => numberInterface("Speed"),
+    language: () => textInterface("Language"),
     providerOptions: () =>
       nodeInterface(
         "Provider Options",
-        undefined!,
+
         stringDictType(stringDictType(jsonValueType))
       ),
-    maxRetries: () => integerInterface("Max Retries", undefined!),
-    abortSignal: () =>
-      nodeInterface("Abort Signal", undefined!, abortSignalType),
-    headers: () =>
-      nodeInterface("Headers", undefined!, stringDictType(stringType)),
+    maxRetries: () => integerInterface("Max Retries"),
+    abortSignal: () => nodeInterface("Abort Signal", abortSignalType),
+    headers: () => nodeInterface("Headers", stringDictType(stringType)),
   },
   outputs: {
-    audio: () => nodeInterface("Audio", undefined!, generatedAudioFileType),
-    warnings: () =>
-      nodeInterface("Warnings", [], listType(generationWarningType)),
+    audio: () => nodeInterface("Audio", generatedAudioFileType),
+    warnings: () => nodeInterface("Warnings", listType(generationWarningType)),
     responses: () =>
-      nodeInterface("Responses", [], listType(speechModelResponseMetadataType)),
+      nodeInterface("Responses", listType(speechModelResponseMetadataType)),
     providerMetadata: () =>
       nodeInterface(
         "Provider Metadata",
-        {},
         stringDictType(stringDictType(jsonValueType))
       ),
   },
@@ -607,11 +557,26 @@ export function registerGenerateSpeechNode(editor: Editor) {
 export const TranscribeNode = defineNode({
   type: "TranscribeNode",
   inputs: {
-    model: () => nodeInterface("Model", undefined!, transcriptionModelType),
-    audio: () => nodeInterface("Audio", undefined!, dataContentOrUrlType),
-    // TODO: Add the rest of the inputs for `transcribe`.
+    model: () => nodeInterface("Model", transcriptionModelType),
+    audio: () => nodeInterface("Audio", dataContentOrUrlType),
+    maxRetries: () => integerInterface("Max Retries"),
+    abortSignal: () => nodeInterface("Abort Signal", abortSignalType),
+    headers: () => nodeInterface("Headers", stringDictType(stringType)),
   },
-  outputs: TranscriptionResult,
+  outputs: {
+    text: () => nodeInterface("Text", stringType),
+    segments: () =>
+      nodeInterface("Segments", listType(transcriptionSegmentType)),
+    language: () => nodeInterface("Language", unsafeOptionalType(stringType)),
+    durationInSeconds: () =>
+      nodeInterface("Duration", unsafeOptionalType(numberType)),
+    warnings: () => nodeInterface("Warnings", listType(generationWarningType)),
+    responses: () =>
+      nodeInterface(
+        "Response",
+        listType(transcriptionModelResponseMetadataType)
+      ),
+  },
   calculate: transcribe,
 });
 export function registerTranscribeNode(editor: Editor) {
@@ -626,7 +591,7 @@ export const BedrockLanguageModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, languageModelType),
+    model: () => nodeInterface("Model", languageModelType),
   },
   calculate({ modelId }) {
     return { model: bedrock.languageModel(modelId) };
@@ -644,7 +609,7 @@ export const BedrockTextEmbeddingModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, textEmbeddingModelType),
+    model: () => nodeInterface("Model", textEmbeddingModelType),
   },
   calculate({ modelId }) {
     return { model: bedrock.textEmbeddingModel(modelId) };
@@ -662,7 +627,7 @@ export const BedrockImageModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, imageModelType),
+    model: () => nodeInterface("Model", imageModelType),
   },
   calculate({ modelId }) {
     return { model: bedrock.imageModel(modelId) };
@@ -680,7 +645,7 @@ export const BedrockSpeechModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, speechModelType),
+    model: () => nodeInterface("Model", speechModelType),
   },
   calculate({ modelId }) {
     return {
@@ -703,7 +668,7 @@ export const BedrockTranscriptionModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, transcriptionModelType),
+    model: () => nodeInterface("Model", transcriptionModelType),
   },
   calculate({ modelId }) {
     return {
@@ -735,7 +700,7 @@ export const AnthropicLanguageModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, languageModelType),
+    model: () => nodeInterface("Model", languageModelType),
   },
   calculate({ modelId }) {
     return { model: anthropic.languageModel(modelId) };
@@ -753,7 +718,7 @@ export const AnthropicTextEmbeddingModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, textEmbeddingModelType),
+    model: () => nodeInterface("Model", textEmbeddingModelType),
   },
   calculate({ modelId }) {
     return { model: anthropic.textEmbeddingModel(modelId) };
@@ -771,7 +736,7 @@ export const AnthropicImageModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, imageModelType),
+    model: () => nodeInterface("Model", imageModelType),
   },
   calculate({ modelId }) {
     return { model: anthropic.imageModel(modelId) };
@@ -789,7 +754,7 @@ export const AnthropicSpeechModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, speechModelType),
+    model: () => nodeInterface("Model", speechModelType),
   },
   calculate({ modelId }) {
     return {
@@ -812,7 +777,7 @@ export const AnthropicTranscriptionModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, transcriptionModelType),
+    model: () => nodeInterface("Model", transcriptionModelType),
   },
   calculate({ modelId }) {
     return {
@@ -844,7 +809,7 @@ export const AssemblyaiLanguageModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, languageModelType),
+    model: () => nodeInterface("Model", languageModelType),
   },
   calculate({ modelId }) {
     return { model: assemblyai.languageModel(modelId) };
@@ -862,7 +827,7 @@ export const AssemblyaiTextEmbeddingModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, textEmbeddingModelType),
+    model: () => nodeInterface("Model", textEmbeddingModelType),
   },
   calculate({ modelId }) {
     return { model: assemblyai.textEmbeddingModel(modelId) };
@@ -880,7 +845,7 @@ export const AssemblyaiImageModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, imageModelType),
+    model: () => nodeInterface("Model", imageModelType),
   },
   calculate({ modelId }) {
     return { model: assemblyai.imageModel(modelId) };
@@ -898,7 +863,7 @@ export const AssemblyaiSpeechModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, speechModelType),
+    model: () => nodeInterface("Model", speechModelType),
   },
   calculate({ modelId }) {
     return {
@@ -921,7 +886,7 @@ export const AssemblyaiTranscriptionModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, transcriptionModelType),
+    model: () => nodeInterface("Model", transcriptionModelType),
   },
   calculate({ modelId }) {
     return {
@@ -954,7 +919,7 @@ export const AzureLanguageModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, languageModelType),
+    model: () => nodeInterface("Model", languageModelType),
   },
   calculate({ modelId }) {
     return { model: azure.languageModel(modelId) };
@@ -972,7 +937,7 @@ export const AzureTextEmbeddingModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, textEmbeddingModelType),
+    model: () => nodeInterface("Model", textEmbeddingModelType),
   },
   calculate({ modelId }) {
     return { model: azure.textEmbeddingModel(modelId) };
@@ -990,7 +955,7 @@ export const AzureImageModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, imageModelType),
+    model: () => nodeInterface("Model", imageModelType),
   },
   calculate({ modelId }) {
     return { model: azure.imageModel(modelId) };
@@ -1008,7 +973,7 @@ export const AzureSpeechModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, speechModelType),
+    model: () => nodeInterface("Model", speechModelType),
   },
   calculate({ modelId }) {
     return {
@@ -1031,7 +996,7 @@ export const AzureTranscriptionModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, transcriptionModelType),
+    model: () => nodeInterface("Model", transcriptionModelType),
   },
   calculate({ modelId }) {
     return {
@@ -1063,7 +1028,7 @@ export const CerebrasLanguageModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, languageModelType),
+    model: () => nodeInterface("Model", languageModelType),
   },
   calculate({ modelId }) {
     return { model: cerebras.languageModel(modelId) };
@@ -1081,7 +1046,7 @@ export const CerebrasTextEmbeddingModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, textEmbeddingModelType),
+    model: () => nodeInterface("Model", textEmbeddingModelType),
   },
   calculate({ modelId }) {
     return { model: cerebras.textEmbeddingModel(modelId) };
@@ -1099,7 +1064,7 @@ export const CerebrasImageModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, imageModelType),
+    model: () => nodeInterface("Model", imageModelType),
   },
   calculate({ modelId }) {
     return { model: cerebras.imageModel(modelId) };
@@ -1117,7 +1082,7 @@ export const CerebrasSpeechModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, speechModelType),
+    model: () => nodeInterface("Model", speechModelType),
   },
   calculate({ modelId }) {
     return {
@@ -1140,7 +1105,7 @@ export const CerebrasTranscriptionModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, transcriptionModelType),
+    model: () => nodeInterface("Model", transcriptionModelType),
   },
   calculate({ modelId }) {
     return {
@@ -1172,7 +1137,7 @@ export const CohereLanguageModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, languageModelType),
+    model: () => nodeInterface("Model", languageModelType),
   },
   calculate({ modelId }) {
     return { model: cohere.languageModel(modelId) };
@@ -1190,7 +1155,7 @@ export const CohereTextEmbeddingModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, textEmbeddingModelType),
+    model: () => nodeInterface("Model", textEmbeddingModelType),
   },
   calculate({ modelId }) {
     return { model: cohere.textEmbeddingModel(modelId) };
@@ -1208,7 +1173,7 @@ export const CohereImageModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, imageModelType),
+    model: () => nodeInterface("Model", imageModelType),
   },
   calculate({ modelId }) {
     return { model: cohere.imageModel(modelId) };
@@ -1226,7 +1191,7 @@ export const CohereSpeechModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, speechModelType),
+    model: () => nodeInterface("Model", speechModelType),
   },
   calculate({ modelId }) {
     return {
@@ -1249,7 +1214,7 @@ export const CohereTranscriptionModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, transcriptionModelType),
+    model: () => nodeInterface("Model", transcriptionModelType),
   },
   calculate({ modelId }) {
     return {
@@ -1281,7 +1246,7 @@ export const DeepgramLanguageModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, languageModelType),
+    model: () => nodeInterface("Model", languageModelType),
   },
   calculate({ modelId }) {
     return { model: deepgram.languageModel(modelId) };
@@ -1299,7 +1264,7 @@ export const DeepgramTextEmbeddingModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, textEmbeddingModelType),
+    model: () => nodeInterface("Model", textEmbeddingModelType),
   },
   calculate({ modelId }) {
     return { model: deepgram.textEmbeddingModel(modelId) };
@@ -1317,7 +1282,7 @@ export const DeepgramImageModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, imageModelType),
+    model: () => nodeInterface("Model", imageModelType),
   },
   calculate({ modelId }) {
     return { model: deepgram.imageModel(modelId) };
@@ -1335,7 +1300,7 @@ export const DeepgramSpeechModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, speechModelType),
+    model: () => nodeInterface("Model", speechModelType),
   },
   calculate({ modelId }) {
     return {
@@ -1358,7 +1323,7 @@ export const DeepgramTranscriptionModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, transcriptionModelType),
+    model: () => nodeInterface("Model", transcriptionModelType),
   },
   calculate({ modelId }) {
     return {
@@ -1390,7 +1355,7 @@ export const DeepinfraLanguageModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, languageModelType),
+    model: () => nodeInterface("Model", languageModelType),
   },
   calculate({ modelId }) {
     return { model: deepinfra.languageModel(modelId) };
@@ -1408,7 +1373,7 @@ export const DeepinfraTextEmbeddingModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, textEmbeddingModelType),
+    model: () => nodeInterface("Model", textEmbeddingModelType),
   },
   calculate({ modelId }) {
     return { model: deepinfra.textEmbeddingModel(modelId) };
@@ -1426,7 +1391,7 @@ export const DeepinfraImageModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, imageModelType),
+    model: () => nodeInterface("Model", imageModelType),
   },
   calculate({ modelId }) {
     return { model: deepinfra.imageModel(modelId) };
@@ -1444,7 +1409,7 @@ export const DeepinfraSpeechModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, speechModelType),
+    model: () => nodeInterface("Model", speechModelType),
   },
   calculate({ modelId }) {
     return {
@@ -1467,7 +1432,7 @@ export const DeepinfraTranscriptionModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, transcriptionModelType),
+    model: () => nodeInterface("Model", transcriptionModelType),
   },
   calculate({ modelId }) {
     return {
@@ -1490,7 +1455,7 @@ export const DeepseekLanguageModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, languageModelType),
+    model: () => nodeInterface("Model", languageModelType),
   },
   calculate({ modelId }) {
     return { model: deepseek.languageModel(modelId) };
@@ -1508,7 +1473,7 @@ export const DeepseekTextEmbeddingModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, textEmbeddingModelType),
+    model: () => nodeInterface("Model", textEmbeddingModelType),
   },
   calculate({ modelId }) {
     return { model: deepseek.textEmbeddingModel(modelId) };
@@ -1526,7 +1491,7 @@ export const DeepseekImageModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, imageModelType),
+    model: () => nodeInterface("Model", imageModelType),
   },
   calculate({ modelId }) {
     return { model: deepseek.imageModel(modelId) };
@@ -1544,7 +1509,7 @@ export const DeepseekSpeechModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, speechModelType),
+    model: () => nodeInterface("Model", speechModelType),
   },
   calculate({ modelId }) {
     return {
@@ -1567,7 +1532,7 @@ export const DeepseekTranscriptionModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, transcriptionModelType),
+    model: () => nodeInterface("Model", transcriptionModelType),
   },
   calculate({ modelId }) {
     return {
@@ -1599,7 +1564,7 @@ export const ElevenlabsLanguageModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, languageModelType),
+    model: () => nodeInterface("Model", languageModelType),
   },
   calculate({ modelId }) {
     return { model: elevenlabs.languageModel(modelId) };
@@ -1617,7 +1582,7 @@ export const ElevenlabsTextEmbeddingModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, textEmbeddingModelType),
+    model: () => nodeInterface("Model", textEmbeddingModelType),
   },
   calculate({ modelId }) {
     return { model: elevenlabs.textEmbeddingModel(modelId) };
@@ -1635,7 +1600,7 @@ export const ElevenlabsImageModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, imageModelType),
+    model: () => nodeInterface("Model", imageModelType),
   },
   calculate({ modelId }) {
     return { model: elevenlabs.imageModel(modelId) };
@@ -1653,7 +1618,7 @@ export const ElevenlabsSpeechModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, speechModelType),
+    model: () => nodeInterface("Model", speechModelType),
   },
   calculate({ modelId }) {
     return {
@@ -1676,7 +1641,7 @@ export const ElevenlabsTranscriptionModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, transcriptionModelType),
+    model: () => nodeInterface("Model", transcriptionModelType),
   },
   calculate({ modelId }) {
     return {
@@ -1708,7 +1673,7 @@ export const FalLanguageModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, languageModelType),
+    model: () => nodeInterface("Model", languageModelType),
   },
   calculate({ modelId }) {
     return { model: fal.languageModel(modelId) };
@@ -1726,7 +1691,7 @@ export const FalTextEmbeddingModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, textEmbeddingModelType),
+    model: () => nodeInterface("Model", textEmbeddingModelType),
   },
   calculate({ modelId }) {
     return { model: fal.textEmbeddingModel(modelId) };
@@ -1744,7 +1709,7 @@ export const FalImageModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, imageModelType),
+    model: () => nodeInterface("Model", imageModelType),
   },
   calculate({ modelId }) {
     return { model: fal.imageModel(modelId) };
@@ -1762,7 +1727,7 @@ export const FalSpeechModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, speechModelType),
+    model: () => nodeInterface("Model", speechModelType),
   },
   calculate({ modelId }) {
     return {
@@ -1785,7 +1750,7 @@ export const FalTranscriptionModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, transcriptionModelType),
+    model: () => nodeInterface("Model", transcriptionModelType),
   },
   calculate({ modelId }) {
     return {
@@ -1817,7 +1782,7 @@ export const FireworksLanguageModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, languageModelType),
+    model: () => nodeInterface("Model", languageModelType),
   },
   calculate({ modelId }) {
     return { model: fireworks.languageModel(modelId) };
@@ -1835,7 +1800,7 @@ export const FireworksTextEmbeddingModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, textEmbeddingModelType),
+    model: () => nodeInterface("Model", textEmbeddingModelType),
   },
   calculate({ modelId }) {
     return { model: fireworks.textEmbeddingModel(modelId) };
@@ -1853,7 +1818,7 @@ export const FireworksImageModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, imageModelType),
+    model: () => nodeInterface("Model", imageModelType),
   },
   calculate({ modelId }) {
     return { model: fireworks.imageModel(modelId) };
@@ -1871,7 +1836,7 @@ export const FireworksSpeechModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, speechModelType),
+    model: () => nodeInterface("Model", speechModelType),
   },
   calculate({ modelId }) {
     return {
@@ -1894,7 +1859,7 @@ export const FireworksTranscriptionModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, transcriptionModelType),
+    model: () => nodeInterface("Model", transcriptionModelType),
   },
   calculate({ modelId }) {
     return {
@@ -1926,7 +1891,7 @@ export const GatewayLanguageModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, languageModelType),
+    model: () => nodeInterface("Model", languageModelType),
   },
   calculate({ modelId }) {
     return { model: gateway.languageModel(modelId) };
@@ -1944,7 +1909,7 @@ export const GatewayTextEmbeddingModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, textEmbeddingModelType),
+    model: () => nodeInterface("Model", textEmbeddingModelType),
   },
   calculate({ modelId }) {
     return { model: gateway.textEmbeddingModel(modelId) };
@@ -1962,7 +1927,7 @@ export const GatewayImageModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, imageModelType),
+    model: () => nodeInterface("Model", imageModelType),
   },
   calculate({ modelId }) {
     return { model: gateway.imageModel(modelId) };
@@ -1980,7 +1945,7 @@ export const GatewaySpeechModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, speechModelType),
+    model: () => nodeInterface("Model", speechModelType),
   },
   calculate({ modelId }) {
     return {
@@ -2003,7 +1968,7 @@ export const GatewayTranscriptionModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, transcriptionModelType),
+    model: () => nodeInterface("Model", transcriptionModelType),
   },
   calculate({ modelId }) {
     return {
@@ -2035,7 +2000,7 @@ export const GladiaLanguageModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, languageModelType),
+    model: () => nodeInterface("Model", languageModelType),
   },
   calculate({ modelId }) {
     return { model: gladia.languageModel(modelId) };
@@ -2053,7 +2018,7 @@ export const GladiaTextEmbeddingModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, textEmbeddingModelType),
+    model: () => nodeInterface("Model", textEmbeddingModelType),
   },
   calculate({ modelId }) {
     return { model: gladia.textEmbeddingModel(modelId) };
@@ -2071,7 +2036,7 @@ export const GladiaImageModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, imageModelType),
+    model: () => nodeInterface("Model", imageModelType),
   },
   calculate({ modelId }) {
     return { model: gladia.imageModel(modelId) };
@@ -2089,7 +2054,7 @@ export const GladiaSpeechModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, speechModelType),
+    model: () => nodeInterface("Model", speechModelType),
   },
   calculate({ modelId }) {
     return {
@@ -2112,7 +2077,7 @@ export const GladiaTranscriptionModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, transcriptionModelType),
+    model: () => nodeInterface("Model", transcriptionModelType),
   },
   calculate({ modelId }) {
     return {
@@ -2144,7 +2109,7 @@ export const GoogleLanguageModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, languageModelType),
+    model: () => nodeInterface("Model", languageModelType),
   },
   calculate({ modelId }) {
     return { model: google.languageModel(modelId) };
@@ -2162,7 +2127,7 @@ export const GoogleTextEmbeddingModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, textEmbeddingModelType),
+    model: () => nodeInterface("Model", textEmbeddingModelType),
   },
   calculate({ modelId }) {
     return { model: google.textEmbeddingModel(modelId) };
@@ -2180,7 +2145,7 @@ export const GoogleImageModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, imageModelType),
+    model: () => nodeInterface("Model", imageModelType),
   },
   calculate({ modelId }) {
     return { model: google.imageModel(modelId) };
@@ -2198,7 +2163,7 @@ export const GoogleSpeechModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, speechModelType),
+    model: () => nodeInterface("Model", speechModelType),
   },
   calculate({ modelId }) {
     return {
@@ -2221,7 +2186,7 @@ export const GoogleTranscriptionModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, transcriptionModelType),
+    model: () => nodeInterface("Model", transcriptionModelType),
   },
   calculate({ modelId }) {
     return {
@@ -2253,7 +2218,7 @@ export const VertexLanguageModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, languageModelType),
+    model: () => nodeInterface("Model", languageModelType),
   },
   calculate({ modelId }) {
     return { model: vertex.languageModel(modelId) };
@@ -2271,7 +2236,7 @@ export const VertexTextEmbeddingModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, textEmbeddingModelType),
+    model: () => nodeInterface("Model", textEmbeddingModelType),
   },
   calculate({ modelId }) {
     return { model: vertex.textEmbeddingModel(modelId) };
@@ -2289,7 +2254,7 @@ export const VertexImageModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, imageModelType),
+    model: () => nodeInterface("Model", imageModelType),
   },
   calculate({ modelId }) {
     return { model: vertex.imageModel(modelId) };
@@ -2307,7 +2272,7 @@ export const VertexSpeechModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, speechModelType),
+    model: () => nodeInterface("Model", speechModelType),
   },
   calculate({ modelId }) {
     return {
@@ -2330,7 +2295,7 @@ export const VertexTranscriptionModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, transcriptionModelType),
+    model: () => nodeInterface("Model", transcriptionModelType),
   },
   calculate({ modelId }) {
     return {
@@ -2362,7 +2327,7 @@ export const GroqLanguageModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, languageModelType),
+    model: () => nodeInterface("Model", languageModelType),
   },
   calculate({ modelId }) {
     return { model: groq.languageModel(modelId) };
@@ -2380,7 +2345,7 @@ export const GroqTextEmbeddingModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, textEmbeddingModelType),
+    model: () => nodeInterface("Model", textEmbeddingModelType),
   },
   calculate({ modelId }) {
     return { model: groq.textEmbeddingModel(modelId) };
@@ -2398,7 +2363,7 @@ export const GroqImageModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, imageModelType),
+    model: () => nodeInterface("Model", imageModelType),
   },
   calculate({ modelId }) {
     return { model: groq.imageModel(modelId) };
@@ -2416,7 +2381,7 @@ export const GroqSpeechModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, speechModelType),
+    model: () => nodeInterface("Model", speechModelType),
   },
   calculate({ modelId }) {
     return {
@@ -2439,7 +2404,7 @@ export const GroqTranscriptionModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, transcriptionModelType),
+    model: () => nodeInterface("Model", transcriptionModelType),
   },
   calculate({ modelId }) {
     return {
@@ -2471,7 +2436,7 @@ export const HumeSpeechModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, speechModelType),
+    model: () => nodeInterface("Model", speechModelType),
   },
   calculate({ modelId }) {
     return {
@@ -2499,7 +2464,7 @@ export const LmntSpeechModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, speechModelType),
+    model: () => nodeInterface("Model", speechModelType),
   },
   calculate({ modelId }) {
     return {
@@ -2526,7 +2491,7 @@ export const LumaLanguageModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, languageModelType),
+    model: () => nodeInterface("Model", languageModelType),
   },
   calculate({ modelId }) {
     return { model: luma.languageModel(modelId) };
@@ -2544,7 +2509,7 @@ export const LumaTextEmbeddingModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, textEmbeddingModelType),
+    model: () => nodeInterface("Model", textEmbeddingModelType),
   },
   calculate({ modelId }) {
     return { model: luma.textEmbeddingModel(modelId) };
@@ -2562,7 +2527,7 @@ export const LumaImageModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, imageModelType),
+    model: () => nodeInterface("Model", imageModelType),
   },
   calculate({ modelId }) {
     return { model: luma.imageModel(modelId) };
@@ -2580,7 +2545,7 @@ export const LumaSpeechModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, speechModelType),
+    model: () => nodeInterface("Model", speechModelType),
   },
   calculate({ modelId }) {
     return {
@@ -2603,7 +2568,7 @@ export const LumaTranscriptionModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, transcriptionModelType),
+    model: () => nodeInterface("Model", transcriptionModelType),
   },
   calculate({ modelId }) {
     return {
@@ -2635,7 +2600,7 @@ export const MistralLanguageModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, languageModelType),
+    model: () => nodeInterface("Model", languageModelType),
   },
   calculate({ modelId }) {
     return { model: mistral.languageModel(modelId) };
@@ -2653,7 +2618,7 @@ export const MistralTextEmbeddingModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, textEmbeddingModelType),
+    model: () => nodeInterface("Model", textEmbeddingModelType),
   },
   calculate({ modelId }) {
     return { model: mistral.textEmbeddingModel(modelId) };
@@ -2671,7 +2636,7 @@ export const MistralImageModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, imageModelType),
+    model: () => nodeInterface("Model", imageModelType),
   },
   calculate({ modelId }) {
     return { model: mistral.imageModel(modelId) };
@@ -2689,7 +2654,7 @@ export const MistralSpeechModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, speechModelType),
+    model: () => nodeInterface("Model", speechModelType),
   },
   calculate({ modelId }) {
     return {
@@ -2712,7 +2677,7 @@ export const MistralTranscriptionModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, transcriptionModelType),
+    model: () => nodeInterface("Model", transcriptionModelType),
   },
   calculate({ modelId }) {
     return {
@@ -2744,7 +2709,7 @@ export const OpenaiLanguageModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, languageModelType),
+    model: () => nodeInterface("Model", languageModelType),
   },
   calculate({ modelId }) {
     return { model: openai.languageModel(modelId) };
@@ -2762,7 +2727,7 @@ export const OpenaiTextEmbeddingModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, textEmbeddingModelType),
+    model: () => nodeInterface("Model", textEmbeddingModelType),
   },
   calculate({ modelId }) {
     return { model: openai.textEmbeddingModel(modelId) };
@@ -2780,7 +2745,7 @@ export const OpenaiImageModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, imageModelType),
+    model: () => nodeInterface("Model", imageModelType),
   },
   calculate({ modelId }) {
     return { model: openai.imageModel(modelId) };
@@ -2798,7 +2763,7 @@ export const OpenaiSpeechModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, speechModelType),
+    model: () => nodeInterface("Model", speechModelType),
   },
   calculate({ modelId }) {
     return {
@@ -2821,7 +2786,7 @@ export const OpenaiTranscriptionModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, transcriptionModelType),
+    model: () => nodeInterface("Model", transcriptionModelType),
   },
   calculate({ modelId }) {
     return {
@@ -2853,7 +2818,7 @@ export const PerplexityLanguageModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, languageModelType),
+    model: () => nodeInterface("Model", languageModelType),
   },
   calculate({ modelId }) {
     return { model: perplexity.languageModel(modelId) };
@@ -2871,7 +2836,7 @@ export const PerplexityTextEmbeddingModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, textEmbeddingModelType),
+    model: () => nodeInterface("Model", textEmbeddingModelType),
   },
   calculate({ modelId }) {
     return { model: perplexity.textEmbeddingModel(modelId) };
@@ -2889,7 +2854,7 @@ export const PerplexityImageModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, imageModelType),
+    model: () => nodeInterface("Model", imageModelType),
   },
   calculate({ modelId }) {
     return { model: perplexity.imageModel(modelId) };
@@ -2907,7 +2872,7 @@ export const PerplexitySpeechModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, speechModelType),
+    model: () => nodeInterface("Model", speechModelType),
   },
   calculate({ modelId }) {
     return {
@@ -2930,7 +2895,7 @@ export const PerplexityTranscriptionModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, transcriptionModelType),
+    model: () => nodeInterface("Model", transcriptionModelType),
   },
   calculate({ modelId }) {
     return {
@@ -2962,7 +2927,7 @@ export const ReplicateLanguageModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, languageModelType),
+    model: () => nodeInterface("Model", languageModelType),
   },
   calculate({ modelId }) {
     return { model: replicate.languageModel(modelId) };
@@ -2980,7 +2945,7 @@ export const ReplicateTextEmbeddingModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, textEmbeddingModelType),
+    model: () => nodeInterface("Model", textEmbeddingModelType),
   },
   calculate({ modelId }) {
     return { model: replicate.textEmbeddingModel(modelId) };
@@ -2998,7 +2963,7 @@ export const ReplicateImageModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, imageModelType),
+    model: () => nodeInterface("Model", imageModelType),
   },
   calculate({ modelId }) {
     return { model: replicate.imageModel(modelId) };
@@ -3016,7 +2981,7 @@ export const ReplicateSpeechModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, speechModelType),
+    model: () => nodeInterface("Model", speechModelType),
   },
   calculate({ modelId }) {
     return {
@@ -3039,7 +3004,7 @@ export const ReplicateTranscriptionModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, transcriptionModelType),
+    model: () => nodeInterface("Model", transcriptionModelType),
   },
   calculate({ modelId }) {
     return {
@@ -3071,7 +3036,7 @@ export const RevaiLanguageModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, languageModelType),
+    model: () => nodeInterface("Model", languageModelType),
   },
   calculate({ modelId }) {
     return { model: revai.languageModel(modelId) };
@@ -3089,7 +3054,7 @@ export const RevaiTextEmbeddingModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, textEmbeddingModelType),
+    model: () => nodeInterface("Model", textEmbeddingModelType),
   },
   calculate({ modelId }) {
     return { model: revai.textEmbeddingModel(modelId) };
@@ -3107,7 +3072,7 @@ export const RevaiImageModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, imageModelType),
+    model: () => nodeInterface("Model", imageModelType),
   },
   calculate({ modelId }) {
     return { model: revai.imageModel(modelId) };
@@ -3125,7 +3090,7 @@ export const RevaiSpeechModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, speechModelType),
+    model: () => nodeInterface("Model", speechModelType),
   },
   calculate({ modelId }) {
     return {
@@ -3148,7 +3113,7 @@ export const RevaiTranscriptionModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, transcriptionModelType),
+    model: () => nodeInterface("Model", transcriptionModelType),
   },
   calculate({ modelId }) {
     return {
@@ -3180,7 +3145,7 @@ export const TogetheraiLanguageModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, languageModelType),
+    model: () => nodeInterface("Model", languageModelType),
   },
   calculate({ modelId }) {
     return { model: togetherai.languageModel(modelId) };
@@ -3198,7 +3163,7 @@ export const TogetheraiTextEmbeddingModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, textEmbeddingModelType),
+    model: () => nodeInterface("Model", textEmbeddingModelType),
   },
   calculate({ modelId }) {
     return { model: togetherai.textEmbeddingModel(modelId) };
@@ -3216,7 +3181,7 @@ export const TogetheraiImageModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, imageModelType),
+    model: () => nodeInterface("Model", imageModelType),
   },
   calculate({ modelId }) {
     return { model: togetherai.imageModel(modelId) };
@@ -3234,7 +3199,7 @@ export const TogetheraiSpeechModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, speechModelType),
+    model: () => nodeInterface("Model", speechModelType),
   },
   calculate({ modelId }) {
     return {
@@ -3257,7 +3222,7 @@ export const TogetheraiTranscriptionModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, transcriptionModelType),
+    model: () => nodeInterface("Model", transcriptionModelType),
   },
   calculate({ modelId }) {
     return {
@@ -3289,7 +3254,7 @@ export const VercelLanguageModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, languageModelType),
+    model: () => nodeInterface("Model", languageModelType),
   },
   calculate({ modelId }) {
     return { model: vercel.languageModel(modelId) };
@@ -3307,7 +3272,7 @@ export const VercelTextEmbeddingModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, textEmbeddingModelType),
+    model: () => nodeInterface("Model", textEmbeddingModelType),
   },
   calculate({ modelId }) {
     return { model: vercel.textEmbeddingModel(modelId) };
@@ -3325,7 +3290,7 @@ export const VercelImageModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, imageModelType),
+    model: () => nodeInterface("Model", imageModelType),
   },
   calculate({ modelId }) {
     return { model: vercel.imageModel(modelId) };
@@ -3343,7 +3308,7 @@ export const VercelSpeechModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, speechModelType),
+    model: () => nodeInterface("Model", speechModelType),
   },
   calculate({ modelId }) {
     return {
@@ -3366,7 +3331,7 @@ export const VercelTranscriptionModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, transcriptionModelType),
+    model: () => nodeInterface("Model", transcriptionModelType),
   },
   calculate({ modelId }) {
     return {
@@ -3398,7 +3363,7 @@ export const XaiLanguageModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, languageModelType),
+    model: () => nodeInterface("Model", languageModelType),
   },
   calculate({ modelId }) {
     return { model: xai.languageModel(modelId) };
@@ -3416,7 +3381,7 @@ export const XaiTextEmbeddingModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, textEmbeddingModelType),
+    model: () => nodeInterface("Model", textEmbeddingModelType),
   },
   calculate({ modelId }) {
     return { model: xai.textEmbeddingModel(modelId) };
@@ -3434,7 +3399,7 @@ export const XaiImageModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, imageModelType),
+    model: () => nodeInterface("Model", imageModelType),
   },
   calculate({ modelId }) {
     return { model: xai.imageModel(modelId) };
@@ -3452,7 +3417,7 @@ export const XaiSpeechModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, speechModelType),
+    model: () => nodeInterface("Model", speechModelType),
   },
   calculate({ modelId }) {
     return {
@@ -3475,7 +3440,7 @@ export const XaiTranscriptionModelNode = defineNode({
     modelId: () => textInterface("Model Id"),
   },
   outputs: {
-    model: () => nodeInterface("Model", undefined!, transcriptionModelType),
+    model: () => nodeInterface("Model", transcriptionModelType),
   },
   calculate({ modelId }) {
     return {
@@ -3507,7 +3472,9 @@ export function registerAiGenerationNodes(editor: Editor) {
   registerDeconstructTextEmbeddingResponseNode(editor);
   registerDeconstructGeneratedFileNode(editor);
   registerDeconstructGeneratedAudioFileNode(editor);
-  registerDeconstructSpeechModelResponseNode(editor);
+  registerDeconstructSpeechModelResponseMetadataNode(editor);
+  registerDeconstructTranscriptionModelResponseMetadataNode(editor);
+  registerDeconstructTranscriptionSegmentNode(editor);
 
   registerGenerateTextNode(editor);
   registerTextEmbeddingNode(editor);

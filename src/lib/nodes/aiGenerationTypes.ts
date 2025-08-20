@@ -1233,6 +1233,10 @@ export const TranscriptionModelResponseMetadata = z
 export type TranscriptionModelResponseMetadata = z.infer<
   typeof TranscriptionModelResponseMetadata
 >;
+export const transcriptionModelResponseMetadataType =
+  nodeInterfaceType<TranscriptionModelResponseMetadata>(
+    "TranscriptionModelResponseMetadata"
+  );
 
 export const TranscriptionSegment = z
   .object({
@@ -1247,8 +1251,52 @@ export const TranscriptionSegment = z
     description: "A segment of the transcription with timing information.",
   });
 export type TranscriptionSegment = z.infer<typeof TranscriptionSegment>;
+export const transcriptionSegmentType = nodeInterfaceType<TranscriptionSegment>(
+  "TranscriptionSegment"
+);
 
-export const TranscriptionResult = z
+export const TranscribeParameters = z
+  .object({
+    model: TranscriptionModel.describe(
+      "The transcription model to use for transcribing the audio."
+    ),
+    audio: z
+      .union([DataContent, z.instanceof(URL)])
+      .describe(
+        "The audio data to transcribe. It can be a DataContent or a URL."
+      ),
+    providerOptions: ProviderOptions.optional().describe(
+      `\
+Additional provider-specific options that are passed through to the provider as body parameters.
+The outer record is keyed by the provider name, and the inner record is keyed by the provider-specific metadata key.
+E.g. \`{"openai": {"temperature": 0}}\`.`
+    ),
+    maxRetries: z
+      .int()
+      .optional()
+      .default(2)
+      .describe(
+        "Maximum number of retries per transcript model call. Set to 0 to disable retries."
+      ),
+    abortSignal: z
+      .instanceof(AbortSignal)
+      .optional()
+      .describe("Abort signal for the transcription call."),
+    headers: z
+      .record(z.string(), z.string())
+      .optional()
+      .describe(
+        "Additional headers to include in the request. Only applicable for HTTP-based providers."
+      ),
+  })
+  .meta({
+    title: "TranscribeParameters",
+    description:
+      "Parameters for the `transcribe` call. It contains the model, audio, and additional options.",
+  });
+export type TranscribeParameters = z.infer<typeof TranscribeParameters>;
+
+export const TranscribeResult = z
   .object({
     text: z.string().describe("The complete transcribed text from the audio."),
     segments: z
@@ -1279,11 +1327,11 @@ export const TranscriptionResult = z
     providerMetadata: ProviderMetadata,
   })
   .meta({
-    title: "TranscriptionResult",
+    title: "TranscribeResult",
     description:
       "The result of a `transcribe` call. It contains the transcribed text, segments, and additional information.",
   });
-export type TranscriptionResult = z.infer<typeof TranscriptionResult>;
+export type TranscribeResult = z.infer<typeof TranscribeResult>;
 
 export const SystemModelMessage = z
   .object({
@@ -1723,43 +1771,45 @@ export function registerAiGenerationInterfaceTypes(
   types: BaklavaInterfaceTypes
 ) {
   types.addTypes(
+    abortSignalType,
     attributeValueType,
+    callWarningType,
+    contentPartSourceType,
+    contentPartToolCallType,
+    contentPartToolResultType,
+    contentPartType,
+    dataContentOrUrlType,
+    dataContentType,
+    embeddingModelUsageType,
+    finishReasonType,
+    generatedAudioFileType,
+    generatedFileType,
     generateTextOnStepFinishCallbackType,
+    generateTextResultType,
+    generationWarningType,
+    imageModelProviderMetadataType,
+    imageModelResponseMetadataType,
     imageModelType,
+    languageModelRequestMetadataType,
     languageModelType,
+    languageModelUsageType,
     outputType,
     prepareStepFunctionType,
+    reasoningPartType,
+    speechModelResponseMetadataType,
     speechModelType,
+    stepResultType,
     stopConditionType,
     telemetrySettingsType,
     textEmbeddingModelType,
+    textEmbeddingResponseType,
     toolCallRepairFunctionType,
+    toolChoiceKindType,
     toolChoiceType,
     toolType,
+    transcriptionModelResponseMetadataType,
     transcriptionModelType,
-    generatedFileType,
-    contentPartSourceType,
-    contentPartType,
-    reasoningPartType,
-    contentPartToolCallType,
-    contentPartToolResultType,
-    finishReasonType,
-    dataContentType,
-    urlType,
-    dataContentOrUrlType,
-    generationWarningType,
-    imageModelResponseMetadataType,
-    imageModelProviderMetadataType,
-    embeddingModelUsageType,
-    textEmbeddingResponseType,
-    callWarningType,
-    generateTextResultType,
-    stepResultType,
-    languageModelUsageType,
-    languageModelRequestMetadataType,
-    toolChoiceKindType,
-    abortSignalType,
-    generatedAudioFileType,
-    speechModelResponseMetadataType
+    transcriptionSegmentType,
+    urlType
   );
 }

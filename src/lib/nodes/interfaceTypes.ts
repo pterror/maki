@@ -229,34 +229,46 @@ export function buttonInterface(name: string, callback: () => void) {
   return new ButtonInterface(name, callback).use(setType, undefinedType);
 }
 
-export function textInterface(name: string, defaultValue = "") {
+export function textInterface(name: string, defaultValue: string = undefined!) {
   return new TextInterface(name, defaultValue).use(setType, stringType);
 }
 
-export function textInputInterface(name: string, defaultValue = "") {
+export function textInputInterface(
+  name: string,
+  defaultValue: string = undefined!
+) {
   return new TextInputInterface(name, defaultValue).use(setType, stringType);
 }
 
-export function textareaInputInterface(name: string, defaultValue = "") {
+export function textareaInputInterface(
+  name: string,
+  defaultValue: string = undefined!
+) {
   return new TextareaInputInterface(name, defaultValue).use(
     setType,
     stringType
   );
 }
 
-export function numberInterface(name: string, defaultValue = 0) {
+export function numberInterface(
+  name: string,
+  defaultValue: number = undefined!
+) {
   return new NumberInterface(name, defaultValue).use(setType, numberType);
 }
 
-export function integerInterface(name: string, defaultValue = Integer(0)) {
+export function integerInterface(
+  name: string,
+  defaultValue: Integer = undefined!
+) {
   return new IntegerInterface(name, defaultValue).use(setType, integerType);
 }
 
 export function sliderInterface(
   name: string,
-  defaultValue = 0,
-  min = 0,
-  max = 100
+  defaultValue: number,
+  min: number,
+  max: number
 ) {
   return new SliderInterface(name, defaultValue, min, max).use(
     setType,
@@ -264,23 +276,26 @@ export function sliderInterface(
   );
 }
 
-export function checkboxInterface(name: string, defaultValue = false) {
+export function checkboxInterface(
+  name: string,
+  defaultValue: boolean = undefined!
+) {
   return new CheckboxInterface(name, defaultValue).use(setType, booleanType);
 }
 
 export function selectInterface<T>(
   name: string,
-  defaultValue: NoInfer<T>,
   type: NodeInterfaceType<T>,
-  options: SelectInterfaceItem<T>[]
+  options: SelectInterfaceItem<T>[],
+  defaultValue: NoInfer<T> = undefined!
 ) {
   return new SelectInterface(name, defaultValue, options).use(setType, type);
 }
 
 export function nodeInterface<T>(
   name: string,
-  defaultValue: NoInfer<T>,
-  type: NodeInterfaceType<T>
+  type: NodeInterfaceType<T>,
+  defaultValue: NoInfer<T> = undefined!
 ) {
   return new NodeInterface(name, defaultValue).use(setType, type);
 }
