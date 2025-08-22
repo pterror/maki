@@ -19,7 +19,7 @@ import {
   textInterface,
 } from "./interfaceTypes";
 
-const allEditorsNeedingDerivedNodes = new Set<WeakRef<Editor>>();
+export const allEditorsNeedingDerivedNodes = new Set<WeakRef<Editor>>();
 
 // Note that inputs can be inlined, so these are not strictly necessary for the core functionality,
 // but they are useful for literals that need to stay in sync across multiple nodes.
@@ -29,7 +29,7 @@ export const CoreBooleanNode = defineNode({
     value: () => checkboxInterface("Value"),
   },
   outputs: {
-    value: () => nodeInterface("Value", false, booleanType),
+    value: () => nodeInterface("Value", booleanType, false),
   },
   calculate(args) {
     return args;
@@ -45,7 +45,7 @@ export const CoreStringNode = defineNode({
     value: () => textInterface("Value"),
   },
   outputs: {
-    value: () => nodeInterface("Value", "", anyType),
+    value: () => nodeInterface("Value", anyType, ""),
   },
   calculate(args) {
     return args;
@@ -61,10 +61,10 @@ export const CoreIntegerNode = defineNode({
     value: () => integerInterface("Value"),
   },
   outputs: {
-    value: () => nodeInterface("Value", 0, anyType),
+    value: () => nodeInterface("Value", integerType, Integer(0)),
   },
-  calculate(args) {
-    return args;
+  calculate({ value }) {
+    return { value: Integer(value) };
   },
 });
 export function registerCoreIntegerNode(editor: Editor) {
@@ -77,7 +77,7 @@ export const CoreNumberNode = defineNode({
     value: () => numberInterface("Value"),
   },
   outputs: {
-    value: () => nodeInterface("Value", 0, anyType),
+    value: () => nodeInterface("Value", anyType),
   },
   calculate(args) {
     return args;
@@ -93,7 +93,7 @@ export const CoreSliderNode = defineNode({
     value: () => sliderInterface("Value"),
   },
   outputs: {
-    value: () => nodeInterface("Value", 0, anyType),
+    value: () => nodeInterface("Value", anyType),
   },
   calculate(args) {
     return args;
@@ -108,25 +108,25 @@ const allListNodeRegisterFunctions = new Set<(editor: Editor) => void>();
 export function defineListNode<T>(
   type: NodeInterfaceType<T>,
   listType: NodeInterfaceType<T[]>,
-  options: IRegisterNodeTypeOptions
+  options: IRegisterNodeTypeOptions,
 ) {
   const node = defineDynamicNode({
     type: "CoreListNode",
     inputs: {
-      size: () => nodeInterface("Size", Integer(0), integerType),
+      size: () => nodeInterface("Size", integerType, Integer(0)),
     },
     outputs: {
-      items: () => nodeInterface("Items", [], listType),
+      items: () => nodeInterface("Items", listType, []),
     },
     onUpdate({ size }) {
       return {
         inputs: {
-          size: () => nodeInterface("Size", Integer(0), integerType),
+          size: () => nodeInterface("Size", integerType, Integer(0)),
           ...Object.fromEntries(
             Array.from({ length: size }, (_, i) => [
               `element${i}`,
               nodeInterface(`${i}`, undefined!, type),
-            ])
+            ]),
           ),
         },
       };
@@ -135,7 +135,7 @@ export function defineListNode<T>(
       return {
         items: Array.from(
           { length: inputs.size },
-          (_, i) => inputs[`element${i}`] as T
+          (_, i) => inputs[`element${i}`] as T,
         ),
       };
     },
@@ -157,30 +157,30 @@ const allStringDictNodeRegisterFunctions = new Set<(editor: Editor) => void>();
 export function defineStringDictNode<V>(
   valueType: NodeInterfaceType<V>,
   dictType: NodeInterfaceType<Record<string, V>>,
-  options: IRegisterNodeTypeOptions
+  options: IRegisterNodeTypeOptions,
 ) {
   const node = defineDynamicNode({
     type: "CoreStringDictNode",
     inputs: {
-      size: () => nodeInterface("Size", Integer(0), integerType),
+      size: () => nodeInterface("Size", integerType, Integer(0)),
     },
     outputs: {
-      items: () => nodeInterface("Items", {}, dictType),
+      items: () => nodeInterface("Items", dictType, {}),
     },
     onUpdate({ size }) {
       return {
         inputs: {
-          size: () => nodeInterface("Size", Integer(0), integerType),
+          size: () => nodeInterface("Size", integerType, Integer(0)),
           ...Object.fromEntries(
             Array(size)
               .fill(null)
               .flatMap((_, i) => [
-                [`key${i}`, nodeInterface(`Key ${i}`, "", stringType)],
+                [`key${i}`, nodeInterface(`Key ${i}`, stringType, "")],
                 [
                   `value${i}`,
-                  nodeInterface(`Value ${i}`, undefined!, valueType),
+                  nodeInterface(`Value ${i}`, valueType, undefined),
                 ],
-              ])
+              ]),
           ),
         },
       };
@@ -190,7 +190,7 @@ export function defineStringDictNode<V>(
         Array.from({ length: inputs.size }, (_, i) => [
           inputs[`key${i}`] as string,
           inputs[`value${i}`] as V,
-        ])
+        ]),
       );
       return { items };
     },

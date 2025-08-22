@@ -2,6 +2,7 @@ import {
   BaklavaInterfaceTypes,
   ButtonInterface,
   CheckboxInterface,
+  defineNode,
   Editor,
   IntegerInterface,
   NodeInterface,
@@ -16,7 +17,21 @@ import {
   type BaklavaInterfaceTypesOptions,
   type SelectInterfaceItem,
 } from "baklavajs";
-import { defineListNode, defineStringDictNode } from "./core";
+import {
+  allEditorsNeedingDerivedNodes,
+  defineListNode,
+  defineStringDictNode,
+} from "./core";
+import {
+  toJSONSchema,
+  z,
+  ZodIntersection,
+  ZodObject,
+  ZodUnion,
+  type ZodType,
+} from "zod/v4";
+import { camelCaseToPascalCase, camelCaseToTitleCase } from "../string";
+import { unsafeEntries } from "../core";
 
 const allInterfaceTypesRegistriesNeedingDerivedTypes = new Set<
   WeakRef<BaklavaInterfaceTypes>
@@ -31,7 +46,7 @@ export function Integer(value: number) {
 }
 
 export function unsafeAsOptionalNodeInterfaceType<T>(
-  type: NodeInterfaceType<T>
+  type: NodeInterfaceType<T>,
 ): NodeInterfaceType<T | undefined> {
   return type as NodeInterfaceType<T | undefined>;
 }
@@ -61,7 +76,7 @@ const listTypeReverseMapping = new WeakMap<
 const allListTypes = new Set<WeakRef<NodeInterfaceType<any[]>>>();
 
 export function listType<T>(
-  itemType: NodeInterfaceType<T>
+  itemType: NodeInterfaceType<T>,
 ): NoInfer<NodeInterfaceType<T[]>> {
   const cached = listTypeMapping.get(itemType);
   if (cached) {
@@ -81,7 +96,7 @@ export function listType<T>(
 }
 
 export function lookupBaseTypeOfListType<T>(
-  listType: NodeInterfaceType<T[]>
+  listType: NodeInterfaceType<T[]>,
 ): NodeInterfaceType<T> {
   // The base type must exist because we created it when creating the list type.
   return listTypeReverseMapping.get(listType)!;
@@ -107,14 +122,14 @@ const allStringDictTypes = new Set<
 >();
 
 export function stringDictType<V>(
-  valueType: NodeInterfaceType<V>
+  valueType: NodeInterfaceType<V>,
 ): NoInfer<NodeInterfaceType<Record<string, V>>> {
   const cached = stringDictTypeMapping.get(valueType);
   if (cached) {
     return cached as NodeInterfaceType<Record<string, V>>;
   }
   const interfaceType = nodeInterfaceType<Record<string, V>>(
-    `stringDict[${valueType.name}]`
+    `stringDict[${valueType.name}]`,
   );
   stringDictTypeMapping.set(valueType, interfaceType);
   stringDictTypeReverseMapping.set(interfaceType, valueType);
@@ -129,7 +144,7 @@ export function stringDictType<V>(
 }
 
 export function lookupBaseTypeOfStringDictType<V>(
-  dictType: NodeInterfaceType<Record<string, V>>
+  dictType: NodeInterfaceType<Record<string, V>>,
 ): NodeInterfaceType<V> {
   // The base type must exist because we created it when creating the dict type.
   return stringDictTypeReverseMapping.get(dictType)!;
@@ -144,14 +159,32 @@ export function getAllStringDictTypes(): NodeInterfaceType<
   });
 }
 
-export const undefinedType = nodeInterfaceType<undefined>("undefined");
-export const stringType = nodeInterfaceType<string>("string");
-export const integerType = nodeInterfaceType<Integer>("integer");
-export const numberType = nodeInterfaceType<number>("number");
-export const bigintType = nodeInterfaceType<bigint>("bigint");
-export const booleanType = nodeInterfaceType<boolean>("boolean");
-export const dateType = nodeInterfaceType<Date>("date");
-export const regexType = nodeInterfaceType<RegExp>("regex");
+const zodTypesMap = new Map<string, NodeInterfaceType<any>>();
+
+function registerCoreType<T extends ZodType>(type: T, name: string) {
+  const id = JSON.stringify(toJSONSchema(type));
+  const interfaceType = nodeInterfaceType<z.infer<T>>(name);
+  zodTypesMap.set(id, interfaceType);
+  return interfaceType;
+}
+
+export const undefinedType = registerCoreType(z.undefined(), "undefined");
+export const stringType = registerCoreType(z.string(), "string");
+export const integerType = registerCoreType(
+  z.int() as unknown as ZodType<Integer>,
+  "integer",
+);
+export const numberType = registerCoreType(z.number(), "number");
+export const bigintType = registerCoreType(z.bigint(), "bigint");
+export const booleanType = registerCoreType(z.boolean(), "boolean");
+export const dateType = registerCoreType(
+  z.instanceof(Date).meta({ title: "Date", id: "Date" }),
+  "date",
+);
+export const regexType = registerCoreType(
+  z.instanceof(RegExp).meta({ title: "RegExp", id: "RegExp" }),
+  "regex",
+);
 
 // Only `any` is allowed to have unsafe conversions.
 anyType.addConversion(undefinedType, (v) => {
@@ -194,7 +227,7 @@ integerType.addConversion(numberType, (v) => v);
 
 export function registerCoreInterfaceTypes(
   editor: Editor,
-  options: Required<BaklavaInterfaceTypesOptions>
+  options: Required<BaklavaInterfaceTypesOptions>,
 ) {
   const nodeInterfaceTypes = new BaklavaInterfaceTypes(editor, options);
   nodeInterfaceTypes.addTypes(
@@ -206,13 +239,13 @@ export function registerCoreInterfaceTypes(
     numberType,
     booleanType,
     dateType,
-    regexType
+    regexType,
   );
   return nodeInterfaceTypes;
 }
 
 export function registerDerivedInterfaceTypes(
-  interfaceTypes: BaklavaInterfaceTypes
+  interfaceTypes: BaklavaInterfaceTypes,
 ): void {
   for (const type of getAllListTypes()) {
     interfaceTypes.addTypes(type);
@@ -221,7 +254,7 @@ export function registerDerivedInterfaceTypes(
     interfaceTypes.addTypes(type);
   }
   allInterfaceTypesRegistriesNeedingDerivedTypes.add(
-    new WeakRef(interfaceTypes)
+    new WeakRef(interfaceTypes),
   );
 }
 
@@ -235,31 +268,31 @@ export function textInterface(name: string, defaultValue: string = undefined!) {
 
 export function textInputInterface(
   name: string,
-  defaultValue: string = undefined!
+  defaultValue: string = undefined!,
 ) {
   return new TextInputInterface(name, defaultValue).use(setType, stringType);
 }
 
 export function textareaInputInterface(
   name: string,
-  defaultValue: string = undefined!
+  defaultValue: string = undefined!,
 ) {
   return new TextareaInputInterface(name, defaultValue).use(
     setType,
-    stringType
+    stringType,
   );
 }
 
 export function numberInterface(
   name: string,
-  defaultValue: number = undefined!
+  defaultValue: number = undefined!,
 ) {
   return new NumberInterface(name, defaultValue).use(setType, numberType);
 }
 
 export function integerInterface(
   name: string,
-  defaultValue: Integer = undefined!
+  defaultValue: Integer = undefined!,
 ) {
   return new IntegerInterface(name, defaultValue).use(setType, integerType);
 }
@@ -268,17 +301,17 @@ export function sliderInterface(
   name: string,
   defaultValue: number,
   min: number,
-  max: number
+  max: number,
 ) {
   return new SliderInterface(name, defaultValue, min, max).use(
     setType,
-    numberType
+    numberType,
   );
 }
 
 export function checkboxInterface(
   name: string,
-  defaultValue: boolean = undefined!
+  defaultValue: boolean = undefined!,
 ) {
   return new CheckboxInterface(name, defaultValue).use(setType, booleanType);
 }
@@ -287,7 +320,7 @@ export function selectInterface<T>(
   name: string,
   type: NodeInterfaceType<T>,
   options: SelectInterfaceItem<T>[],
-  defaultValue: NoInfer<T> = undefined!
+  defaultValue: NoInfer<T> = undefined!,
 ) {
   return new SelectInterface(name, defaultValue, options).use(setType, type);
 }
@@ -295,7 +328,90 @@ export function selectInterface<T>(
 export function nodeInterface<T>(
   name: string,
   type: NodeInterfaceType<T>,
-  defaultValue: NoInfer<T> = undefined!
+  defaultValue: NoInfer<T> = undefined!,
 ) {
   return new NodeInterface(name, defaultValue).use(setType, type);
+}
+
+export function upsertBaklavaType<T extends ZodType>(type: T) {
+  const id = JSON.stringify(toJSONSchema(type));
+  const existing = zodTypesMap.get(id);
+  const typeName = z.globalRegistry.get(type)?.title;
+  if (typeName === undefined) {
+    console.error("Issue with Zod type:", type);
+    throw new Error("This Zod type is missing a name.");
+  }
+  if (existing) {
+    if (typeName !== existing.name) {
+      throw new Error(
+        `Zod type name mismatch. New name '${typeName}' does not match existing name '${existing.name}'.`,
+      );
+    }
+    return existing;
+  }
+  const interfaceType = nodeInterfaceType<z.infer<T>>(typeName);
+  zodTypesMap.set(id, interfaceType);
+  if (type instanceof ZodObject) {
+    const ConstructNode = defineNode({
+      type: `Construct${camelCaseToPascalCase(typeName)}Node`,
+      inputs: Object.fromEntries(
+        unsafeEntries(type.shape).map(([key, value]) => [
+          key,
+          () =>
+            // FIXME: checkboxinterface etc. as appropriate
+            nodeInterface(camelCaseToTitleCase(key), upsertBaklavaType(value)),
+        ]),
+      ),
+      outputs: {
+        value: () => nodeInterface("Value", interfaceType),
+      },
+    });
+    function registerConstructNode(editor: Editor) {
+      editor.registerNodeType(ConstructNode, {
+        category: "Object Construction",
+      });
+    }
+    const DeconstructNode = defineNode({
+      type: `Deconstruct${camelCaseToPascalCase(typeName)}Node`,
+      inputs: {
+        value: () => nodeInterface("Value", interfaceType),
+      },
+      outputs: Object.fromEntries(
+        unsafeEntries(type.shape).map(
+          ([key, value]: readonly [key: string, value: ZodType]) => [
+            key,
+            () =>
+              nodeInterface(
+                camelCaseToTitleCase(key),
+                upsertBaklavaType(value),
+              ),
+          ],
+        ),
+      ),
+    });
+    function registerDeconstructNode(editor: Editor) {
+      editor.registerNodeType(DeconstructNode, {
+        category: "Object Deconstruction",
+      });
+    }
+    for (const editor of allEditorsNeedingDerivedNodes) {
+      const editorInstance = editor.deref();
+      if (!editorInstance) continue;
+      registerConstructNode(editorInstance);
+      registerDeconstructNode(editorInstance);
+    }
+  }
+  if (type instanceof ZodUnion) {
+    for (const member of type.options) {
+      const memberInterfaceType = upsertBaklavaType(member as ZodType);
+      memberInterfaceType.addConversion(interfaceType, (v) => v);
+    }
+  }
+  if (type instanceof ZodIntersection) {
+    const leftInterfaceType = upsertBaklavaType(type.def.left as ZodType);
+    interfaceType.addConversion(leftInterfaceType, (v) => v);
+    const rightInterfaceType = upsertBaklavaType(type.def.right as ZodType);
+    interfaceType.addConversion(rightInterfaceType, (v) => v);
+  }
+  return interfaceType;
 }

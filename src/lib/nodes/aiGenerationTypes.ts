@@ -11,15 +11,8 @@ import {
   NoSuchToolError,
   InvalidToolInputError,
 } from "ai";
-import { z } from "zod/v4";
+import { z, ZodType } from "zod/v4";
 import { JSONArray, JSONValue, zFunction } from "./sharedTypes";
-import {
-  booleanType,
-  nodeInterfaceType,
-  numberType,
-  stringType,
-} from "./interfaceTypes";
-import type { BaklavaInterfaceTypes } from "baklavajs";
 
 export const LanguageModel = z
   .custom<Exclude<UpstreamLanguageModel, string>>()
@@ -29,8 +22,6 @@ export const LanguageModel = z
     description: "Common interface for language models.",
   });
 export type LanguageModel = z.infer<typeof LanguageModel>;
-export const languageModelType =
-  nodeInterfaceType<LanguageModel>("LanguageModel");
 
 export const TextEmbeddingModel = z
   .custom<EmbeddingModel<string>>()
@@ -40,8 +31,6 @@ export const TextEmbeddingModel = z
     description: "Common interface for text embedding models.",
   });
 export type TextEmbeddingModel = z.infer<typeof TextEmbeddingModel>;
-export const textEmbeddingModelType =
-  nodeInterfaceType<TextEmbeddingModel>("TextEmbeddingModel");
 
 export const ImageModel = z
   .custom<UpstreamImageModel>()
@@ -51,7 +40,6 @@ export const ImageModel = z
     description: "Common interface for image models.",
   });
 export type ImageModel = z.infer<typeof ImageModel>;
-export const imageModelType = nodeInterfaceType<ImageModel>("ImageModel");
 
 export const SpeechModel = z
   .custom<UpstreamSpeechModel>()
@@ -61,7 +49,6 @@ export const SpeechModel = z
     description: "Common interface for speech models.",
   });
 export type SpeechModel = z.infer<typeof SpeechModel>;
-export const speechModelType = nodeInterfaceType<SpeechModel>("SpeechModel");
 
 export const TranscriptionModel = z
   .custom<UpstreamTranscriptionModel>()
@@ -71,8 +58,6 @@ export const TranscriptionModel = z
     description: "Common interface for transcription models.",
   });
 export type TranscriptionModel = z.infer<typeof TranscriptionModel>;
-export const transcriptionModelType =
-  nodeInterfaceType<TranscriptionModel>("TranscriptionModel");
 
 export const ProviderMetadata = z
   .record(z.string(), z.record(z.string(), JSONValue))
@@ -138,7 +123,7 @@ export const ContentPartSourceUrl = z
     url: z.string().describe("The URL of the source."),
     title: z.string().optional().describe("The title of the source."),
     providerMetadata: ProviderMetadata.optional().describe(
-      "Additional provider metadata for the source."
+      "Additional provider metadata for the source.",
     ),
   })
   .meta({ title: "ContentPartSourceUrl" });
@@ -150,7 +135,7 @@ export const ContentPartSourceDocument = z
     sourceType: z
       .literal("document")
       .describe(
-        "The type of source - document sources reference files/documents."
+        "The type of source - document sources reference files/documents.",
       ),
     id: z.string().describe("The ID of the source."),
     mediaType: z
@@ -162,7 +147,7 @@ export const ContentPartSourceDocument = z
       .optional()
       .describe("Optional filename of the document."),
     providerMetadata: ProviderMetadata.optional().describe(
-      "Additional provider metadata for the source."
+      "Additional provider metadata for the source.",
     ),
   })
   .meta({ title: "ContentPartSourceDocument" });
@@ -181,8 +166,6 @@ export const GeneratedFile = z
     description: "A generated file.",
   });
 export type GeneratedFile = z.infer<typeof GeneratedFile>;
-export const generatedFileType =
-  nodeInterfaceType<GeneratedFile>("GeneratedFile");
 
 export const ContentPartText = z
   .object({
@@ -215,8 +198,6 @@ It can be a URL or a document.
 Sources are used to provide context to the model and can be referenced in the generated text.`,
   });
 export type ContentPartSource = z.infer<typeof ContentPartSource>;
-export const contentPartSourceType =
-  nodeInterfaceType<ContentPartSource>("ContentPartSource");
 
 export const ContentPartFile = z
   .object({
@@ -241,9 +222,6 @@ export const ContentPartToolCall = z
   })
   .meta({ title: "ContentPartToolCall" });
 export type ContentPartToolCall = z.infer<typeof ContentPartToolCall>;
-export const contentPartToolCallType = nodeInterfaceType<ContentPartToolCall>(
-  "ContentPartToolCall"
-);
 
 export const ContentPartToolResult = z
   .object({
@@ -258,8 +236,6 @@ export const ContentPartToolResult = z
   })
   .meta({ title: "ContentPartToolResult" });
 export type ContentPartToolResult = z.infer<typeof ContentPartToolResult>;
-export const contentPartToolResultType =
-  nodeInterfaceType<ContentPartToolResult>("ContentPartToolResult");
 
 export const ContentPartToolError = z
   .object({
@@ -289,7 +265,6 @@ export const ContentPart = z
   ])
   .meta({ title: "ContentPart" });
 export type ContentPart = z.infer<typeof ContentPart>;
-export const contentPartType = nodeInterfaceType<ContentPart>("ContentPart");
 
 export const DataContent = z
   .union([
@@ -305,15 +280,6 @@ export const DataContent = z
       "Data content that can be used in image or file parts of a prompt. It can be a base64-encoded string, a Uint8Array, an ArrayBuffer.",
   });
 export type DataContent = z.infer<typeof DataContent>;
-export const dataContentType = nodeInterfaceType<DataContent>("DataContent");
-
-export const urlType = nodeInterfaceType<URL>("URL");
-
-export const dataContentOrUrlType = nodeInterfaceType<DataContent | URL>(
-  "DataContentOrURL"
-);
-dataContentType.addConversion(dataContentOrUrlType, (v) => v);
-urlType.addConversion(dataContentOrUrlType, (v) => v);
 
 export const TextPart = z
   .object({
@@ -338,7 +304,7 @@ Image data. Can either be:
       .string()
       .optional()
       .describe(
-        "Optional IANA media type of the image. See https://www.iana.org/assignments/media-types/media-types.xhtml"
+        "Optional IANA media type of the image. See https://www.iana.org/assignments/media-types/media-types.xhtml",
       ),
     providerOptions: ProviderOptions.optional(),
   })
@@ -375,8 +341,6 @@ export const ReasoningPart = z
   })
   .meta({ title: "ReasoningPart" });
 export type ReasoningPart = z.infer<typeof ReasoningPart>;
-export const reasoningPartType =
-  nodeInterfaceType<ReasoningPart>("ReasoningPart");
 
 export const ToolCallPart = z
   .object({
@@ -384,13 +348,13 @@ export const ToolCallPart = z
     toolCallId: z
       .string()
       .describe(
-        "ID of the tool call. This ID is used to match the tool call with the tool result."
+        "ID of the tool call. This ID is used to match the tool call with the tool result.",
       ),
     toolName: z.string().describe("Name of the tool that is being called."),
     input: z
       .unknown()
       .describe(
-        "Arguments of the tool call. This is a JSON-serializable object that matches the tool's input schema."
+        "Arguments of the tool call. This is a JSON-serializable object that matches the tool's input schema.",
       ),
     providerOptions: ProviderOptions.optional(),
     providerExecuted: z
@@ -449,7 +413,7 @@ export const ToolResultOutputContentMedia = z.object({
   mediaType: z
     .string()
     .describe(
-      "IANA media type of the tool result part. See https://www.iana.org/assignments/media-types/media-types.xhtml"
+      "IANA media type of the tool result part. See https://www.iana.org/assignments/media-types/media-types.xhtml",
     ),
 });
 export type ToolResultOutputContentMedia = z.infer<
@@ -462,7 +426,7 @@ export const ToolResultOutputContent = z.object({
     z.discriminatedUnion("type", [
       ToolResultOutputContentText,
       ToolResultOutputContentMedia,
-    ])
+    ]),
   ),
 });
 export type ToolResultOutputContent = z.infer<typeof ToolResultOutputContent>;
@@ -491,7 +455,7 @@ export const ToolResultPart = z
       .string()
       .describe("Name of the tool that generated this result."),
     output: ToolResultOutput.describe(
-      "Result of the tool call. This is a JSON-serializable object."
+      "Result of the tool call. This is a JSON-serializable object.",
     ),
     providerOptions: ProviderOptions.optional(),
   })
@@ -527,13 +491,18 @@ Can be one of the following:
 - \`unknown\`: the model has not transmitted a finish reason`,
   });
 export type FinishReason = z.infer<typeof FinishReason>;
-export const finishReasonType = nodeInterfaceType<FinishReason>("FinishReason");
 
 export const AssistantContent = z
   .union([
     z.string(),
     z.array(
-      z.union([TextPart, FilePart, ReasoningPart, ToolCallPart, ToolResultPart])
+      z.union([
+        TextPart,
+        FilePart,
+        ReasoningPart,
+        ToolCallPart,
+        ToolResultPart,
+      ]),
     ),
   ])
   .meta({
@@ -600,7 +569,7 @@ export const LanguageModelUsage = z
       .number()
       .optional()
       .describe(
-        "The total number of tokens as reported by the provider. This number might be different from the sum of `inputTokens` and `outputTokens` and e.g. include reasoning tokens or other overhead."
+        "The total number of tokens as reported by the provider. This number might be different from the sum of `inputTokens` and `outputTokens` and e.g. include reasoning tokens or other overhead.",
       ),
     reasoningTokens: z
       .number()
@@ -619,8 +588,6 @@ Usage information for a language model call.
 If your API return additional usage information, you can add it to the provider metadata under your provider's key.`,
   });
 export type LanguageModelUsage = z.infer<typeof LanguageModelUsage>;
-export const languageModelUsageType =
-  nodeInterfaceType<LanguageModelUsage>("LanguageModelUsage");
 
 export const LanguageModelRequestMetadata = z
   .object({
@@ -637,10 +604,6 @@ export const LanguageModelRequestMetadata = z
 export type LanguageModelRequestMetadata = z.infer<
   typeof LanguageModelRequestMetadata
 >;
-export const languageModelRequestMetadataType =
-  nodeInterfaceType<LanguageModelRequestMetadata>(
-    "LanguageModelRequestMetadata"
-  );
 
 export const LanguageModelResponseMetadata = z
   .object({
@@ -651,13 +614,13 @@ export const LanguageModelResponseMetadata = z
     modelId: z
       .string()
       .describe(
-        "The ID of the response model that was used to generate the response."
+        "The ID of the response model that was used to generate the response.",
       ),
     headers: z
       .record(z.string(), z.string())
       .optional()
       .describe(
-        "Response headers (available only for providers that use HTTP requests)."
+        "Response headers (available only for providers that use HTTP requests).",
       ),
   })
   .meta({
@@ -668,10 +631,6 @@ export const LanguageModelResponseMetadata = z
 export type LanguageModelResponseMetadata = z.infer<
   typeof LanguageModelResponseMetadata
 >;
-export const languageModelResponseMetadataType =
-  nodeInterfaceType<LanguageModelResponseMetadata>(
-    "LanguageModelResponseMetadata"
-  );
 
 export const LanguageModelResponseMetadataWithMessagesAndBody =
   LanguageModelResponseMetadata.extend({
@@ -679,13 +638,13 @@ export const LanguageModelResponseMetadataWithMessagesAndBody =
       `\
 The response messages that were generated during the call. It consists of an assistant message, potentially containing tool calls.
 
-When there are tool results, there is an additional tool message with the tool results that are available. If there are tools that do not have execute functions, they are not included in the tool results and need to be added separately.`
+When there are tool results, there is an additional tool message with the tool results that are available. If there are tools that do not have execute functions, they are not included in the tool results and need to be added separately.`,
     ),
     body: z
       .unknown()
       .optional()
       .describe(
-        "Response body (available only for providers that use HTTP requests)."
+        "Response body (available only for providers that use HTTP requests).",
       ),
   }).meta({
     title: "LanguageModelResponseMetadataWithMessagesAndBody",
@@ -695,14 +654,6 @@ When there are tool results, there is an additional tool message with the tool r
 export type LanguageModelResponseMetadataWithMessagesAndBody = z.infer<
   typeof LanguageModelResponseMetadataWithMessagesAndBody
 >;
-export const languageModelResponseMetadataWithMessagesAndBodyType =
-  nodeInterfaceType<LanguageModelResponseMetadataWithMessagesAndBody>(
-    "LanguageModelResponseMetadataWithMessagesAndBody"
-  );
-languageModelResponseMetadataWithMessagesAndBodyType.addConversion(
-  languageModelResponseMetadataType,
-  (v) => v
-);
 
 export const JSONSchema7 = z.custom<UpstreamJSONSchema7>().meta({
   id: "JSONSchema7",
@@ -723,10 +674,10 @@ export const FunctionTool = z
       .string()
       .optional()
       .describe(
-        "A description of the tool. The language model uses this to understand the tool's purpose and to provide better completion suggestions."
+        "A description of the tool. The language model uses this to understand the tool's purpose and to provide better completion suggestions.",
       ),
     inputSchema: JSONSchema7.describe(
-      "The parameters that the tool expects. The language model uses this to understand the tool's input requirements and to provide matching suggestions."
+      "The parameters that the tool expects. The language model uses this to understand the tool's input requirements and to provide matching suggestions.",
     ),
     providerOptions: ProviderOptions.optional(),
   })
@@ -745,7 +696,7 @@ export const ProviderDefinedTool = z.object({
   id: z
     .string()
     .describe(
-      "The ID of the tool. Should follow the format `<provider-name>.<unique-tool-name>`."
+      "The ID of the tool. Should follow the format `<provider-name>.<unique-tool-name>`.",
     ),
   name: z
     .string()
@@ -753,7 +704,7 @@ export const ProviderDefinedTool = z.object({
   args: z
     .record(z.string(), z.unknown())
     .describe(
-      "The arguments for configuring the tool. Must match the expected arguments defined by the provider for this tool."
+      "The arguments for configuring the tool. Must match the expected arguments defined by the provider for this tool.",
     ),
 });
 export type ProviderDefinedTool = z.infer<typeof ProviderDefinedTool>;
@@ -799,7 +750,6 @@ export const CallWarning = z
       "Warning from the model provider for this call. The call will proceed, but e.g. some settings might not be supported, which can lead to suboptimal results.",
   });
 export type CallWarning = z.infer<typeof CallWarning>;
-export const callWarningType = nodeInterfaceType<CallWarning>("CallWarning");
 
 export const StepResult = z
   .object({
@@ -812,18 +762,18 @@ export const StepResult = z
     reasoning: z
       .array(ReasoningPart)
       .describe(
-        "The full reasoning that the model has generated in the last step."
+        "The full reasoning that the model has generated in the last step.",
       ),
     reasoningText: z
       .string()
       .optional()
       .describe(
-        "The reasoning text that the model has generated in the last step. Can be undefined if the model has only generated text."
+        "The reasoning text that the model has generated in the last step. Can be undefined if the model has only generated text.",
       ),
     files: z
       .array(GeneratedFile)
       .describe(
-        "The files that were generated in the last step. Empty array if no files were generated."
+        "The files that were generated in the last step. Empty array if no files were generated.",
       ),
     sources: z
       .array(ContentPartSource)
@@ -852,7 +802,7 @@ export const StepResult = z
       .array(CallWarning)
       .optional()
       .describe(
-        "Warnings from the model provider (e.g. unsupported settings)."
+        "Warnings from the model provider (e.g. unsupported settings).",
       ),
     request: LanguageModelRequestMetadata,
     response: LanguageModelResponseMetadataWithMessagesAndBody,
@@ -863,7 +813,6 @@ export const StepResult = z
     description: "The result of a single step in the generation process.",
   });
 export type StepResult = z.infer<typeof StepResult>;
-export const stepResultType = nodeInterfaceType<StepResult>("StepResult");
 
 export const GenerateTextResult = StepResult.extend({
   totalUsage: LanguageModelUsage,
@@ -871,7 +820,7 @@ export const GenerateTextResult = StepResult.extend({
   experimental_output: z
     .unknown()
     .describe(
-      "The generated structured output. It uses the `experimental_output` specification."
+      "The generated structured output. It uses the `experimental_output` specification.",
     ),
 }).meta({
   title: "GenerateTextResult",
@@ -880,9 +829,6 @@ The result of a \`generateText\` call.
 It contains the generated text, the tool calls that were made during the generation, and the results of the tool calls.`,
 });
 export type GenerateTextResult = z.infer<typeof GenerateTextResult>;
-export const generateTextResultType =
-  nodeInterfaceType<GenerateTextResult>("GenerateTextResult");
-generateTextResultType.addConversion(stepResultType, (v) => v);
 
 export const Embedding = z.array(z.number()).meta({
   title: "Embedding",
@@ -903,9 +849,6 @@ export const EmbeddingModelUsage = z
     description: "Represents the number of tokens used in an embedding.",
   });
 export type EmbeddingModelUsage = z.infer<typeof EmbeddingModelUsage>;
-export const embeddingModelUsageType = nodeInterfaceType<EmbeddingModelUsage>(
-  "EmbeddingModelUsage"
-);
 
 export const TextEmbeddingResponse = z.object({
   headers: z
@@ -915,8 +858,6 @@ export const TextEmbeddingResponse = z.object({
   body: z.unknown().optional().describe("The response body."),
 });
 export type TextEmbeddingResponse = z.infer<typeof TextEmbeddingResponse>;
-export const textEmbeddingResponseType =
-  nodeInterfaceType<TextEmbeddingResponse>("TextEmbeddingResponse");
 
 export const TextEmbeddingResult = z
   .object({
@@ -927,7 +868,7 @@ export const TextEmbeddingResult = z
     usage: EmbeddingModelUsage,
     providerMetadata: ProviderMetadata.optional(),
     response: TextEmbeddingResponse.optional().describe(
-      "Optional response data."
+      "Optional response data.",
     ),
   })
   .meta({
@@ -971,8 +912,6 @@ export const GenerationWarning = z
       "A warning from the model provider for this call. The call will proceed, but e.g. some settings might not be supported, which can lead to suboptimal results.",
   });
 export type GenerationWarning = z.infer<typeof GenerationWarning>;
-export const generationWarningType =
-  nodeInterfaceType<GenerationWarning>("GenerationWarning");
 
 export const ImageModelResponseMetadata = z
   .object({
@@ -982,7 +921,7 @@ export const ImageModelResponseMetadata = z
     modelId: z
       .string()
       .describe(
-        "The ID of the response model that was used to generate the response."
+        "The ID of the response model that was used to generate the response.",
       ),
     headers: z
       .record(z.string(), z.string())
@@ -997,8 +936,6 @@ export const ImageModelResponseMetadata = z
 export type ImageModelResponseMetadata = z.infer<
   typeof ImageModelResponseMetadata
 >;
-export const imageModelResponseMetadataType =
-  nodeInterfaceType<ImageModelResponseMetadata>("ImageModelResponseMetadata");
 
 export const ImageModelProviderMetadata = z
   .record(z.string(), z.object({ images: JSONArray }).and(JSONValue))
@@ -1010,8 +947,6 @@ export const ImageModelProviderMetadata = z
 export type ImageModelProviderMetadata = z.infer<
   typeof ImageModelProviderMetadata
 >;
-export const imageModelProviderMetadataType =
-  nodeInterfaceType<ImageModelProviderMetadata>("ImageModelProviderMetadata");
 
 export const GenerateImageParameters = z
   .object({
@@ -1026,21 +961,27 @@ export const GenerateImageParameters = z
       .describe("Number of images to generate. Default: 1."),
     size: z
       .string()
+      .refine((val) => /^\d+x\d+$/.test(val), {
+        message: "Invalid size format. Must be `{width}x{height}`.",
+      })
       .optional()
       .describe(
-        "Size of the images to generate. Must have the format `{width}x{height}`. If not provided, the default size will be used."
-      ),
+        "Size of the images to generate. Must have the format `{width}x{height}`. If not provided, the default size will be used.",
+      ) as ZodType<`${number}x${number}`>,
     aspectRatio: z
       .string()
+      .refine((val) => /^\d+:\d+$/.test(val), {
+        message: "Invalid aspect ratio format. Must be `{width}:{height}`.",
+      })
       .optional()
       .describe(
-        "Aspect ratio of the images to generate. Must have the format `{width}:{height}`. If not provided, the default aspect ratio will be used."
-      ),
+        "Aspect ratio of the images to generate. Must have the format `{width}:{height}`. If not provided, the default aspect ratio will be used.",
+      ) as ZodType<`${number}:${number}`>,
     seed: z
       .int()
       .optional()
       .describe(
-        "Seed for the image generation. If not provided, the default seed will be used."
+        "Seed for the image generation. If not provided, the default seed will be used.",
       ),
     providerOptions: ProviderOptions.optional(),
     maxRetries: z
@@ -1048,14 +989,14 @@ export const GenerateImageParameters = z
       .optional()
       .default(2)
       .describe(
-        "Maximum number of retries per image generation call. Set to 0 to disable retries."
+        "Maximum number of retries per image generation call. Set to 0 to disable retries.",
       ),
     abortSignal: z.instanceof(AbortSignal),
     headers: z
       .record(z.string(), z.string())
       .optional()
       .describe(
-        "Additional headers to include in the request. Only applicable for HTTP-based providers."
+        "Additional headers to include in the request. Only applicable for HTTP-based providers.",
       ),
   })
   .meta({
@@ -1075,10 +1016,10 @@ export const GenerateImageResult = z
     responses: z
       .array(ImageModelResponseMetadata)
       .describe(
-        "Response metadata from the provider. There may be multiple responses if we made multiple calls to the model."
+        "Response metadata from the provider. There may be multiple responses if we made multiple calls to the model.",
       ),
     providerMetadata: ImageModelProviderMetadata.describe(
-      "Provider-specific metadata. They are passed through from the provider to the AI SDK and enable provider-specific results that can be fully encapsulated in the provider."
+      "Provider-specific metadata. They are passed through from the provider to the AI SDK and enable provider-specific results that can be fully encapsulated in the provider.",
     ),
   })
   .meta({
@@ -1097,9 +1038,6 @@ export const GeneratedAudioFile = GeneratedFile.extend({
   description: "A generated audio file.",
 });
 export type GeneratedAudioFile = z.infer<typeof GeneratedAudioFile>;
-export const generatedAudioFileType =
-  nodeInterfaceType<GeneratedAudioFile>("GeneratedAudioFile");
-generatedAudioFileType.addConversion(generatedFileType, (v) => v);
 
 export const SpeechModelResponseMetadata = z
   .object({
@@ -1109,7 +1047,7 @@ export const SpeechModelResponseMetadata = z
     modelId: z
       .string()
       .describe(
-        "The ID of the response model that was used to generate the response."
+        "The ID of the response model that was used to generate the response.",
       ),
     headers: z
       .record(z.string(), z.string())
@@ -1128,13 +1066,11 @@ export const SpeechModelResponseMetadata = z
 export type SpeechModelResponseMetadata = z.infer<
   typeof SpeechModelResponseMetadata
 >;
-export const speechModelResponseMetadataType =
-  nodeInterfaceType<SpeechModelResponseMetadata>("SpeechModelResponseMetadata");
 
 export const GenerateSpeechParameters = z
   .object({
     model: SpeechModel.describe(
-      "The speech model to use for generating speech."
+      "The speech model to use for generating speech.",
     ),
     text: z.string().describe("The text to convert to speech."),
     voice: z
@@ -1145,13 +1081,13 @@ export const GenerateSpeechParameters = z
       .string()
       .optional()
       .describe(
-        "The desired output format for the audio e.g. 'mp3', 'wav', etc."
+        "The desired output format for the audio e.g. 'mp3', 'wav', etc.",
       ),
     instructions: z
       .string()
       .optional()
       .describe(
-        "Instructions for the speech generation e.g. 'Speak in a slow and steady tone'."
+        "Instructions for the speech generation e.g. 'Speak in a slow and steady tone'.",
       ),
     speed: z
       .number()
@@ -1161,7 +1097,7 @@ export const GenerateSpeechParameters = z
       .string()
       .optional()
       .describe(
-        "The language for speech generation. This should be an ISO 639-1 language code (e.g. 'en', 'es', 'fr') or 'auto' for automatic language detection. Provider support varies."
+        "The language for speech generation. This should be an ISO 639-1 language code (e.g. 'en', 'es', 'fr') or 'auto' for automatic language detection. Provider support varies.",
       ),
     providerOptions: ProviderOptions.optional(),
     maxRetries: z
@@ -1169,14 +1105,14 @@ export const GenerateSpeechParameters = z
       .optional()
       .default(2)
       .describe(
-        "Maximum number of retries per speech model call. Set to 0 to disable retries."
+        "Maximum number of retries per speech model call. Set to 0 to disable retries.",
       ),
     abortSignal: z.instanceof(AbortSignal).optional(),
     headers: z
       .record(z.string(), z.string())
       .optional()
       .describe(
-        "Additional headers to include in the request. Only applicable for HTTP-based providers."
+        "Additional headers to include in the request. Only applicable for HTTP-based providers.",
       ),
   })
   .meta({
@@ -1189,7 +1125,7 @@ export type GenerateSpeechParameters = z.infer<typeof GenerateSpeechParameters>;
 export const GenerateSpeechResult = z
   .object({
     audio: GeneratedAudioFile.describe(
-      "The audio data as a base64 encoded string or binary data."
+      "The audio data as a base64 encoded string or binary data.",
     ),
     warnings: z
       .array(GenerationWarning)
@@ -1197,10 +1133,10 @@ export const GenerateSpeechResult = z
     responses: z
       .array(SpeechModelResponseMetadata)
       .describe(
-        "Response metadata from the provider. There may be multiple responses if we made multiple calls to the model."
+        "Response metadata from the provider. There may be multiple responses if we made multiple calls to the model.",
       ),
     providerMetadata: ProviderMetadata.describe(
-      "Provider metadata from the provider."
+      "Provider metadata from the provider.",
     ),
   })
   .meta({
@@ -1218,7 +1154,7 @@ export const TranscriptionModelResponseMetadata = z
     modelId: z
       .string()
       .describe(
-        "The ID of the response model that was used to generate the response."
+        "The ID of the response model that was used to generate the response.",
       ),
     headers: z
       .record(z.string(), z.string())
@@ -1233,10 +1169,6 @@ export const TranscriptionModelResponseMetadata = z
 export type TranscriptionModelResponseMetadata = z.infer<
   typeof TranscriptionModelResponseMetadata
 >;
-export const transcriptionModelResponseMetadataType =
-  nodeInterfaceType<TranscriptionModelResponseMetadata>(
-    "TranscriptionModelResponseMetadata"
-  );
 
 export const TranscriptionSegment = z
   .object({
@@ -1251,32 +1183,29 @@ export const TranscriptionSegment = z
     description: "A segment of the transcription with timing information.",
   });
 export type TranscriptionSegment = z.infer<typeof TranscriptionSegment>;
-export const transcriptionSegmentType = nodeInterfaceType<TranscriptionSegment>(
-  "TranscriptionSegment"
-);
 
 export const TranscribeParameters = z
   .object({
     model: TranscriptionModel.describe(
-      "The transcription model to use for transcribing the audio."
+      "The transcription model to use for transcribing the audio.",
     ),
     audio: z
       .union([DataContent, z.instanceof(URL)])
       .describe(
-        "The audio data to transcribe. It can be a DataContent or a URL."
+        "The audio data to transcribe. It can be a DataContent or a URL.",
       ),
     providerOptions: ProviderOptions.optional().describe(
       `\
 Additional provider-specific options that are passed through to the provider as body parameters.
 The outer record is keyed by the provider name, and the inner record is keyed by the provider-specific metadata key.
-E.g. \`{"openai": {"temperature": 0}}\`.`
+E.g. \`{"openai": {"temperature": 0}}\`.`,
     ),
     maxRetries: z
       .int()
       .optional()
       .default(2)
       .describe(
-        "Maximum number of retries per transcript model call. Set to 0 to disable retries."
+        "Maximum number of retries per transcript model call. Set to 0 to disable retries.",
       ),
     abortSignal: z
       .instanceof(AbortSignal)
@@ -1286,7 +1215,7 @@ E.g. \`{"openai": {"temperature": 0}}\`.`
       .record(z.string(), z.string())
       .optional()
       .describe(
-        "Additional headers to include in the request. Only applicable for HTTP-based providers."
+        "Additional headers to include in the request. Only applicable for HTTP-based providers.",
       ),
   })
   .meta({
@@ -1302,19 +1231,19 @@ export const TranscribeResult = z
     segments: z
       .array(TranscriptionSegment)
       .describe(
-        "Array of transcript segments with timing information. Each segment represents a portion of the transcribed text with start and end times."
+        "Array of transcript segments with timing information. Each segment represents a portion of the transcribed text with start and end times.",
       ),
     language: z
       .string()
       .optional()
       .describe(
-        "The detected language of the audio content, as an ISO-639-1 code (e.g., 'en' for English). May be undefined if the language couldn't be detected."
+        "The detected language of the audio content, as an ISO-639-1 code (e.g., 'en' for English). May be undefined if the language couldn't be detected.",
       ),
     durationInSeconds: z
       .number()
       .optional()
       .describe(
-        "The total duration of the audio file in seconds. May be undefined if the duration couldn't be determined."
+        "The total duration of the audio file in seconds. May be undefined if the duration couldn't be determined.",
       ),
     warnings: z
       .array(GenerationWarning)
@@ -1322,7 +1251,7 @@ export const TranscribeResult = z
     responses: z
       .array(TranscriptionModelResponseMetadata)
       .describe(
-        "Response metadata from the provider. There may be multiple responses if we made multiple calls to the model."
+        "Response metadata from the provider. There may be multiple responses if we made multiple calls to the model.",
       ),
     providerMetadata: ProviderMetadata,
   })
@@ -1393,44 +1322,44 @@ export const CallSettings = z
       .number()
       .optional()
       .describe(
-        "Temperature setting. The range depends on the provider and model."
+        "Temperature setting. The range depends on the provider and model.",
       ),
     topP: z
       .number()
       .optional()
       .describe(
-        "Nucleus sampling. This is a number between 0 and 1. E.g. 0.1 would mean that only tokens with the top 10% probability mass are considered."
+        "Nucleus sampling. This is a number between 0 and 1. E.g. 0.1 would mean that only tokens with the top 10% probability mass are considered.",
       ),
     topK: z
       .number()
       .optional()
       .describe(
-        "Only sample from the top K options for each subsequent token. Used to remove 'long tail' low probability responses."
+        "Only sample from the top K options for each subsequent token. Used to remove 'long tail' low probability responses.",
       ),
     presencePenalty: z
       .number()
       .optional()
       .describe(
-        "Presence penalty setting. It affects the likelihood of the model to repeat information that is already in the prompt."
+        "Presence penalty setting. It affects the likelihood of the model to repeat information that is already in the prompt.",
       ),
     frequencyPenalty: z
       .number()
       .optional()
       .describe(
-        "Frequency penalty setting. It affects the likelihood of the model to repeatedly use the same words or phrases."
+        "Frequency penalty setting. It affects the likelihood of the model to repeatedly use the same words or phrases.",
       ),
     stopSequences: z
       .array(z.string())
       .optional()
       .describe(
-        "Stop sequences for the model. If set, the model will stop generating text when one of the stop sequences is generated."
+        "Stop sequences for the model. If set, the model will stop generating text when one of the stop sequences is generated.",
       ),
     seed: z
       .number()
       .int()
       .optional()
       .describe(
-        "The seed (integer) to use for random sampling. If set and supported by the model, calls will generate deterministic results."
+        "The seed (integer) to use for random sampling. If set and supported by the model, calls will generate deterministic results.",
       ),
     maxRetries: z
       .number()
@@ -1447,7 +1376,7 @@ export const CallSettings = z
       .record(z.string(), z.string().optional())
       .optional()
       .describe(
-        "Additional HTTP headers to be sent with the request. Only applicable for HTTP-based providers."
+        "Additional HTTP headers to be sent with the request. Only applicable for HTTP-based providers.",
       ),
   })
   .meta({
@@ -1463,19 +1392,19 @@ export const Prompt = z
       .string()
       .optional()
       .describe(
-        "System message to include in the prompt. Can be used with `prompt` or `messages`."
+        "System message to include in the prompt. Can be used with `prompt` or `messages`.",
       ),
     prompt: z
       .union([z.string(), z.array(ModelMessage)])
       .optional()
       .describe(
-        "A prompt. It can be either a text prompt or a list of messages. You can either use `prompt` or `messages` but not both."
+        "A prompt. It can be either a text prompt or a list of messages. You can either use `prompt` or `messages` but not both.",
       ),
     messages: z
       .array(ModelMessage)
       .optional()
       .describe(
-        "A list of messages. You can either use `prompt` or `messages` but not both."
+        "A list of messages. You can either use `prompt` or `messages` but not both.",
       ),
   })
   .meta({
@@ -1487,8 +1416,6 @@ export type Prompt = z.infer<typeof Prompt>;
 
 export const ToolChoiceKind = z.literal(["auto", "none", "required", "tool"]);
 export type ToolChoiceKind = z.infer<typeof ToolChoiceKind>;
-export const toolChoiceKindType =
-  nodeInterfaceType<ToolChoiceKind>("ToolChoiceKind");
 
 export const ToolChoice = z
   .union([
@@ -1507,7 +1434,6 @@ Tool choice for the generation. It supports the following settings:
 - \`{ type: 'tool', toolName: string (typed) }\`: the model must call the specified tool`,
   });
 export type ToolChoice = z.infer<typeof ToolChoice>;
-export const toolChoiceType = nodeInterfaceType<ToolChoice>("ToolChoice");
 
 export const StopCondition = zFunction<
   (options: { steps: Array<StepResult> }) => PromiseLike<boolean> | boolean
@@ -1517,8 +1443,6 @@ export const StopCondition = zFunction<
     "A function that determines whether to stop the generation based on the current steps.",
 });
 export type StopCondition = z.infer<typeof StopCondition>;
-export const stopConditionType =
-  nodeInterfaceType<StopCondition>("StopCondition");
 
 export const AttributeValue = z
   .union([
@@ -1535,11 +1459,6 @@ export const AttributeValue = z
       "Attribute values may be any non-nullish primitive value except an object.\n\n`null` or `undefined` attribute values are invalid and will result in undefined behavior.",
   });
 export type AttributeValue = z.infer<typeof AttributeValue>;
-export const attributeValueType =
-  nodeInterfaceType<AttributeValue>("AttributeValue");
-stringType.addConversion(attributeValueType, (v) => v);
-numberType.addConversion(attributeValueType, (v) => v);
-booleanType.addConversion(attributeValueType, (v) => v);
 
 export const Tracer = z.custom<UpstreamTelemetrySettings["tracer"]>().meta({
   title: "Tracer",
@@ -1553,25 +1472,25 @@ export const TelemetrySettings = z
       .boolean()
       .optional()
       .describe(
-        "Enable or disable telemetry. Disabled by default while experimental."
+        "Enable or disable telemetry. Disabled by default while experimental.",
       ),
     recordInputs: z
       .boolean()
       .optional()
       .describe(
-        "Enable or disable input recording. Enabled by default.\n\nYou might want to disable input recording to avoid recording sensitive information, to reduce data transfers, or to increase performance."
+        "Enable or disable input recording. Enabled by default.\n\nYou might want to disable input recording to avoid recording sensitive information, to reduce data transfers, or to increase performance.",
       ),
     recordOutputs: z
       .boolean()
       .optional()
       .describe(
-        "Enable or disable output recording. Enabled by default.\n\nYou might want to disable output recording to avoid recording sensitive information, to reduce data transfers, or to increase performance."
+        "Enable or disable output recording. Enabled by default.\n\nYou might want to disable output recording to avoid recording sensitive information, to reduce data transfers, or to increase performance.",
       ),
     functionId: z
       .string()
       .optional()
       .describe(
-        "Identifier for this function. Used to group telemetry data by function."
+        "Identifier for this function. Used to group telemetry data by function.",
       ),
     metadata: z
       .record(z.string(), AttributeValue)
@@ -1585,8 +1504,6 @@ export const TelemetrySettings = z
       "Configuration for telemetry. It is experimental and subject to change.",
   });
 export type TelemetrySettings = z.infer<typeof TelemetrySettings>;
-export const telemetrySettingsType =
-  nodeInterfaceType<TelemetrySettings>("TelemetrySettings");
 
 export const Output = z.custom<UpstreamOutput.Output<unknown, unknown>>().meta({
   title: "Output",
@@ -1595,7 +1512,6 @@ export const Output = z.custom<UpstreamOutput.Output<unknown, unknown>>().meta({
   id: "Output",
 });
 export type Output = z.infer<typeof Output>;
-export const outputType = nodeInterfaceType<Output>("Output");
 
 export type PrepareStepResult =
   | {
@@ -1620,27 +1536,24 @@ export const PrepareStepFunction = zFunction<
     "A function that is called before each step to prepare the settings for the step.",
 });
 export type PrepareStepFunction = z.infer<typeof PrepareStepFunction>;
-export const prepareStepFunctionType = nodeInterfaceType<PrepareStepFunction>(
-  "PrepareStepFunction"
-);
 
 export const ToolCallOptions = z
   .object({
     toolCallId: z
       .string()
       .describe(
-        "The ID of the tool call. You can use it e.g. when sending tool-call related information with stream data."
+        "The ID of the tool call. You can use it e.g. when sending tool-call related information with stream data.",
       ),
     messages: z
       .array(ModelMessage)
       .describe(
-        "Messages that were sent to the language model to initiate the response that contained the tool call.\nThe messages **do not** include the system prompt nor the assistant response that contained the tool call."
+        "Messages that were sent to the language model to initiate the response that contained the tool call.\nThe messages **do not** include the system prompt nor the assistant response that contained the tool call.",
       ),
     abortSignal: z
       .instanceof(AbortSignal)
       .optional()
       .describe(
-        "An optional abort signal that indicates that the overall operation should be aborted."
+        "An optional abort signal that indicates that the overall operation should be aborted.",
       ),
   })
   .meta({
@@ -1657,7 +1570,6 @@ export const Tool = z.custom<UpstreamTool>().meta({
     "A tool that can be called by the language model. It can be a function tool or a provider-defined tool.",
 });
 export type Tool = z.infer<typeof Tool>;
-export const toolType = nodeInterfaceType<Tool>("Tool");
 
 export const ToolSet = z.record(z.string(), Tool).meta({
   title: "ToolSet",
@@ -1681,8 +1593,6 @@ export const ToolCallRepairFunction = zFunction<
     "A function that attempts to repair a tool call that failed to parse.\n\nIt receives the error and the context as arguments and returns the repaired tool call JSON as text.",
 });
 export type ToolCallRepairFunction = z.infer<typeof ToolCallRepairFunction>;
-export const toolCallRepairFunctionType =
-  nodeInterfaceType<ToolCallRepairFunction>("ToolCallRepairFunction");
 
 export const GenerateTextOnStepFinishCallback = zFunction<
   (stepResult: StepResult) => Promise<void> | void
@@ -1694,24 +1604,20 @@ export const GenerateTextOnStepFinishCallback = zFunction<
 export type GenerateTextOnStepFinishCallback = z.infer<
   typeof GenerateTextOnStepFinishCallback
 >;
-export const generateTextOnStepFinishCallbackType =
-  nodeInterfaceType<GenerateTextOnStepFinishCallback>(
-    "GenerateTextOnStepFinishCallback"
-  );
 
 export const GenerateTextParameters = CallSettings.extend(Prompt.shape)
   .extend({
     model: LanguageModel,
     tools: ToolSet.optional().describe(
-      "The tools that the model can call. The model needs to support calling tools."
+      "The tools that the model can call. The model needs to support calling tools.",
     ),
     toolChoice: ToolChoice.optional().describe(
-      "The tool choice strategy. Default: 'auto'."
+      "The tool choice strategy. Default: 'auto'.",
     ),
     stopWhen: z
       .union([StopCondition, z.array(StopCondition)])
       .describe(
-        "Condition for stopping the generation when there are tool results in the last step. When the condition is an array, any of the conditions can be met to stop the generation. Default: `stepCountIs(1)`"
+        "Condition for stopping the generation when there are tool results in the last step. When the condition is an array, any of the conditions can be met to stop the generation. Default: `stepCountIs(1)`",
       ),
     experimental_telemetry: TelemetrySettings.optional(),
     providerOptions: ProviderOptions.optional(),
@@ -1719,10 +1625,10 @@ export const GenerateTextParameters = CallSettings.extend(Prompt.shape)
       .array(z.string())
       .optional()
       .describe(
-        "Limits the tools that are available for the model to call without changing the tool call and result types in the result."
+        "Limits the tools that are available for the model to call without changing the tool call and result types in the result.",
       ),
     experimental_output: Output.optional().describe(
-      "Specification for parsing structured outputs from the LLM response."
+      "Specification for parsing structured outputs from the LLM response.",
     ),
     prepareStep: PrepareStepFunction.optional(),
     experimental_repairToolCall: ToolCallRepairFunction.optional(),
@@ -1734,8 +1640,6 @@ export const GenerateTextParameters = CallSettings.extend(Prompt.shape)
   });
 export type GenerateTextParameters = z.infer<typeof GenerateTextParameters>;
 
-export const abortSignalType = nodeInterfaceType<AbortSignal>("AbortSignal");
-
 export const TextEmbeddingParameters = z
   .object({
     model: TextEmbeddingModel,
@@ -1745,7 +1649,7 @@ export const TextEmbeddingParameters = z
       .min(0)
       .optional()
       .describe(
-        "Maximum number of retries per embedding model call. Set to 0 to disable retries."
+        "Maximum number of retries per embedding model call. Set to 0 to disable retries.",
       ),
     abortSignal: z
       .instanceof(AbortSignal)
@@ -1755,7 +1659,7 @@ export const TextEmbeddingParameters = z
       .record(z.string(), z.string())
       .optional()
       .describe(
-        "Additional headers to include in the request. Only applicable for HTTP-based providers."
+        "Additional headers to include in the request. Only applicable for HTTP-based providers.",
       ),
     providerOptions: ProviderOptions.optional(),
     experimental_telemetry: TelemetrySettings.optional(),
@@ -1766,50 +1670,3 @@ export const TextEmbeddingParameters = z
       "Parameters for the `embed` function for text embeddings. It includes the model, value, and additional options.",
   });
 export type TextEmbeddingParameters = z.infer<typeof TextEmbeddingParameters>;
-
-export function registerAiGenerationInterfaceTypes(
-  types: BaklavaInterfaceTypes
-) {
-  types.addTypes(
-    abortSignalType,
-    attributeValueType,
-    callWarningType,
-    contentPartSourceType,
-    contentPartToolCallType,
-    contentPartToolResultType,
-    contentPartType,
-    dataContentOrUrlType,
-    dataContentType,
-    embeddingModelUsageType,
-    finishReasonType,
-    generatedAudioFileType,
-    generatedFileType,
-    generateTextOnStepFinishCallbackType,
-    generateTextResultType,
-    generationWarningType,
-    imageModelProviderMetadataType,
-    imageModelResponseMetadataType,
-    imageModelType,
-    languageModelRequestMetadataType,
-    languageModelType,
-    languageModelUsageType,
-    outputType,
-    prepareStepFunctionType,
-    reasoningPartType,
-    speechModelResponseMetadataType,
-    speechModelType,
-    stepResultType,
-    stopConditionType,
-    telemetrySettingsType,
-    textEmbeddingModelType,
-    textEmbeddingResponseType,
-    toolCallRepairFunctionType,
-    toolChoiceKindType,
-    toolChoiceType,
-    toolType,
-    transcriptionModelResponseMetadataType,
-    transcriptionModelType,
-    transcriptionSegmentType,
-    urlType
-  );
-}
