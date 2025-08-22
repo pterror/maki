@@ -1,23 +1,23 @@
 import { z } from "zod/v4";
 import { zFunction } from "./sharedTypes";
-import { BaklavaInterfaceTypes, defineNode, Editor } from "baklavajs";
-import {
-  anyType,
-  listType,
-  nodeInterface,
-  nodeInterfaceType,
-  selectInterface,
-  stringType,
-  textInterface,
-} from "./interfaceTypes";
+import { registerMcpServerTool } from "./mcp";
+
+export const DatabaseQueryConditionComparisonOperator = z
+  .literal(["=", "!=", ">", "<", ">=", "<=", "LIKE"])
+  .meta({
+    title: "DatabaseQueryConditionComparisonOperator",
+    description: "Comparison operators for database query conditions",
+    id: "DatabaseQueryConditionComparisonOperator",
+  });
+export type DatabaseQueryConditionComparisonOperator = z.infer<
+  typeof DatabaseQueryConditionComparisonOperator
+>;
 
 export const DatabaseQueryConditionComparison = z
   .object({
     type: z.literal("comparison").describe("Type of condition"),
     column: z.string().describe("Column to filter on"),
-    operator: z
-      .literal(["=", "!=", ">", "<", ">=", "<=", "LIKE"])
-      .describe("Comparison operator"),
+    operator: DatabaseQueryConditionComparisonOperator,
     value: z
       .union([z.string(), z.number(), z.boolean()])
       .describe("Value to compare against"),
@@ -206,274 +206,134 @@ export const Database = z
   });
 export type Database = z.infer<typeof Database>;
 
-const DatabaseComparisonOperator = z
-  .literal(["=", "!=", ">", "<", ">=", "<=", "LIKE"])
-  .describe("Comparison operator");
-type DatabaseComparisonOperator = z.infer<typeof DatabaseComparisonOperator>;
-
-const databaseComparisonOperatorType =
-  nodeInterfaceType<DatabaseComparisonOperator>("DatabaseComparisonOperator");
-databaseComparisonOperatorType.addConversion(stringType, (v) => v);
-const databaseQueryConditionComparisonType =
-  nodeInterfaceType<DatabaseQueryConditionComparison>(
-    "DatabaseQueryConditionComparison",
-  );
-
-const databaseQueryConditionAndType =
-  nodeInterfaceType<DatabaseQueryConditionAnd>("DatabaseQueryConditionAnd");
-const databaseQueryConditionOrType =
-  nodeInterfaceType<DatabaseQueryConditionOr>("DatabaseQueryConditionOr");
-const databaseQueryConditionNotType =
-  nodeInterfaceType<DatabaseQueryConditionNot>("DatabaseQueryConditionNot");
-const databaseQueryConditionType = nodeInterfaceType<DatabaseQueryCondition>(
-  "DatabaseQueryCondition",
-);
-const databaseQueryConditionListType = listType<DatabaseQueryCondition>(
-  databaseQueryConditionType,
+registerMcpServerTool(
+  "database-query-condition-comparison",
+  {
+    title: "Database Query Condition Comparison",
+    description: "A comparison condition for filtering database query results.",
+    inputSchema: DatabaseQueryConditionComparison,
+    outputSchema: z.object({ condition: DatabaseQueryConditionComparison }),
+    annotations: { baklavaCategory: "Database" },
+  },
+  ({ column, operator, value }) => ({
+    condition: {
+      type: "comparison" as const,
+      column,
+      operator,
+      value,
+    },
+  }),
 );
 
-databaseQueryConditionComparisonType.addConversion(
-  databaseQueryConditionType,
-  (v) => v,
-);
-databaseQueryConditionAndType.addConversion(
-  databaseQueryConditionType,
-  (v) => v,
-);
-databaseQueryConditionOrType.addConversion(
-  databaseQueryConditionType,
-  (v) => v,
-);
-databaseQueryConditionNotType.addConversion(
-  databaseQueryConditionType,
-  (v) => v,
+registerMcpServerTool(
+  "database-query-condition-and",
+  {
+    title: "Database Query Condition And",
+    description: "Combines multiple conditions with logical AND.",
+    inputSchema: DatabaseQueryConditionAnd,
+    outputSchema: z.object({ condition: DatabaseQueryConditionAnd }),
+    annotations: { baklavaCategory: "Database" },
+  },
+  ({ conditions }) => ({
+    condition: { type: "and" as const, conditions },
+  }),
 );
 
-export function registerDatabaseInterfaceTypes(types: BaklavaInterfaceTypes) {
-  types.addTypes(
-    databaseComparisonOperatorType,
-    databaseQueryConditionComparisonType,
-    databaseQueryConditionAndType,
-    databaseQueryConditionOrType,
-    databaseQueryConditionNotType,
-  );
-}
+registerMcpServerTool(
+  "database-query-condition-or",
+  {
+    title: "Database Query Condition Or",
+    description: "Combines multiple conditions with logical OR.",
+    inputSchema: DatabaseQueryConditionOr,
+    outputSchema: z.object({ condition: DatabaseQueryConditionOr }),
+    annotations: { baklavaCategory: "Database" },
+  },
+  ({ conditions }) => ({
+    condition: { type: "or" as const, conditions },
+  }),
+);
 
-export const DatabaseQueryConditionComparisonNode = defineNode({
-  type: "DatabaseQueryConditionComparisonNode",
-  inputs: {
-    column: () => textInterface("Column"),
-    operator: () =>
-      selectInterface<DatabaseComparisonOperator>(
-        "Operator",
-        databaseComparisonOperatorType,
-        ["=", "!=", ">", "<", ">=", "<=", "LIKE"],
-        "=",
-      ),
-    value: () => nodeInterface("Value", anyType, ""),
+registerMcpServerTool(
+  "database-query-condition-not",
+  {
+    title: "Database Query Condition Not",
+    description: "Negates a single condition.",
+    inputSchema: DatabaseQueryConditionNot,
+    outputSchema: z.object({ condition: DatabaseQueryConditionNot }),
+    annotations: { baklavaCategory: "Database" },
   },
-  outputs: {
-    condition: () =>
-      nodeInterface("Condition", databaseQueryConditionComparisonType, {
-        type: "comparison",
-        column: "",
-        operator: "=",
-        value: "",
-      }),
-  },
-  calculate({ column, operator, value }) {
-    return {
-      condition: {
-        type: "comparison" as const,
-        column,
-        operator,
-        // TODO: Ensure value is of the correct type
-        value: value as string | number | boolean,
-      },
-    };
-  },
-});
-export function registerDatabaseQueryConditionComparisonNode(editor: Editor) {
-  editor.registerNodeType(DatabaseQueryConditionComparisonNode, {
-    category: "Database Condition",
-  });
-}
+  ({ condition }) => ({
+    condition: { type: "not" as const, condition },
+  }),
+);
 
-export const DatabaseQueryConditionAndNode = defineNode({
-  type: "DatabaseQueryConditionAndNode",
-  inputs: {
-    conditions: () =>
-      nodeInterface("Conditions", databaseQueryConditionListType, []),
+registerMcpServerTool(
+  "database-select",
+  {
+    title: "Database Select",
+    description: "Selects rows from a database table.",
+    inputSchema: z.object({
+      database: Database,
+      command: DatabaseSelectCommand,
+    }),
+    outputSchema: z.object({ rows: z.array(z.unknown()) }),
+    annotations: { baklavaCategory: "Database" },
   },
-  outputs: {
-    condition: () =>
-      nodeInterface("Condition", databaseQueryConditionAndType, {
-        type: "and",
-        conditions: [],
-      }),
-  },
-  calculate({ conditions }) {
-    return { condition: { type: "and" as const, conditions } };
-  },
-});
-export function registerDatabaseQueryConditionAndNode(editor: Editor) {
-  editor.registerNodeType(DatabaseQueryConditionAndNode, {
-    category: "Database Condition",
-  });
-}
+  async ({ database, command }) => ({
+    rows: await database.select(command),
+  }),
+);
 
-export const DatabaseQueryConditionOrNode = defineNode({
-  type: "DatabaseQueryConditionOrNode",
-  inputs: {
-    conditions: () =>
-      nodeInterface("Conditions", databaseQueryConditionListType, []),
+registerMcpServerTool(
+  "database-insert",
+  {
+    title: "Database Insert",
+    description: "Inserts rows into a database table.",
+    inputSchema: z.object({
+      database: Database,
+      command: DatabaseInsertCommand,
+    }),
+    outputSchema: z.object({}),
+    annotations: { baklavaCategory: "Database" },
   },
-  outputs: {
-    condition: () =>
-      nodeInterface("Condition", databaseQueryConditionOrType, {
-        type: "or",
-        conditions: [],
-      }),
-  },
-  calculate({ conditions }) {
-    return { condition: { type: "or" as const, conditions } };
-  },
-});
-export function registerDatabaseQueryConditionOrNode(editor: Editor) {
-  editor.registerNodeType(DatabaseQueryConditionOrNode, {
-    category: "Database Condition",
-  });
-}
-
-export const DatabaseQueryConditionNotNode = defineNode({
-  type: "DatabaseQueryConditionNotNode",
-  inputs: {
-    condition: () =>
-      nodeInterface("Condition", databaseQueryConditionType, {
-        type: "comparison",
-        column: "",
-        operator: "=",
-        value: "",
-      }),
-  },
-  outputs: {
-    condition: () =>
-      nodeInterface("Condition", databaseQueryConditionNotType, {
-        type: "not",
-        condition: {
-          type: "comparison",
-          column: "",
-          operator: "=",
-          value: "",
-        },
-      }),
-  },
-  calculate({ condition }) {
-    return { condition: { type: "not" as const, condition } };
-  },
-});
-export function registerDatabaseQueryConditionNotNode(editor: Editor) {
-  editor.registerNodeType(DatabaseQueryConditionNotNode, {
-    category: "Database Condition",
-  });
-}
-
-export function registerDatabaseNodes(editor: Editor) {
-  registerDatabaseQueryConditionComparisonNode(editor);
-  registerDatabaseQueryConditionAndNode(editor);
-  registerDatabaseQueryConditionOrNode(editor);
-  registerDatabaseQueryConditionNotNode(editor);
-  registerDatabaseSelectNode(editor);
-}
-
-export const databaseInterfaceType = nodeInterfaceType<Database>("Database");
-export const databaseSelectCommandInterfaceType =
-  nodeInterfaceType<DatabaseSelectCommand>("DatabaseSelectCommand");
-export const databaseInsertCommandInterfaceType =
-  nodeInterfaceType<DatabaseInsertCommand>("DatabaseInsertCommand");
-export const databaseUpdateCommandInterfaceType =
-  nodeInterfaceType<DatabaseUpdateCommand>("DatabaseUpdateCommand");
-export const databaseDeleteCommandInterfaceType =
-  nodeInterfaceType<DatabaseDeleteCommand>("DatabaseDeleteCommand");
-
-export const DatabaseSelectNode = defineNode({
-  type: "DatabaseSelectNode",
-  inputs: {
-    database: () => nodeInterface("Database", databaseInterfaceType),
-    command: () =>
-      nodeInterface("Command", databaseSelectCommandInterfaceType, {
-        table: "",
-        columns: [],
-      }),
-  },
-  outputs: {
-    rows: () => nodeInterface("Rows", listType<unknown>(anyType), []),
-  },
-  async calculate({ database, command }) {
-    return { rows: await database.select(command) };
-  },
-});
-export function registerDatabaseSelectNode(editor: Editor) {
-  editor.registerNodeType(DatabaseSelectNode, { category: "Database Query" });
-}
-
-export const DatabaseInsertNode = defineNode({
-  type: "DatabaseInsertNode",
-  inputs: {
-    database: () => nodeInterface("Database", databaseInterfaceType),
-    command: () =>
-      nodeInterface("Command", databaseInsertCommandInterfaceType, {
-        table: "",
-        columns: [],
-        values: [],
-      }),
-  },
-  outputs: {},
-  async calculate({ database, command }) {
+  async ({ database, command }) => {
     await database.insert(command);
     return {};
   },
-});
-export function registerDatabaseInsertNode(editor: Editor) {
-  editor.registerNodeType(DatabaseInsertNode, { category: "Database Command" });
-}
+);
 
-export const DatabaseUpdateNode = defineNode({
-  type: "DatabaseUpdateNode",
-  inputs: {
-    database: () => nodeInterface("Database", databaseInterfaceType),
-    command: () =>
-      nodeInterface("Command", databaseUpdateCommandInterfaceType, {
-        table: "",
-        columns: [],
-        set: {},
-      }),
+registerMcpServerTool(
+  "database-update",
+  {
+    title: "Database Update",
+    description: "Updates rows in a database table.",
+    inputSchema: z.object({
+      database: Database,
+      command: DatabaseUpdateCommand,
+    }),
+    outputSchema: z.object({}),
+    annotations: { baklavaCategory: "Database" },
   },
-  outputs: {},
-  async calculate({ database, command }) {
+  async ({ database, command }) => {
     await database.update(command);
     return {};
   },
-});
-export function registerDatabaseUpdateNode(editor: Editor) {
-  editor.registerNodeType(DatabaseUpdateNode, { category: "Database Command" });
-}
+);
 
-export const DatabaseDeleteNode = defineNode({
-  type: "DatabaseDeleteNode",
-  inputs: {
-    database: () => nodeInterface("Database", databaseInterfaceType),
-    command: () =>
-      nodeInterface("Command", databaseDeleteCommandInterfaceType, {
-        table: "",
-      }),
+registerMcpServerTool(
+  "database-delete",
+  {
+    title: "Database Delete",
+    description: "Deletes rows from a database table.",
+    inputSchema: z.object({
+      database: Database,
+      command: DatabaseDeleteCommand,
+    }),
+    outputSchema: z.object({}),
+    annotations: { baklavaCategory: "Database" },
   },
-  outputs: {},
-  async calculate({ database, command }) {
+  async ({ database, command }) => {
     await database.delete(command);
     return {};
   },
-});
-export function registerDatabaseDeleteNode(editor: Editor) {
-  editor.registerNodeType(DatabaseDeleteNode, { category: "Database Command" });
-}
+);
