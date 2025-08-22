@@ -25,8 +25,11 @@ import {
 import {
   toJSONSchema,
   z,
+  ZodBoolean,
   ZodIntersection,
+  ZodNumber,
   ZodObject,
+  ZodString,
   ZodUnion,
   type ZodType,
 } from "zod/v4";
@@ -357,9 +360,22 @@ export function upsertBaklavaType<T extends ZodType>(type: T) {
       inputs: Object.fromEntries(
         unsafeEntries(type.shape).map(([key, value]) => [
           key,
-          () =>
-            // FIXME: checkboxinterface etc. as appropriate
-            nodeInterface(camelCaseToTitleCase(key), upsertBaklavaType(value)),
+          () => {
+            const titleCaseKey = camelCaseToTitleCase(key);
+            if (value instanceof ZodBoolean) {
+              return checkboxInterface(titleCaseKey);
+            }
+            if (value instanceof ZodString) {
+              return textInputInterface(titleCaseKey);
+            }
+            if (value instanceof ZodNumber) {
+              if (value.format === "safeint") {
+                return integerInterface(titleCaseKey);
+              }
+              return numberInterface(titleCaseKey);
+            }
+            return nodeInterface(titleCaseKey, upsertBaklavaType(value));
+          },
         ]),
       ),
       outputs: {

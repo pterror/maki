@@ -9,10 +9,6 @@ import {
   registerCoreInterfaceTypes,
   registerDerivedInterfaceTypes,
 } from "./interfaceTypes";
-import {
-  registerDatabaseInterfaceTypes,
-  registerDatabaseNodes,
-} from "./database";
 import { registerCoreNodes, registerDerivedNodes } from "./core";
 
 export function useFullBaklava() {
@@ -41,12 +37,7 @@ export function setupBaklava(
 ) {
   registerCoreNodes(baklava.editor);
   const interfaceTypes = registerCoreInterfaceTypes(baklava.editor, options);
-
   registerDerivedNodes(baklava.editor);
   registerDerivedInterfaceTypes(interfaceTypes);
-
-  registerDatabaseNodes(baklava.editor);
-  registerDatabaseInterfaceTypes(interfaceTypes);
-
   return { interfaceTypes };
 }
