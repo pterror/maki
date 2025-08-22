@@ -1,15 +1,14 @@
 import { Database as Sqlite3Database } from "sqlite3";
 import {
   Database,
-  databaseInterfaceType,
   type DatabaseQueryCondition,
   type DatabaseQueryConditionAnd,
   type DatabaseQueryConditionComparison,
   type DatabaseQueryConditionNot,
   type DatabaseQueryConditionOr,
 } from "./database";
-import { defineNode, Editor } from "baklavajs";
-import { nodeInterface, textInterface } from "./interfaceTypes";
+import { registerMcpServerTool } from "./mcp";
+import { z } from "zod";
 
 function sqlite3StringifyDatabaseQueryConditionComparison(
   condition: DatabaseQueryConditionComparison,
@@ -72,20 +71,22 @@ function sqlite3StringifyDatabaseQueryCondition(
   }
 }
 
-export const Sqlite3DatabaseNode = defineNode({
-  type: "Sqlite3DatabaseNope",
-  inputs: {
-    path: () => textInterface("Path"),
+registerMcpServerTool(
+  "sqlite3-database",
+  {
+    title: "SQLite3 Database",
+    description: "Creates a SQLite3 database instance.",
+    inputSchema: z.object({
+      path: z.string().describe("Path to the SQLite3 database file"),
+    }),
+    outputSchema: z.object({ database: Database }),
+    annotations: { baklavaCategory: "Database" },
   },
-  outputs: {
-    database: () =>
-      nodeInterface("Database", undefined!, databaseInterfaceType),
-  },
-  async calculate(input) {
-    const sqlite3Database = new Sqlite3Database(input.path, (error) => {
+  async ({ path }: { path: string }) => {
+    const sqlite3Database = new Sqlite3Database(path, (error) => {
       if (error) {
         throw new Error(
-          `Failed to open SQLite3 database at ${input.path}: ${error.message}`,
+          `Failed to open SQLite3 database at ${path}: ${error.message}`,
         );
       }
     });
@@ -100,7 +101,6 @@ export const Sqlite3DatabaseNode = defineNode({
         }${command.orderBy ? ` ORDER BY ${command.orderBy}` : ""}${
           command.limit ? ` LIMIT ${command.limit}` : ""
         }`;
-
         return new Promise((resolve, reject) => {
           sqlite3Database.all(query, parameters, (error, rows) => {
             if (error) {
@@ -113,10 +113,7 @@ export const Sqlite3DatabaseNode = defineNode({
       },
       insert: async (command) => {
         const placeholders = command.values.map(() => "?").join(", ");
-        const query = `INSERT INTO ${command.table} (${command.columns.join(
-          ", ",
-        )}) VALUES (${placeholders})`;
-
+        const query = `INSERT INTO ${command.table} (${command.columns.join(", ")}) VALUES (${placeholders})`;
         return new Promise((resolve, reject) => {
           sqlite3Database.run(query, command.values, function (error) {
             if (error) {
@@ -139,7 +136,6 @@ export const Sqlite3DatabaseNode = defineNode({
             ? ` WHERE ${sqlite3StringifyDatabaseQueryCondition(command.where, parameters)}`
             : ""
         }`;
-
         return new Promise((resolve, reject) => {
           sqlite3Database.run(query, parameters, function (error) {
             if (error) {
@@ -157,7 +153,6 @@ export const Sqlite3DatabaseNode = defineNode({
             ? ` WHERE ${sqlite3StringifyDatabaseQueryCondition(command.where, parameters)}`
             : ""
         }`;
-
         return new Promise((resolve, reject) => {
           sqlite3Database.run(query, parameters, function (error) {
             if (error) {
@@ -171,7 +166,4 @@ export const Sqlite3DatabaseNode = defineNode({
     };
     return { database };
   },
-});
-export function registerDatabaseSqliteNode(editor: Editor) {
-  editor.registerNodeType(Sqlite3DatabaseNode, { category: "Database" });
-}
+);
