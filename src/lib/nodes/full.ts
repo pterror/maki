@@ -14,9 +14,6 @@ import {
   registerDatabaseNodes,
 } from "./database";
 import { registerCoreNodes, registerDerivedNodes } from "./core";
-import { registerAiGenerationNodes } from "./aiGeneration";
-import { registerAiGenerationInterfaceTypes } from "./aiGenerationTypes";
-import { registerSharedTypesInterfaceTypes } from "./sharedTypes";
 
 export function useFullBaklava() {
   const baklava = useBaklava();
@@ -40,7 +37,7 @@ export function useFullBaklava() {
 
 export function setupBaklava(
   baklava: IBaklavaViewModel,
-  options: Required<BaklavaInterfaceTypesOptions>
+  options: Required<BaklavaInterfaceTypesOptions>,
 ) {
   registerCoreNodes(baklava.editor);
   const interfaceTypes = registerCoreInterfaceTypes(baklava.editor, options);
@@ -48,13 +45,8 @@ export function setupBaklava(
   registerDerivedNodes(baklava.editor);
   registerDerivedInterfaceTypes(interfaceTypes);
 
-  registerSharedTypesInterfaceTypes(interfaceTypes);
-
   registerDatabaseNodes(baklava.editor);
   registerDatabaseInterfaceTypes(interfaceTypes);
-
-  registerAiGenerationNodes(baklava.editor);
-  registerAiGenerationInterfaceTypes(interfaceTypes);
 
   return { interfaceTypes };
 }

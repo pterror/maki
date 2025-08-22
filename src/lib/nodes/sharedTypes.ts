@@ -3,7 +3,6 @@ import {
   Integer as UpstreamInteger,
   nodeInterfaceType,
 } from "./interfaceTypes";
-import type { BaklavaInterfaceTypes } from "baklavajs";
 
 export const zodShape = (schema: z.ZodType): Record<string, z.ZodType> =>
   schema instanceof z.ZodObject ? schema.shape : {};
@@ -13,7 +12,7 @@ export const zFunction = <
 >() => z.custom<T>((x) => typeof x === "function");
 
 export const Integer = z.custom<UpstreamInteger>(
-  (x) => typeof x === "number" && Number.isInteger(x)
+  (x) => typeof x === "number" && Number.isInteger(x),
 );
 
 export const Schema = z.custom<z.ZodType>().meta({
@@ -33,12 +32,12 @@ export const JSONValue = z
     z.boolean(),
     z.record(
       z.string(),
-      z.lazy((): z.ZodType<JSONValue> => JSONValue)
+      z.lazy((): z.ZodType<JSONValue> => JSONValue),
     ),
     z.array(z.lazy((): z.ZodType<JSONValue> => JSONValue)),
   ])
   .describe(
-    "A JSON value can be a string, number, boolean, object, array, or `null`. JSON values can be serialized and deserialized by the `JSON.stringify` and `JSON.parse` methods."
+    "A JSON value can be a string, number, boolean, object, array, or `null`. JSON values can be serialized and deserialized by the `JSON.stringify` and `JSON.parse` methods.",
   );
 export type JSONValue =
   | null
@@ -51,9 +50,3 @@ export const jsonValueType = nodeInterfaceType<JSONValue>("JSONValue");
 
 export const JSONArray = z.array(JSONValue);
 export type JSONArray = z.infer<typeof JSONArray>;
-
-export function registerSharedTypesInterfaceTypes(
-  types: BaklavaInterfaceTypes
-) {
-  types.addTypes(schemaType, jsonValueType);
-}

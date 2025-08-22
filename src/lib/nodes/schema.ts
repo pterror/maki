@@ -44,13 +44,13 @@ export const {
 });
 
 export function schemaInterfaceFactory(name: string) {
-  return () => nodeInterface(name, unknownSchema, schemaType);
+  return () => nodeInterface(name, schemaType, unknownSchema);
 }
 
 export const LiteralSchemaNode = defineNode({
   type: "LiteralSchemaNode",
   inputs: {
-    value: () => nodeInterface("Value", null, unknownType),
+    value: () => nodeInterface("Value", unknownType, null),
   },
   outputs: {
     schema: schemaInterfaceFactory("Schema"),
@@ -67,7 +67,7 @@ export const ObjectSchemaNode = defineNode({
   type: "ObjectSchemaNode",
   inputs: {
     properties: () =>
-      nodeInterface("Properties", {}, stringDictType(schemaType)),
+      nodeInterface("Properties", stringDictType(schemaType), {}),
   },
   outputs: {
     schema: schemaInterfaceFactory("Schema"),
@@ -99,7 +99,7 @@ export function registerArraySchemaNode(editor: Editor) {
 export const UnionSchemaNode = defineNode({
   type: "UnionSchemaNode",
   inputs: {
-    schemas: () => nodeInterface("Schemas", [], listType(schemaType)),
+    schemas: () => nodeInterface("Schemas", listType(schemaType), []),
   },
   outputs: {
     schema: schemaInterfaceFactory("Schema"),
@@ -132,7 +132,7 @@ export function registerIntersectionSchemaNode(editor: Editor) {
 export const TupleSchemaNode = defineNode({
   type: "TupleSchemaNode",
   inputs: {
-    itemSchemas: () => nodeInterface("Schemas", [], listType(schemaType)),
+    itemSchemas: () => nodeInterface("Schemas", listType(schemaType), []),
   },
   outputs: {
     schema: schemaInterfaceFactory("Schema"),
@@ -164,7 +164,7 @@ export function registerRecordSchemaNode(editor: Editor) {
 export const EnumSchemaNode = defineNode({
   type: "EnumSchemaNode",
   inputs: {
-    values: () => nodeInterface("Values", [], listType(stringType)),
+    values: () => nodeInterface("Values", listType(stringType), []),
   },
   outputs: {
     schema: schemaInterfaceFactory("Schema"),

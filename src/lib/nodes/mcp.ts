@@ -15,10 +15,10 @@ import {
   type ZodRawShape,
   type ZodType,
 } from "zod/v4";
-import type { objectOutputType } from "zod";
 import type { RequestHandlerExtra } from "@modelcontextprotocol/sdk/shared/protocol.js";
 import { unsafeEntries } from "../core";
 import { upsertBaklavaType } from "./interfaceTypes";
+import type { objectOutputType } from "zod/v3";
 
 export type McpToolConfig = {
   title?: string;

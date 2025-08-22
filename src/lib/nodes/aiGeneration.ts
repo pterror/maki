@@ -58,9 +58,7 @@ registerMcpServerTool(
     description: "Generates text based on the provided input.",
     inputSchema: GenerateTextParameters,
     outputSchema: GenerateTextResult,
-    annotations: {
-      baklavaCategory: "AI Generation",
-    },
+    annotations: { baklavaCategory: "AI Generation" },
   },
   generateText,
 );
@@ -72,9 +70,7 @@ registerMcpServerTool(
     description: "Embeds text into a vector representation.",
     inputSchema: GenerateTextParameters,
     outputSchema: GenerateTextResult,
-    annotations: {
-      baklavaCategory: "AI Generation",
-    },
+    annotations: { baklavaCategory: "AI Generation" },
   },
   generateText,
 );
@@ -86,9 +82,7 @@ registerMcpServerTool(
     description: "Generates an image based on the provided prompt.",
     inputSchema: GenerateImageParameters,
     outputSchema: GenerateImageResult,
-    annotations: {
-      baklavaCategory: "AI Generation",
-    },
+    annotations: { baklavaCategory: "AI Generation" },
   },
   generateImage,
 );
@@ -100,9 +94,7 @@ registerMcpServerTool(
     description: "Generates speech based on the provided text.",
     inputSchema: GenerateSpeechParameters,
     outputSchema: GenerateSpeechResult,
-    annotations: {
-      baklavaCategory: "AI Generation",
-    },
+    annotations: { baklavaCategory: "AI Generation" },
   },
   generateSpeech,
 );
@@ -114,18 +106,16 @@ registerMcpServerTool(
     description: "Transcribes audio to text.",
     inputSchema: TranscribeParameters,
     outputSchema: TranscribeResult,
-    annotations: {
-      baklavaCategory: "AI Generation",
-    },
+    annotations: { baklavaCategory: "AI Generation" },
   },
   transcribe,
 );
 
 registerMcpServerTool(
-  "BedrockLanguageModel",
+  "bedrock-language-model",
   {
-    title: "BedrockLanguageModel",
-    description: "TODO",
+    title: "Bedrock Language Model",
+    description: "Provides access to Amazon Bedrock language models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: LanguageModel }),
     annotations: { baklavaCategory: "AI Models" },
@@ -136,10 +126,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "BedrockTextEmbeddingModel",
+  "bedrock-text-embedding-model",
   {
-    title: "BedrockTextEmbeddingModel",
-    description: "TODO",
+    title: "Bedrock Text Embedding Model",
+    description: "Provides access to Amazon Bedrock text embedding models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: TextEmbeddingModel }),
     annotations: { baklavaCategory: "AI Models" },
@@ -150,10 +140,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "BedrockImageModel",
+  "bedrock-image-model",
   {
-    title: "BedrockImageModel",
-    description: "TODO",
+    title: "Bedrock Image Model",
+    description: "Provides access to Amazon Bedrock image generation models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: ImageModel }),
     annotations: { baklavaCategory: "AI Models" },
@@ -164,10 +154,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "BedrockSpeechModel",
+  "bedrock-speech-model",
   {
-    title: "BedrockSpeechModel",
-    description: "TODO",
+    title: "Bedrock Speech Model",
+    description: "Provides access to Amazon Bedrock speech synthesis models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: SpeechModel }),
     annotations: { baklavaCategory: "AI Models" },
@@ -181,10 +171,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "BedrockTranscriptionModel",
+  "bedrock-transcription-model",
   {
-    title: "BedrockTranscriptionModel",
-    description: "TODO",
+    title: "Bedrock Transcription Model",
+    description: "Provides access to Amazon Bedrock transcription models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: TranscriptionModel }),
     annotations: { baklavaCategory: "AI Models" },
@@ -198,10 +188,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "AnthropicLanguageModel",
+  "anthropic-language-model",
   {
-    title: "AnthropicLanguageModel",
-    description: "TODO",
+    title: "Anthropic Language Model",
+    description: "Provides access to Anthropic language models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: LanguageModel }),
     annotations: { baklavaCategory: "AI Models" },
@@ -212,10 +202,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "AnthropicTextEmbeddingModel",
+  "anthropic-text-embedding-model",
   {
-    title: "AnthropicTextEmbeddingModel",
-    description: "TODO",
+    title: "Anthropic Text Embedding Model",
+    description: "Provides access to Anthropic text embedding models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: TextEmbeddingModel }),
     annotations: { baklavaCategory: "AI Models" },
@@ -226,10 +216,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "AnthropicImageModel",
+  "anthropic-image-model",
   {
-    title: "AnthropicImageModel",
-    description: "TODO",
+    title: "Anthropic Image Model",
+    description: "Provides access to Anthropic image generation models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: ImageModel }),
     annotations: { baklavaCategory: "AI Models" },
@@ -240,10 +230,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "AnthropicSpeechModel",
+  "anthropic-speech-model",
   {
-    title: "AnthropicSpeechModel",
-    description: "TODO",
+    title: "Anthropic Speech Model",
+    description: "Provides access to Anthropic speech synthesis models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: SpeechModel }),
     annotations: { baklavaCategory: "AI Models" },
@@ -257,10 +247,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "AnthropicTranscriptionModel",
+  "anthropic-transcription-model",
   {
-    title: "AnthropicTranscriptionModel",
-    description: "TODO",
+    title: "Anthropic Transcription Model",
+    description: "Provides access to Anthropic transcription models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: TranscriptionModel }),
     annotations: { baklavaCategory: "AI Models" },
@@ -274,10 +264,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "AssemblyaiLanguageModel",
+  "assemblyai-language-model",
   {
-    title: "AssemblyaiLanguageModel",
-    description: "TODO",
+    title: "AssemblyAI Language Model",
+    description: "Provides access to AssemblyAI language models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: LanguageModel }),
     annotations: { baklavaCategory: "AI Models" },
@@ -288,10 +278,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "AssemblyaiTextEmbeddingModel",
+  "assemblyai-text-embedding-model",
   {
-    title: "AssemblyaiTextEmbeddingModel",
-    description: "TODO",
+    title: "AssemblyAI Text Embedding Model",
+    description: "Provides access to AssemblyAI text embedding models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: TextEmbeddingModel }),
     annotations: { baklavaCategory: "AI Models" },
@@ -302,10 +292,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "AssemblyaiImageModel",
+  "assemblyai-image-model",
   {
-    title: "AssemblyaiImageModel",
-    description: "TODO",
+    title: "AssemblyAI Image Model",
+    description: "Provides access to AssemblyAI image generation models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: ImageModel }),
     annotations: { baklavaCategory: "AI Models" },
@@ -316,10 +306,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "AssemblyaiSpeechModel",
+  "assemblyai-speech-model",
   {
-    title: "AssemblyaiSpeechModel",
-    description: "TODO",
+    title: "AssemblyAI Speech Model",
+    description: "Provides access to AssemblyAI speech synthesis models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: SpeechModel }),
     annotations: { baklavaCategory: "AI Models" },
@@ -333,10 +323,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "AssemblyaiTranscriptionModel",
+  "assemblyai-transcription-model",
   {
-    title: "AssemblyaiTranscriptionModel",
-    description: "TODO",
+    title: "AssemblyAI Transcription Model",
+    description: "Provides access to AssemblyAI transcription models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: TranscriptionModel }),
     annotations: { baklavaCategory: "AI Models" },
@@ -350,10 +340,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "AzureLanguageModel",
+  "azure-language-model",
   {
-    title: "AzureLanguageModel",
-    description: "TODO",
+    title: "Azure Language Model",
+    description: "Provides access to Azure language models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: LanguageModel }),
     annotations: { baklavaCategory: "AI Models" },
@@ -364,10 +354,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "AzureTextEmbeddingModel",
+  "azure-text-embedding-model",
   {
-    title: "AzureTextEmbeddingModel",
-    description: "TODO",
+    title: "Azure Text Embedding Model",
+    description: "Provides access to Azure text embedding models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: TextEmbeddingModel }),
     annotations: { baklavaCategory: "AI Models" },
@@ -378,10 +368,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "AzureImageModel",
+  "azure-image-model",
   {
-    title: "AzureImageModel",
-    description: "TODO",
+    title: "Azure Image Model",
+    description: "Provides access to Azure image generation models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: ImageModel }),
     annotations: { baklavaCategory: "AI Models" },
@@ -390,10 +380,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "AzureSpeechModel",
+  "azure-speech-model",
   {
-    title: "AzureSpeechModel",
-    description: "TODO",
+    title: "Azure Speech Model",
+    description: "Provides access to Azure speech synthesis models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: SpeechModel }),
     annotations: { baklavaCategory: "AI Models" },
@@ -407,10 +397,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "AzureTranscriptionModel",
+  "azure-transcription-model",
   {
-    title: "AzureTranscriptionModel",
-    description: "TODO",
+    title: "Azure Transcription Model",
+    description: "Provides access to Azure transcription models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: TranscriptionModel }),
     annotations: { baklavaCategory: "AI Models" },
@@ -424,10 +414,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "CerebrasLanguageModel",
+  "cerebras-language-model",
   {
-    title: "CerebrasLanguageModel",
-    description: "TODO",
+    title: "Cerebras Language Model",
+    description: "Provides access to Cerebras language models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: LanguageModel }),
     annotations: { baklavaCategory: "AI Models" },
@@ -438,10 +428,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "CerebrasTextEmbeddingModel",
+  "cerebras-text-embedding-model",
   {
-    title: "CerebrasTextEmbeddingModel",
-    description: "TODO",
+    title: "Cerebras Text Embedding Model",
+    description: "Provides access to Cerebras text embedding models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: TextEmbeddingModel }),
     annotations: { baklavaCategory: "AI Models" },
@@ -452,10 +442,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "CerebrasImageModel",
+  "cerebras-image-model",
   {
-    title: "CerebrasImageModel",
-    description: "TODO",
+    title: "Cerebras Image Model",
+    description: "Provides access to Cerebras image generation models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: ImageModel }),
     annotations: { baklavaCategory: "AI Models" },
@@ -466,10 +456,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "CerebrasSpeechModel",
+  "cerebras-speech-model",
   {
-    title: "CerebrasSpeechModel",
-    description: "TODO",
+    title: "Cerebras Speech Model",
+    description: "Provides access to Cerebras speech synthesis models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: SpeechModel }),
     annotations: { baklavaCategory: "AI Models" },
@@ -483,10 +473,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "CerebrasTranscriptionModel",
+  "cerebras-transcription-model",
   {
-    title: "CerebrasTranscriptionModel",
-    description: "TODO",
+    title: "Cerebras Transcription Model",
+    description: "Provides access to Cerebras transcription models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: TranscriptionModel }),
     annotations: { baklavaCategory: "AI Models" },
@@ -500,10 +490,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "CohereLanguageModel",
+  "cohere-language-model",
   {
-    title: "CohereLanguageModel",
-    description: "TODO",
+    title: "Cohere Language Model",
+    description: "Provides access to Cohere language models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: LanguageModel }),
     annotations: { baklavaCategory: "AI Models" },
@@ -514,10 +504,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "CohereTextEmbeddingModel",
+  "cohere-text-embedding-model",
   {
-    title: "CohereTextEmbeddingModel",
-    description: "TODO",
+    title: "Cohere Text Embedding Model",
+    description: "Provides access to Cohere text embedding models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: TextEmbeddingModel }),
     annotations: { baklavaCategory: "AI Models" },
@@ -528,10 +518,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "CohereImageModel",
+  "cohere-image-model",
   {
-    title: "CohereImageModel",
-    description: "TODO",
+    title: "Cohere Image Model",
+    description: "Provides access to Cohere image generation models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: ImageModel }),
     annotations: { baklavaCategory: "AI Models" },
@@ -540,10 +530,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "CohereSpeechModel",
+  "cohere-speech-model",
   {
-    title: "CohereSpeechModel",
-    description: "TODO",
+    title: "Cohere Speech Model",
+    description: "Provides access to Cohere speech synthesis models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: SpeechModel }),
     annotations: { baklavaCategory: "AI Models" },
@@ -557,10 +547,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "CohereTranscriptionModel",
+  "cohere-transcription-model",
   {
-    title: "CohereTranscriptionModel",
-    description: "TODO",
+    title: "Cohere Transcription Model",
+    description: "Provides access to Cohere transcription models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: TranscriptionModel }),
     annotations: { baklavaCategory: "AI Models" },
@@ -574,10 +564,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "DeepgramLanguageModel",
+  "deepgram-language-model",
   {
-    title: "DeepgramLanguageModel",
-    description: "TODO",
+    title: "Deepgram Language Model",
+    description: "Provides access to Deepgram language models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: LanguageModel }),
     annotations: { baklavaCategory: "AI Models" },
@@ -588,10 +578,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "DeepgramTextEmbeddingModel",
+  "deepgram-text-embedding-model",
   {
-    title: "DeepgramTextEmbeddingModel",
-    description: "TODO",
+    title: "Deepgram Text Embedding Model",
+    description: "Provides access to Deepgram text embedding models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: TextEmbeddingModel }),
     annotations: { baklavaCategory: "AI Models" },
@@ -602,10 +592,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "DeepgramImageModel",
+  "deepgram-image-model",
   {
-    title: "DeepgramImageModel",
-    description: "TODO",
+    title: "Deepgram Image Model",
+    description: "Provides access to Deepgram image generation models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: ImageModel }),
     annotations: { baklavaCategory: "AI Models" },
@@ -616,10 +606,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "DeepgramSpeechModel",
+  "deepgram-speech-model",
   {
-    title: "DeepgramSpeechModel",
-    description: "TODO",
+    title: "Deepgram Speech Model",
+    description: "Provides access to Deepgram speech synthesis models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: SpeechModel }),
     annotations: { baklavaCategory: "AI Models" },
@@ -633,10 +623,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "DeepgramTranscriptionModel",
+  "deepgram-transcription-model",
   {
-    title: "DeepgramTranscriptionModel",
-    description: "TODO",
+    title: "Deepgram Transcription Model",
+    description: "Provides access to Deepgram transcription models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: TranscriptionModel }),
     annotations: { baklavaCategory: "AI Models" },
@@ -650,10 +640,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "DeepinfraLanguageModel",
+  "deepinfra-language-model",
   {
-    title: "DeepinfraLanguageModel",
-    description: "TODO",
+    title: "Deepinfra Language Model",
+    description: "Provides access to Deepinfra language models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: LanguageModel }),
     annotations: { baklavaCategory: "AI Models" },
@@ -664,10 +654,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "DeepinfraTextEmbeddingModel",
+  "deepinfra-text-embedding-model",
   {
-    title: "DeepinfraTextEmbeddingModel",
-    description: "TODO",
+    title: "Deepinfra Text Embedding Model",
+    description: "Provides access to Deepinfra text embedding models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: TextEmbeddingModel }),
     annotations: { baklavaCategory: "AI Models" },
@@ -678,10 +668,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "DeepinfraImageModel",
+  "deepinfra-image-model",
   {
-    title: "DeepinfraImageModel",
-    description: "TODO",
+    title: "Deepinfra Image Model",
+    description: "Provides access to Deepinfra image generation models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: ImageModel }),
     annotations: { baklavaCategory: "AI Models" },
@@ -692,10 +682,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "DeepinfraSpeechModel",
+  "deepinfra-speech-model",
   {
-    title: "DeepinfraSpeechModel",
-    description: "TODO",
+    title: "Deepinfra Speech Model",
+    description: "Provides access to Deepinfra speech synthesis models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: SpeechModel }),
     annotations: { baklavaCategory: "AI Models" },
@@ -709,10 +699,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "DeepinfraTranscriptionModel",
+  "deepinfra-transcription-model",
   {
-    title: "DeepinfraTranscriptionModel",
-    description: "TODO",
+    title: "Deepinfra Transcription Model",
+    description: "Provides access to Deepinfra transcription models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: TranscriptionModel }),
     annotations: { baklavaCategory: "AI Models" },
@@ -726,10 +716,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "DeepseekLanguageModel",
+  "deepseek-language-model",
   {
-    title: "DeepseekLanguageModel",
-    description: "TODO",
+    title: "Deepseek Language Model",
+    description: "Provides access to Deepseek language models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: LanguageModel }),
     annotations: { baklavaCategory: "AI Models" },
@@ -740,10 +730,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "DeepseekTextEmbeddingModel",
+  "deepseek-text-embedding-model",
   {
-    title: "DeepseekTextEmbeddingModel",
-    description: "TODO",
+    title: "Deepseek Text Embedding Model",
+    description: "Provides access to Deepseek text embedding models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: TextEmbeddingModel }),
     annotations: { baklavaCategory: "AI Models" },
@@ -754,10 +744,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "DeepseekImageModel",
+  "deepseek-image-model",
   {
-    title: "DeepseekImageModel",
-    description: "TODO",
+    title: "Deepseek Image Model",
+    description: "Provides access to Deepseek image generation models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: ImageModel }),
     annotations: { baklavaCategory: "AI Models" },
@@ -768,10 +758,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "DeepseekSpeechModel",
+  "deepseek-speech-model",
   {
-    title: "DeepseekSpeechModel",
-    description: "TODO",
+    title: "Deepseek Speech Model",
+    description: "Provides access to Deepseek speech synthesis models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: SpeechModel }),
     annotations: { baklavaCategory: "AI Models" },
@@ -785,10 +775,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "DeepseekTranscriptionModel",
+  "deepseek-transcription-model",
   {
-    title: "DeepseekTranscriptionModel",
-    description: "TODO",
+    title: "Deepseek Transcription Model",
+    description: "Provides access to Deepseek transcription models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: TranscriptionModel }),
     annotations: { baklavaCategory: "AI Models" },
@@ -802,10 +792,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "ElevenlabsLanguageModel",
+  "elevenlabs-language-model",
   {
-    title: "ElevenlabsLanguageModel",
-    description: "TODO",
+    title: "ElevenLabs Language Model",
+    description: "Provides access to ElevenLabs language models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: LanguageModel }),
     annotations: { baklavaCategory: "AI Models" },
@@ -816,10 +806,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "ElevenlabsTextEmbeddingModel",
+  "elevenlabs-text-embedding-model",
   {
-    title: "ElevenlabsTextEmbeddingModel",
-    description: "TODO",
+    title: "ElevenLabs Text Embedding Model",
+    description: "Provides access to ElevenLabs text embedding models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: TextEmbeddingModel }),
     annotations: { baklavaCategory: "AI Models" },
@@ -830,10 +820,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "ElevenlabsImageModel",
+  "elevenlabs-image-model",
   {
-    title: "ElevenlabsImageModel",
-    description: "TODO",
+    title: "ElevenLabs Image Model",
+    description: "Provides access to ElevenLabs image generation models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: ImageModel }),
     annotations: { baklavaCategory: "AI Models" },
@@ -844,10 +834,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "ElevenlabsSpeechModel",
+  "elevenlabs-speech-model",
   {
-    title: "ElevenlabsSpeechModel",
-    description: "TODO",
+    title: "ElevenLabs Speech Model",
+    description: "Provides access to ElevenLabs speech synthesis models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: SpeechModel }),
     annotations: { baklavaCategory: "AI Models" },
@@ -861,10 +851,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "ElevenlabsTranscriptionModel",
+  "elevenlabs-transcription-model",
   {
-    title: "ElevenlabsTranscriptionModel",
-    description: "TODO",
+    title: "ElevenLabs Transcription Model",
+    description: "Provides access to ElevenLabs transcription models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: TranscriptionModel }),
     annotations: { baklavaCategory: "AI Models" },
@@ -878,10 +868,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "FalLanguageModel",
+  "fal-language-model",
   {
-    title: "FalLanguageModel",
-    description: "TODO",
+    title: "Fal Language Model",
+    description: "Provides access to Fal language models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: LanguageModel }),
     annotations: { baklavaCategory: "AI Models" },
@@ -890,10 +880,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "FalTextEmbeddingModel",
+  "fal-text-embedding-model",
   {
-    title: "FalTextEmbeddingModel",
-    description: "TODO",
+    title: "Fal Text Embedding Model",
+    description: "Provides access to Fal text embedding models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: TextEmbeddingModel }),
     annotations: { baklavaCategory: "AI Models" },
@@ -904,10 +894,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "FalImageModel",
+  "fal-image-model",
   {
-    title: "FalImageModel",
-    description: "TODO",
+    title: "Fal Image Model",
+    description: "Provides access to Fal image generation models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: ImageModel }),
     annotations: { baklavaCategory: "AI Models" },
@@ -916,10 +906,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "FalSpeechModel",
+  "fal-speech-model",
   {
-    title: "FalSpeechModel",
-    description: "TODO",
+    title: "Fal Speech Model",
+    description: "Provides access to Fal speech synthesis models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: SpeechModel }),
     annotations: { baklavaCategory: "AI Models" },
@@ -933,10 +923,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "FalTranscriptionModel",
+  "fal-transcription-model",
   {
-    title: "FalTranscriptionModel",
-    description: "TODO",
+    title: "Fal Transcription Model",
+    description: "Provides access to Fal transcription models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: TranscriptionModel }),
     annotations: { baklavaCategory: "AI Models" },
@@ -950,10 +940,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "FireworksLanguageModel",
+  "fireworks-language-model",
   {
-    title: "FireworksLanguageModel",
-    description: "TODO",
+    title: "Fireworks Language Model",
+    description: "Provides access to Fireworks language models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -966,10 +956,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "FireworksTextEmbeddingModel",
+  "fireworks-text-embedding-model",
   {
-    title: "FireworksTextEmbeddingModel",
-    description: "TODO",
+    title: "Fireworks Text Embedding Model",
+    description: "Provides access to Fireworks text embedding models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -982,10 +972,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "FireworksImageModel",
+  "fireworks-image-model",
   {
-    title: "FireworksImageModel",
-    description: "TODO",
+    title: "Fireworks Image Model",
+    description: "Provides access to Fireworks image generation models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -998,10 +988,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "FireworksSpeechModel",
+  "fireworks-speech-model",
   {
-    title: "FireworksSpeechModel",
-    description: "TODO",
+    title: "Fireworks Speech Model",
+    description: "Provides access to Fireworks speech synthesis models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -1019,10 +1009,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "FireworksTranscriptionModel",
+  "fireworks-transcription-model",
   {
-    title: "FireworksTranscriptionModel",
-    description: "TODO",
+    title: "Fireworks Transcription Model",
+    description: "Provides access to Fireworks transcription models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -1040,10 +1030,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "GatewayLanguageModel",
+  "gateway-language-model",
   {
-    title: "GatewayLanguageModel",
-    description: "TODO",
+    title: "Gateway Language Model",
+    description: "Provides access to Gateway language models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -1056,10 +1046,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "GatewayTextEmbeddingModel",
+  "gateway-text-embedding-model",
   {
-    title: "GatewayTextEmbeddingModel",
-    description: "TODO",
+    title: "Gateway Text Embedding Model",
+    description: "Provides access to Gateway text embedding models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -1072,10 +1062,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "GatewayImageModel",
+  "gateway-image-model",
   {
-    title: "GatewayImageModel",
-    description: "TODO",
+    title: "Gateway Image Model",
+    description: "Provides access to Gateway image generation models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -1088,10 +1078,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "GatewaySpeechModel",
+  "gateway-speech-model",
   {
-    title: "GatewaySpeechModel",
-    description: "TODO",
+    title: "Gateway Speech Model",
+    description: "Provides access to Gateway speech synthesis models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -1109,10 +1099,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "GatewayTranscriptionModel",
+  "gateway-transcription-model",
   {
-    title: "GatewayTranscriptionModel",
-    description: "TODO",
+    title: "Gateway Transcription Model",
+    description: "Provides access to Gateway transcription models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -1130,10 +1120,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "GladiaLanguageModel",
+  "gladia-language-model",
   {
-    title: "GladiaLanguageModel",
-    description: "TODO",
+    title: "Gladia Language Model",
+    description: "Provides access to Gladia language models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -1146,10 +1136,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "GladiaTextEmbeddingModel",
+  "gladia-text-embedding-model",
   {
-    title: "GladiaTextEmbeddingModel",
-    description: "TODO",
+    title: "Gladia Text Embedding Model",
+    description: "Provides access to Gladia text embedding models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -1162,10 +1152,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "GladiaImageModel",
+  "gladia-image-model",
   {
-    title: "GladiaImageModel",
-    description: "TODO",
+    title: "Gladia Image Model",
+    description: "Provides access to Gladia image generation models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -1178,10 +1168,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "GladiaSpeechModel",
+  "gladia-speech-model",
   {
-    title: "GladiaSpeechModel",
-    description: "TODO",
+    title: "Gladia Speech Model",
+    description: "Provides access to Gladia speech synthesis models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -1199,10 +1189,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "GladiaTranscriptionModel",
+  "gladia-transcription-model",
   {
-    title: "GladiaTranscriptionModel",
-    description: "TODO",
+    title: "Gladia Transcription Model",
+    description: "Provides access to Gladia transcription models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -1220,10 +1210,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "GoogleLanguageModel",
+  "google-language-model",
   {
-    title: "GoogleLanguageModel",
-    description: "TODO",
+    title: "Google Language Model",
+    description: "Provides access to Google language models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -1236,10 +1226,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "GoogleTextEmbeddingModel",
+  "google-text-embedding-model",
   {
-    title: "GoogleTextEmbeddingModel",
-    description: "TODO",
+    title: "Google Text Embedding Model",
+    description: "Provides access to Google text embedding models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -1252,10 +1242,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "GoogleImageModel",
+  "google-image-model",
   {
-    title: "GoogleImageModel",
-    description: "TODO",
+    title: "Google Image Model",
+    description: "Provides access to Google image generation models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -1268,10 +1258,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "GoogleSpeechModel",
+  "google-speech-model",
   {
-    title: "GoogleSpeechModel",
-    description: "TODO",
+    title: "Google Speech Model",
+    description: "Provides access to Google speech synthesis models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -1289,10 +1279,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "GoogleTranscriptionModel",
+  "google-transcription-model",
   {
-    title: "GoogleTranscriptionModel",
-    description: "TODO",
+    title: "Google Transcription Model",
+    description: "Provides access to Google transcription models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -1310,10 +1300,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "VertexLanguageModel",
+  "vertex-language-model",
   {
-    title: "VertexLanguageModel",
-    description: "TODO",
+    title: "Vertex Language Model",
+    description: "Provides access to Vertex language models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -1326,10 +1316,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "VertexTextEmbeddingModel",
+  "vertex-text-embedding-model",
   {
-    title: "VertexTextEmbeddingModel",
-    description: "TODO",
+    title: "Vertex Text Embedding Model",
+    description: "Provides access to Vertex text embedding models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -1342,10 +1332,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "VertexImageModel",
+  "vertex-image-model",
   {
-    title: "VertexImageModel",
-    description: "TODO",
+    title: "Vertex Image Model",
+    description: "Provides access to Vertex image generation models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -1358,10 +1348,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "VertexSpeechModel",
+  "vertex-speech-model",
   {
-    title: "VertexSpeechModel",
-    description: "TODO",
+    title: "Vertex Speech Model",
+    description: "Provides access to Vertex speech synthesis models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -1379,10 +1369,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "VertexTranscriptionModel",
+  "vertex-transcription-model",
   {
-    title: "VertexTranscriptionModel",
-    description: "TODO",
+    title: "Vertex Transcription Model",
+    description: "Provides access to Vertex transcription models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -1400,10 +1390,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "GroqLanguageModel",
+  "groq-language-model",
   {
-    title: "GroqLanguageModel",
-    description: "TODO",
+    title: "Groq Language Model",
+    description: "Provides access to Groq language models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -1416,10 +1406,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "GroqTextEmbeddingModel",
+  "groq-text-embedding-model",
   {
-    title: "GroqTextEmbeddingModel",
-    description: "TODO",
+    title: "Groq Text Embedding Model",
+    description: "Provides access to Groq text embedding models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -1432,10 +1422,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "GroqImageModel",
+  "groq-image-model",
   {
-    title: "GroqImageModel",
-    description: "TODO",
+    title: "Groq Image Model",
+    description: "Provides access to Groq image generation models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -1448,10 +1438,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "GroqSpeechModel",
+  "groq-speech-model",
   {
-    title: "GroqSpeechModel",
-    description: "TODO",
+    title: "Groq Speech Model",
+    description: "Provides access to Groq speech synthesis models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -1469,10 +1459,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "GroqTranscriptionModel",
+  "groq-transcription-model",
   {
-    title: "GroqTranscriptionModel",
-    description: "TODO",
+    title: "Groq Transcription Model",
+    description: "Provides access to Groq transcription models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -1490,10 +1480,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "HumeSpeechModel",
+  "hume-speech-model",
   {
-    title: "HumeSpeechModel",
-    description: "TODO",
+    title: "Hume Speech Model",
+    description: "Provides access to Hume speech synthesis models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -1513,10 +1503,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "LmntSpeechModel",
+  "lmnt-speech-model",
   {
-    title: "LmntSpeechModel",
-    description: "TODO",
+    title: "LMNT Speech Model",
+    description: "Provides access to LMNT speech synthesis models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -1534,10 +1524,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "LumaLanguageModel",
+  "luma-language-model",
   {
-    title: "LumaLanguageModel",
-    description: "TODO",
+    title: "Luma Language Model",
+    description: "Provides access to Luma language models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -1550,10 +1540,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "LumaTextEmbeddingModel",
+  "luma-text-embedding-model",
   {
-    title: "LumaTextEmbeddingModel",
-    description: "TODO",
+    title: "Luma Text Embedding Model",
+    description: "Provides access to Luma text embedding models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -1566,10 +1556,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "LumaImageModel",
+  "luma-image-model",
   {
-    title: "LumaImageModel",
-    description: "TODO",
+    title: "Luma Image Model",
+    description: "Provides access to Luma image generation models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -1582,10 +1572,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "LumaSpeechModel",
+  "luma-speech-model",
   {
-    title: "LumaSpeechModel",
-    description: "TODO",
+    title: "Luma Speech Model",
+    description: "Provides access to Luma speech synthesis models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -1603,10 +1593,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "LumaTranscriptionModel",
+  "luma-transcription-model",
   {
-    title: "LumaTranscriptionModel",
-    description: "TODO",
+    title: "Luma Transcription Model",
+    description: "Provides access to Luma transcription models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -1624,10 +1614,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "MistralLanguageModel",
+  "mistral-language-model",
   {
-    title: "MistralLanguageModel",
-    description: "TODO",
+    title: "Mistral Language Model",
+    description: "Provides access to Mistral language models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -1640,10 +1630,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "MistralTextEmbeddingModel",
+  "mistral-text-embedding-model",
   {
-    title: "MistralTextEmbeddingModel",
-    description: "TODO",
+    title: "Mistral Text Embedding Model",
+    description: "Provides access to Mistral text embedding models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -1656,10 +1646,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "MistralImageModel",
+  "mistral-image-model",
   {
-    title: "MistralImageModel",
-    description: "TODO",
+    title: "Mistral Image Model",
+    description: "Provides access to Mistral image generation models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -1672,10 +1662,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "MistralSpeechModel",
+  "mistral-speech-model",
   {
-    title: "MistralSpeechModel",
-    description: "TODO",
+    title: "Mistral Speech Model",
+    description: "Provides access to Mistral speech synthesis models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: SpeechModel }),
     annotations: { baklavaCategory: "AI Generation" },
@@ -1689,10 +1679,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "MistralTranscriptionModel",
+  "mistral-transcription-model",
   {
-    title: "MistralTranscriptionModel",
-    description: "TODO",
+    title: "Mistral Transcription Model",
+    description: "Provides access to Mistral transcription models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: TranscriptionModel }),
     annotations: { baklavaCategory: "AI Generation" },
@@ -1706,10 +1696,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "OpenaiLanguageModel",
+  "openai-language-model",
   {
-    title: "OpenaiLanguageModel",
-    description: "TODO",
+    title: "OpenAI Language Model",
+    description: "Provides access to OpenAI language models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -1722,10 +1712,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "OpenaiTextEmbeddingModel",
+  "openai-text-embedding-model",
   {
-    title: "OpenaiTextEmbeddingModel",
-    description: "TODO",
+    title: "OpenAI Text Embedding Model",
+    description: "Provides access to OpenAI text embedding models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -1738,10 +1728,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "OpenaiImageModel",
+  "openai-image-model",
   {
-    title: "OpenaiImageModel",
-    description: "TODO",
+    title: "OpenAI Image Model",
+    description: "Provides access to OpenAI image generation models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -1754,10 +1744,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "OpenaiSpeechModel",
+  "openai-speech-model",
   {
-    title: "OpenaiSpeechModel",
-    description: "TODO",
+    title: "OpenAI Speech Model",
+    description: "Provides access to OpenAI speech synthesis models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: SpeechModel }),
     annotations: { baklavaCategory: "AI Generation" },
@@ -1771,10 +1761,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "OpenaiTranscriptionModel",
+  "openai-transcription-model",
   {
-    title: "OpenaiTranscriptionModel",
-    description: "TODO",
+    title: "OpenAI Transcription Model",
+    description: "Provides access to OpenAI transcription models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: TranscriptionModel }),
     annotations: { baklavaCategory: "AI Generation" },
@@ -1788,10 +1778,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "PerplexityLanguageModel",
+  "perplexity-language-model",
   {
-    title: "PerplexityLanguageModel",
-    description: "TODO",
+    title: "Perplexity Language Model",
+    description: "Provides access to Perplexity language models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -1804,10 +1794,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "PerplexityTextEmbeddingModel",
+  "perplexity-text-embedding-model",
   {
-    title: "PerplexityTextEmbeddingModel",
-    description: "TODO",
+    title: "Perplexity Text Embedding Model",
+    description: "Provides access to Perplexity text embedding models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -1820,10 +1810,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "PerplexityImageModel",
+  "perplexity-image-model",
   {
-    title: "PerplexityImageModel",
-    description: "TODO",
+    title: "Perplexity Image Model",
+    description: "Provides access to Perplexity image generation models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -1836,10 +1826,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "PerplexitySpeechModel",
+  "perplexity-speech-model",
   {
-    title: "PerplexitySpeechModel",
-    description: "TODO",
+    title: "Perplexity Speech Model",
+    description: "Provides access to Perplexity speech synthesis models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: SpeechModel }),
     annotations: { baklavaCategory: "AI Generation" },
@@ -1853,10 +1843,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "PerplexityTranscriptionModel",
+  "perplexity-transcription-model",
   {
-    title: "PerplexityTranscriptionModel",
-    description: "TODO",
+    title: "Perplexity Transcription Model",
+    description: "Provides access to Perplexity transcription models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: TranscriptionModel }),
     annotations: { baklavaCategory: "AI Generation" },
@@ -1870,10 +1860,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "ReplicateLanguageModel",
+  "replicate-language-model",
   {
-    title: "ReplicateLanguageModel",
-    description: "TODO",
+    title: "Replicate Language Model",
+    description: "Provides access to Replicate language models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -1886,10 +1876,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "ReplicateTextEmbeddingModel",
+  "replicate-text-embedding-model",
   {
-    title: "ReplicateTextEmbeddingModel",
-    description: "TODO",
+    title: "Replicate Text Embedding Model",
+    description: "Provides access to Replicate text embedding models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -1902,10 +1892,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "ReplicateImageModel",
+  "replicate-image-model",
   {
-    title: "ReplicateImageModel",
-    description: "TODO",
+    title: "Replicate Image Model",
+    description: "Provides access to Replicate image generation models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -1918,10 +1908,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "ReplicateSpeechModel",
+  "replicate-speech-model",
   {
-    title: "ReplicateSpeechModel",
-    description: "TODO",
+    title: "Replicate Speech Model",
+    description: "Provides access to Replicate speech synthesis models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: SpeechModel }),
     annotations: { baklavaCategory: "AI Generation" },
@@ -1935,10 +1925,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "ReplicateTranscriptionModel",
+  "replicate-transcription-model",
   {
-    title: "ReplicateTranscriptionModel",
-    description: "TODO",
+    title: "Replicate Transcription Model",
+    description: "Provides access to Replicate transcription models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: TranscriptionModel }),
     annotations: { baklavaCategory: "AI Generation" },
@@ -1952,10 +1942,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "RevaiLanguageModel",
+  "revai-language-model",
   {
-    title: "RevaiLanguageModel",
-    description: "TODO",
+    title: "RevAI Language Model",
+    description: "Provides access to RevAI language models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -1968,10 +1958,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "RevaiTextEmbeddingModel",
+  "revai-text-embedding-model",
   {
-    title: "RevaiTextEmbeddingModel",
-    description: "TODO",
+    title: "RevAI Text Embedding Model",
+    description: "Provides access to RevAI text embedding models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -1984,10 +1974,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "RevaiImageModel",
+  "revai-image-model",
   {
-    title: "RevaiImageModel",
-    description: "TODO",
+    title: "RevAI Image Model",
+    description: "Provides access to RevAI image generation models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -2000,10 +1990,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "RevaiSpeechModel",
+  "revai-speech-model",
   {
-    title: "RevaiSpeechModel",
-    description: "TODO",
+    title: "RevAI Speech Model",
+    description: "Provides access to RevAI speech synthesis models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: SpeechModel }),
     annotations: { baklavaCategory: "AI Generation" },
@@ -2017,10 +2007,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "RevaiTranscriptionModel",
+  "revai-transcription-model",
   {
-    title: "RevaiTranscriptionModel",
-    description: "TODO",
+    title: "RevAI Transcription Model",
+    description: "Provides access to RevAI transcription models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: TranscriptionModel }),
     annotations: { baklavaCategory: "AI Generation" },
@@ -2034,10 +2024,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "TogetheraiLanguageModel",
+  "togetherai-language-model",
   {
-    title: "TogetheraiLanguageModel",
-    description: "TODO",
+    title: "TogetherAI Language Model",
+    description: "Provides access to TogetherAI language models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -2050,10 +2040,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "TogetheraiTextEmbeddingModel",
+  "togetherai-text-embedding-model",
   {
-    title: "TogetheraiTextEmbeddingModel",
-    description: "TODO",
+    title: "TogetherAI Text Embedding Model",
+    description: "Provides access to TogetherAI text embedding models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -2066,10 +2056,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "TogetheraiImageModel",
+  "togetherai-image-model",
   {
-    title: "TogetheraiImageModel",
-    description: "TODO",
+    title: "TogetherAI Image Model",
+    description: "Provides access to TogetherAI image generation models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -2082,10 +2072,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "TogetheraiSpeechModel",
+  "togetherai-speech-model",
   {
-    title: "TogetheraiSpeechModel",
-    description: "TODO",
+    title: "TogetherAI Speech Model",
+    description: "Provides access to TogetherAI speech synthesis models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: SpeechModel }),
     annotations: { baklavaCategory: "AI Generation" },
@@ -2099,10 +2089,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "TogetheraiTranscriptionModel",
+  "togetherai-transcription-model",
   {
-    title: "TogetheraiTranscriptionModel",
-    description: "TODO",
+    title: "TogetherAI Transcription Model",
+    description: "Provides access to TogetherAI transcription models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: TranscriptionModel }),
     annotations: { baklavaCategory: "AI Generation" },
@@ -2116,10 +2106,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "VercelLanguageModel",
+  "vercel-language-model",
   {
-    title: "VercelLanguageModel",
-    description: "TODO",
+    title: "Vercel Language Model",
+    description: "Provides access to Vercel language models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -2132,10 +2122,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "VercelTextEmbeddingModel",
+  "vercel-text-embedding-model",
   {
-    title: "VercelTextEmbeddingModel",
-    description: "TODO",
+    title: "Vercel Text Embedding Model",
+    description: "Provides access to Vercel text embedding models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -2148,10 +2138,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "VercelImageModel",
+  "vercel-image-model",
   {
-    title: "VercelImageModel",
-    description: "TODO",
+    title: "Vercel Image Model",
+    description: "Provides access to Vercel image generation models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -2164,10 +2154,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "VercelSpeechModel",
+  "vercel-speech-model",
   {
-    title: "VercelSpeechModel",
-    description: "TODO",
+    title: "Vercel Speech Model",
+    description: "Provides access to Vercel speech synthesis models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: SpeechModel }),
     annotations: { baklavaCategory: "AI Generation" },
@@ -2181,10 +2171,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "VercelTranscriptionModel",
+  "vercel-transcription-model",
   {
-    title: "VercelTranscriptionModel",
-    description: "TODO",
+    title: "Vercel Transcription Model",
+    description: "Provides access to Vercel transcription models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: TranscriptionModel }),
     annotations: { baklavaCategory: "AI Generation" },
@@ -2198,10 +2188,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "XaiLanguageModel",
+  "xai-language-model",
   {
-    title: "XaiLanguageModel",
-    description: "TODO",
+    title: "XAI Language Model",
+    description: "Provides access to XAI language models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -2214,10 +2204,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "XaiTextEmbeddingModel",
+  "xai-text-embedding-model",
   {
-    title: "XaiTextEmbeddingModel",
-    description: "TODO",
+    title: "XAI Text Embedding Model",
+    description: "Provides access to XAI text embedding models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -2230,10 +2220,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "XaiImageModel",
+  "xai-image-model",
   {
-    title: "XaiImageModel",
-    description: "TODO",
+    title: "XAI Image Model",
+    description: "Provides access to XAI image generation models.",
     inputSchema: z.object({
       modelId: z.string(),
     }),
@@ -2246,10 +2236,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "XaiSpeechModel",
+  "xai-speech-model",
   {
-    title: "XaiSpeechModel",
-    description: "TODO",
+    title: "XAI Speech Model",
+    description: "Provides access to XAI speech synthesis models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: SpeechModel }),
     annotations: { baklavaCategory: "AI Generation" },
@@ -2263,10 +2253,10 @@ registerMcpServerTool(
 );
 
 registerMcpServerTool(
-  "XaiTranscriptionModel",
+  "xai-transcription-model",
   {
-    title: "XaiTranscriptionModel",
-    description: "TODO",
+    title: "XAI Transcription Model",
+    description: "Provides access to XAI transcription models.",
     inputSchema: z.object({ modelId: z.string() }),
     outputSchema: z.object({ model: TranscriptionModel }),
     annotations: { baklavaCategory: "AI Generation" },

@@ -102,7 +102,7 @@ export const DatabaseSelectCommand = z
     table: z.string().describe("Name of the table to query"),
     columns: z.array(z.string()).describe("Columns to select from the table"),
     where: DatabaseQueryCondition.optional().describe(
-      "Conditions to filter the results"
+      "Conditions to filter the results",
     ),
     orderBy: z.string().optional().describe("Column to order the results by"),
     limit: z
@@ -126,7 +126,7 @@ export const DatabaseSelectCommand = z
             .enum(["INNER", "LEFT", "RIGHT", "FULL"])
             .optional()
             .describe("Type of join"),
-        })
+        }),
       )
       .optional()
       .describe("Join conditions for the query"),
@@ -159,7 +159,7 @@ export const DatabaseUpdateCommand = z
     columns: z.array(z.string()).describe("Columns to update"),
     set: z.looseObject({}).describe("Values to update"),
     where: DatabaseQueryCondition.optional().describe(
-      "Conditions to filter which rows to update"
+      "Conditions to filter which rows to update",
     ),
   })
   .meta({
@@ -173,7 +173,7 @@ export const DatabaseDeleteCommand = z
   .object({
     table: z.string().describe("Name of the table to delete from"),
     where: DatabaseQueryCondition.optional().describe(
-      "Conditions to filter which rows to delete"
+      "Conditions to filter which rows to delete",
     ),
   })
   .meta({
@@ -216,7 +216,7 @@ const databaseComparisonOperatorType =
 databaseComparisonOperatorType.addConversion(stringType, (v) => v);
 const databaseQueryConditionComparisonType =
   nodeInterfaceType<DatabaseQueryConditionComparison>(
-    "DatabaseQueryConditionComparison"
+    "DatabaseQueryConditionComparison",
   );
 
 const databaseQueryConditionAndType =
@@ -226,27 +226,27 @@ const databaseQueryConditionOrType =
 const databaseQueryConditionNotType =
   nodeInterfaceType<DatabaseQueryConditionNot>("DatabaseQueryConditionNot");
 const databaseQueryConditionType = nodeInterfaceType<DatabaseQueryCondition>(
-  "DatabaseQueryCondition"
+  "DatabaseQueryCondition",
 );
 const databaseQueryConditionListType = listType<DatabaseQueryCondition>(
-  databaseQueryConditionType
+  databaseQueryConditionType,
 );
 
 databaseQueryConditionComparisonType.addConversion(
   databaseQueryConditionType,
-  (v) => v
+  (v) => v,
 );
 databaseQueryConditionAndType.addConversion(
   databaseQueryConditionType,
-  (v) => v
+  (v) => v,
 );
 databaseQueryConditionOrType.addConversion(
   databaseQueryConditionType,
-  (v) => v
+  (v) => v,
 );
 databaseQueryConditionNotType.addConversion(
   databaseQueryConditionType,
-  (v) => v
+  (v) => v,
 );
 
 export function registerDatabaseInterfaceTypes(types: BaklavaInterfaceTypes) {
@@ -255,7 +255,7 @@ export function registerDatabaseInterfaceTypes(types: BaklavaInterfaceTypes) {
     databaseQueryConditionComparisonType,
     databaseQueryConditionAndType,
     databaseQueryConditionOrType,
-    databaseQueryConditionNotType
+    databaseQueryConditionNotType,
   );
 }
 
@@ -266,24 +266,20 @@ export const DatabaseQueryConditionComparisonNode = defineNode({
     operator: () =>
       selectInterface<DatabaseComparisonOperator>(
         "Operator",
-        "=",
         databaseComparisonOperatorType,
-        ["=", "!=", ">", "<", ">=", "<=", "LIKE"]
+        ["=", "!=", ">", "<", ">=", "<=", "LIKE"],
+        "=",
       ),
-    value: () => nodeInterface("Value", "", anyType),
+    value: () => nodeInterface("Value", anyType, ""),
   },
   outputs: {
     condition: () =>
-      nodeInterface(
-        "Condition",
-        {
-          type: "comparison",
-          column: "",
-          operator: "=",
-          value: "",
-        },
-        databaseQueryConditionComparisonType
-      ),
+      nodeInterface("Condition", databaseQueryConditionComparisonType, {
+        type: "comparison",
+        column: "",
+        operator: "=",
+        value: "",
+      }),
   },
   calculate({ column, operator, value }) {
     return {
@@ -307,15 +303,14 @@ export const DatabaseQueryConditionAndNode = defineNode({
   type: "DatabaseQueryConditionAndNode",
   inputs: {
     conditions: () =>
-      nodeInterface("Conditions", [], databaseQueryConditionListType),
+      nodeInterface("Conditions", databaseQueryConditionListType, []),
   },
   outputs: {
     condition: () =>
-      nodeInterface(
-        "Condition",
-        { type: "and", conditions: [] },
-        databaseQueryConditionAndType
-      ),
+      nodeInterface("Condition", databaseQueryConditionAndType, {
+        type: "and",
+        conditions: [],
+      }),
   },
   calculate({ conditions }) {
     return { condition: { type: "and" as const, conditions } };
@@ -331,15 +326,14 @@ export const DatabaseQueryConditionOrNode = defineNode({
   type: "DatabaseQueryConditionOrNode",
   inputs: {
     conditions: () =>
-      nodeInterface("Conditions", [], databaseQueryConditionListType),
+      nodeInterface("Conditions", databaseQueryConditionListType, []),
   },
   outputs: {
     condition: () =>
-      nodeInterface(
-        "Condition",
-        { type: "or", conditions: [] },
-        databaseQueryConditionOrType
-      ),
+      nodeInterface("Condition", databaseQueryConditionOrType, {
+        type: "or",
+        conditions: [],
+      }),
   },
   calculate({ conditions }) {
     return { condition: { type: "or" as const, conditions } };
@@ -355,27 +349,24 @@ export const DatabaseQueryConditionNotNode = defineNode({
   type: "DatabaseQueryConditionNotNode",
   inputs: {
     condition: () =>
-      nodeInterface(
-        "Condition",
-        { type: "comparison", column: "", operator: "=", value: "" },
-        databaseQueryConditionType
-      ),
+      nodeInterface("Condition", databaseQueryConditionType, {
+        type: "comparison",
+        column: "",
+        operator: "=",
+        value: "",
+      }),
   },
   outputs: {
     condition: () =>
-      nodeInterface(
-        "Condition",
-        {
-          type: "not",
-          condition: {
-            type: "comparison",
-            column: "",
-            operator: "=",
-            value: "",
-          },
+      nodeInterface("Condition", databaseQueryConditionNotType, {
+        type: "not",
+        condition: {
+          type: "comparison",
+          column: "",
+          operator: "=",
+          value: "",
         },
-        databaseQueryConditionNotType
-      ),
+      }),
   },
   calculate({ condition }) {
     return { condition: { type: "not" as const, condition } };
@@ -408,20 +399,15 @@ export const databaseDeleteCommandInterfaceType =
 export const DatabaseSelectNode = defineNode({
   type: "DatabaseSelectNode",
   inputs: {
-    database: () =>
-      nodeInterface("Database", undefined!, databaseInterfaceType),
+    database: () => nodeInterface("Database", databaseInterfaceType),
     command: () =>
-      nodeInterface(
-        "Command",
-        {
-          table: "",
-          columns: [],
-        },
-        databaseSelectCommandInterfaceType
-      ),
+      nodeInterface("Command", databaseSelectCommandInterfaceType, {
+        table: "",
+        columns: [],
+      }),
   },
   outputs: {
-    rows: () => nodeInterface("Rows", [], listType<unknown>(anyType)),
+    rows: () => nodeInterface("Rows", listType<unknown>(anyType), []),
   },
   async calculate({ database, command }) {
     return { rows: await database.select(command) };
@@ -434,18 +420,13 @@ export function registerDatabaseSelectNode(editor: Editor) {
 export const DatabaseInsertNode = defineNode({
   type: "DatabaseInsertNode",
   inputs: {
-    database: () =>
-      nodeInterface("Database", undefined!, databaseInterfaceType),
+    database: () => nodeInterface("Database", databaseInterfaceType),
     command: () =>
-      nodeInterface(
-        "Command",
-        {
-          table: "",
-          columns: [],
-          values: [],
-        },
-        databaseInsertCommandInterfaceType
-      ),
+      nodeInterface("Command", databaseInsertCommandInterfaceType, {
+        table: "",
+        columns: [],
+        values: [],
+      }),
   },
   outputs: {},
   async calculate({ database, command }) {
@@ -460,18 +441,13 @@ export function registerDatabaseInsertNode(editor: Editor) {
 export const DatabaseUpdateNode = defineNode({
   type: "DatabaseUpdateNode",
   inputs: {
-    database: () =>
-      nodeInterface("Database", undefined!, databaseInterfaceType),
+    database: () => nodeInterface("Database", databaseInterfaceType),
     command: () =>
-      nodeInterface(
-        "Command",
-        {
-          table: "",
-          columns: [],
-          set: {},
-        },
-        databaseUpdateCommandInterfaceType
-      ),
+      nodeInterface("Command", databaseUpdateCommandInterfaceType, {
+        table: "",
+        columns: [],
+        set: {},
+      }),
   },
   outputs: {},
   async calculate({ database, command }) {
@@ -486,16 +462,11 @@ export function registerDatabaseUpdateNode(editor: Editor) {
 export const DatabaseDeleteNode = defineNode({
   type: "DatabaseDeleteNode",
   inputs: {
-    database: () =>
-      nodeInterface("Database", undefined!, databaseInterfaceType),
+    database: () => nodeInterface("Database", databaseInterfaceType),
     command: () =>
-      nodeInterface(
-        "Command",
-        {
-          table: "",
-        },
-        databaseDeleteCommandInterfaceType
-      ),
+      nodeInterface("Command", databaseDeleteCommandInterfaceType, {
+        table: "",
+      }),
   },
   outputs: {},
   async calculate({ database, command }) {
