@@ -18,7 +18,6 @@ import { zCustom, zFunction, zInstanceof } from "./zodHelpers";
 export const LanguageModel = zCustom<Exclude<UpstreamLanguageModel, string>>(
   "ai-sdk-language-model",
 ).register(z.globalRegistry, {
-  id: "LanguageModel",
   title: "LanguageModel",
   description: "Common interface for language models.",
 });
@@ -27,7 +26,6 @@ export type LanguageModel = z.infer<typeof LanguageModel>;
 export const TextEmbeddingModel = zCustom<EmbeddingModel<string>>(
   "ai-sdk-text-embedding-model",
 ).register(z.globalRegistry, {
-  id: "TextEmbeddingModel",
   title: "TextEmbeddingModel",
   description: "Common interface for text embedding models.",
 });
@@ -36,7 +34,6 @@ export type TextEmbeddingModel = z.infer<typeof TextEmbeddingModel>;
 export const ImageModel = zCustom<UpstreamImageModel>(
   "ai-sdk-image-model",
 ).register(z.globalRegistry, {
-  id: "ImageModel",
   title: "ImageModel",
   description: "Common interface for image models.",
 });
@@ -45,7 +42,6 @@ export type ImageModel = z.infer<typeof ImageModel>;
 export const SpeechModel = zCustom<UpstreamSpeechModel>(
   "ai-sdk-speech-model",
 ).register(z.globalRegistry, {
-  id: "SpeechModel",
   title: "SpeechModel",
   description: "Common interface for speech models.",
 });
@@ -54,7 +50,6 @@ export type SpeechModel = z.infer<typeof SpeechModel>;
 export const TranscriptionModel = zCustom<UpstreamTranscriptionModel>(
   "ai-sdk-transcription-model",
 ).register(z.globalRegistry, {
-  id: "TranscriptionModel",
   title: "TranscriptionModel",
   description: "Common interface for transcription models.",
 });
@@ -657,7 +652,6 @@ export type LanguageModelResponseMetadataWithMessagesAndBody = z.infer<
 >;
 
 export const JSONSchema7 = zCustom<UpstreamJSONSchema7>("json-schema-7").meta({
-  id: "JSONSchema7",
   title: "JSONSchema7",
   description: `\
 A JSON Schema 7 object that describes the input schema of a tool and/or the output schema of the LLM.
@@ -988,7 +982,6 @@ export const GenerateImageParameters = z
     maxRetries: z
       .int()
       .optional()
-      .default(2)
       .describe(
         "Maximum number of retries per image generation call. Set to 0 to disable retries.",
       ),
@@ -1104,7 +1097,6 @@ export const GenerateSpeechParameters = z
     maxRetries: z
       .int()
       .optional()
-      .default(2)
       .describe(
         "Maximum number of retries per speech model call. Set to 0 to disable retries.",
       ),
@@ -1204,7 +1196,6 @@ E.g. \`{"openai": {"temperature": 0}}\`.`,
     maxRetries: z
       .int()
       .optional()
-      .default(2)
       .describe(
         "Maximum number of retries per transcript model call. Set to 0 to disable retries.",
       ),
@@ -1315,7 +1306,6 @@ export const CallSettings = z
   .object({
     maxOutputTokens: z
       .int()
-      .min(0)
       .optional()
       .describe("Maximum number of tokens to generate."),
     temperature: z
@@ -1355,17 +1345,13 @@ export const CallSettings = z
         "Stop sequences for the model. If set, the model will stop generating text when one of the stop sequences is generated.",
       ),
     seed: z
-      .number()
       .int()
       .optional()
       .describe(
         "The seed (integer) to use for random sampling. If set and supported by the model, calls will generate deterministic results.",
       ),
     maxRetries: z
-      .number()
       .int()
-      .min(0)
-      .default(2)
       .optional()
       .describe("Maximum number of retries. Set to 0 to disable retries."),
     abortSignal: zInstanceof(AbortSignal)
@@ -1512,7 +1498,6 @@ export const Output = zCustom<UpstreamOutput.Output<unknown, unknown>>(
   title: "Output",
   description:
     "Specification for parsing structured outputs from the LLM response. It is experimental and subject to change.",
-  id: "Output",
 });
 export type Output = z.infer<typeof Output>;
 
@@ -1647,7 +1632,6 @@ export const TextEmbeddingParameters = z
     value: z.string().describe("The value that should be embedded."),
     maxRetries: z
       .int()
-      .min(0)
       .optional()
       .describe(
         "Maximum number of retries per embedding model call. Set to 0 to disable retries.",

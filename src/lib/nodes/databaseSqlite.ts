@@ -8,7 +8,7 @@ import {
   type DatabaseQueryConditionOr,
 } from "./database";
 import { registerMcpServerTool } from "./mcp";
-import { z } from "zod";
+import { z } from "zod/v4";
 
 function sqlite3StringifyDatabaseQueryConditionComparison(
   condition: DatabaseQueryConditionComparison,

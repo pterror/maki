@@ -5,7 +5,7 @@ export function camelCaseToPascalCase(input: string): string {
 export function camelCaseToTitleCase(input: string): string {
   // TODO: Replace with a single regex replace
   return input
-    .replace(/[A-Z](?=[A-Za-z])|[a-z](?=[A-Z0-9])|[0-9](?=[A-Za-z])/g, "$& ")
+    .replace(/[A-Z](?=[A-Z])|[a-z](?=[A-Z0-9])|[0-9](?=[A-Za-z])/g, "$& ")
     .replace(/_/g, " ")
     .replace(/\b\w/g, (char) => char.toUpperCase());
 }

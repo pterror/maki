@@ -25,6 +25,11 @@ import { unsafeValues } from "../core";
 import { defineNode, Editor } from "baklavajs";
 import { kebabCaseToPascalCase } from "../string";
 import { allEditorsNeedingDerivedNodes } from "./core";
+import {
+  MemoryClientTransport,
+  MemoryServerTransport,
+} from "./memoryTransport";
+import { zodShape } from "./zodHelpers";
 
 export type McpToolConfig = {
   title?: string;
@@ -37,6 +42,10 @@ export type McpToolConfig = {
 const EMPTY_OBJECT_JSON_SCHEMA = { type: "object", properties: {} };
 
 const mcpServer = new McpServer({ name: "maki-server", version: "0.1.0" });
+const serverTransport = new MemoryServerTransport();
+export function initializeMcpServer() {
+  mcpServer.connect(serverTransport);
+}
 
 export type ToolCallback<Args extends undefined | ZodRawShape = undefined> =
   Args extends ZodRawShape
@@ -65,19 +74,27 @@ export function registerMcpServerTool<
     args: z.infer<InputArgs>,
   ) => z.infer<OutputArgs> | Promise<z.infer<OutputArgs>>,
 ): RegisteredTool {
-  return mcpServer.registerTool(name, config as never, (args) => {
-    const result = cb(args as never);
-    if (result instanceof Promise) {
-      return result.then<CallToolResult>((data) => ({
+  return mcpServer.registerTool(
+    name,
+    {
+      ...config,
+      inputSchema: zodShape(config.inputSchema),
+      outputSchema: zodShape(config.outputSchema),
+    } as never,
+    (args) => {
+      const result = cb(args as never);
+      if (result instanceof Promise) {
+        return result.then<CallToolResult>((data) => ({
+          content: [],
+          structuredContent: data,
+        }));
+      }
+      return {
         content: [],
-        structuredContent: data,
-      }));
-    }
-    return {
-      content: [],
-      structuredContent: result,
-    } satisfies CallToolResult;
-  });
+        structuredContent: result,
+      } satisfies CallToolResult;
+    },
+  );
 }
 
 export function getMcpServerTools(server: McpServer) {
@@ -150,4 +167,8 @@ export async function registerAllToolsInBaklava() {
       registerToolNode(editorInstance);
     }
   }
+}
+
+export function initializeMcpClient() {
+  mcpClient.connect(new MemoryClientTransport(serverTransport));
 }

@@ -17,8 +17,9 @@ import {
   type SelectInterfaceItem,
 } from "baklavajs";
 import { defineListNode, defineStringDictNode } from "./core";
-import { toJSONSchema, z, type ZodType } from "zod/v4";
+import { z, type ZodType } from "zod/v4";
 import { zInstanceof } from "./zodHelpers";
+import { registerCoreType } from "./baklava";
 
 const allInterfaceTypesRegistriesNeedingDerivedTypes = new Set<
   WeakRef<BaklavaInterfaceTypes>
@@ -146,15 +147,6 @@ export function getAllStringDictTypes(): NodeInterfaceType<
   });
 }
 
-const zodTypesMap = new Map<string, NodeInterfaceType<any>>();
-
-function registerCoreType<T extends ZodType>(type: T, name: string) {
-  const id = JSON.stringify(toJSONSchema(type));
-  const interfaceType = nodeInterfaceType<z.infer<T>>(name);
-  zodTypesMap.set(id, interfaceType);
-  return interfaceType;
-}
-
 export function withCustomJsonSchemaFormat<T extends ZodType>(
   type: T,
   format: string,
@@ -163,6 +155,8 @@ export function withCustomJsonSchemaFormat<T extends ZodType>(
   return type;
 }
 
+registerCoreType(z.unknown(), "unknown");
+registerCoreType(z.any(), "any");
 export const undefinedType = registerCoreType(
   withCustomJsonSchemaFormat(z.undefined(), "undefined"),
   "undefined",

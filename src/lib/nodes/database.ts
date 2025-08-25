@@ -7,7 +7,6 @@ export const DatabaseQueryConditionComparisonOperator = z
   .meta({
     title: "DatabaseQueryConditionComparisonOperator",
     description: "Comparison operators for database query conditions",
-    id: "DatabaseQueryConditionComparisonOperator",
   });
 export type DatabaseQueryConditionComparisonOperator = z.infer<
   typeof DatabaseQueryConditionComparisonOperator
@@ -25,7 +24,6 @@ export const DatabaseQueryConditionComparison = z
   .meta({
     title: "DatabaseQueryConditionComparison",
     description: "A comparison condition for filtering database query results",
-    id: "DatabaseQueryConditionComparison",
   });
 export type DatabaseQueryConditionComparison = z.infer<
   typeof DatabaseQueryConditionComparison
@@ -44,7 +42,6 @@ export const DatabaseQueryConditionAnd = z
   .meta({
     title: "DatabaseQueryConditionAnd",
     description: "Combines multiple conditions with logical AND",
-    id: "DatabaseQueryConditionAnd",
   });
 export type DatabaseQueryConditionAnd = z.infer<
   typeof DatabaseQueryConditionAnd
@@ -63,7 +60,6 @@ export const DatabaseQueryConditionOr = z
   .meta({
     title: "DatabaseQueryConditionOr",
     description: "Combines multiple conditions with logical OR",
-    id: "DatabaseQueryConditionOr",
   });
 export type DatabaseQueryConditionOr = z.infer<typeof DatabaseQueryConditionOr>;
 
@@ -77,7 +73,6 @@ export const DatabaseQueryConditionNot = z
   .meta({
     title: "DatabaseQueryConditionNot",
     description: "Negates a single condition",
-    id: "DatabaseQueryConditionNot",
   });
 export type DatabaseQueryConditionNot = z.infer<
   typeof DatabaseQueryConditionNot
@@ -93,9 +88,28 @@ export const DatabaseQueryCondition = z
   .meta({
     title: "DatabaseQueryCondition",
     description: "Condition for filtering database query results",
-    id: "DatabaseQueryCondition",
   });
 export type DatabaseQueryCondition = z.infer<typeof DatabaseQueryCondition>;
+
+export const DatabaseJoinType = z
+  .literal(["INNER", "LEFT", "RIGHT", "FULL"])
+  .meta({
+    title: "DatabaseJoinType",
+    description: "Type of join to use in database queries",
+  });
+export type DatabaseJoinType = z.infer<typeof DatabaseJoinType>;
+
+export const DatabaseJoinClause = z
+  .object({
+    table: z.string().describe("Table to join with"),
+    on: z.string().describe("Condition for the join"),
+    type: DatabaseJoinType.optional(),
+  })
+  .meta({
+    title: "DatabaseSelectCommandJoinClause",
+    description: "Join clause for database select command",
+  });
+export type DatabaseJoinClause = z.infer<typeof DatabaseJoinClause>;
 
 export const DatabaseSelectCommand = z
   .object({
@@ -105,36 +119,19 @@ export const DatabaseSelectCommand = z
       "Conditions to filter the results",
     ),
     orderBy: z.string().optional().describe("Column to order the results by"),
-    limit: z
-      .number()
-      .int()
-      .positive()
-      .optional()
-      .describe("Maximum number of results to return"),
+    limit: z.int().optional().describe("Maximum number of results to return"),
     offset: z
-      .number()
       .int()
-      .nonnegative()
       .optional()
       .describe("Number of results to skip before starting to return results"),
     join: z
-      .array(
-        z.object({
-          table: z.string().describe("Table to join"),
-          on: z.string().describe("Condition for the join"),
-          type: z
-            .enum(["INNER", "LEFT", "RIGHT", "FULL"])
-            .optional()
-            .describe("Type of join"),
-        }),
-      )
+      .array(DatabaseJoinClause)
       .optional()
       .describe("Join conditions for the query"),
   })
   .meta({
     title: "DatabaseQuery",
     description: "A SQL query to be executed against a database",
-    id: "DatabaseQuery",
   });
 export type DatabaseSelectCommand = z.infer<typeof DatabaseSelectCommand>;
 
@@ -142,14 +139,12 @@ export const DatabaseInsertCommand = z
   .object({
     table: z.string().describe("Name of the table to insert into"),
     columns: z.array(z.string()).describe("Columns of the objects to insert"),
-    values: z
-      .array(z.looseObject({}))
-      .describe("Values to insert into the table"),
+    // TODO: `z.looseObject({})`  
+    values: z.array(z.unknown()).describe("Values to insert into the table"),
   })
   .meta({
     title: "DatabaseInsertCommand",
     description: "Command to insert data into a database table",
-    id: "DatabaseInsertCommand",
   });
 export type DatabaseInsertCommand = z.infer<typeof DatabaseInsertCommand>;
 
@@ -157,7 +152,8 @@ export const DatabaseUpdateCommand = z
   .object({
     table: z.string().describe("Name of the table to update"),
     columns: z.array(z.string()).describe("Columns to update"),
-    set: z.looseObject({}).describe("Values to update"),
+    // TODO: `z.looseObject({})`
+    set: z.unknown().describe("Values to update"),
     where: DatabaseQueryCondition.optional().describe(
       "Conditions to filter which rows to update",
     ),
@@ -165,7 +161,6 @@ export const DatabaseUpdateCommand = z
   .meta({
     title: "DatabaseUpdateCommand",
     description: "Command to update data in a database table",
-    id: "DatabaseUpdateCommand",
   });
 export type DatabaseUpdateCommand = z.infer<typeof DatabaseUpdateCommand>;
 
@@ -179,7 +174,6 @@ export const DatabaseDeleteCommand = z
   .meta({
     title: "DatabaseDeleteCommand",
     description: "Command to delete data from a database table",
-    id: "DatabaseDeleteCommand",
   });
 export type DatabaseDeleteCommand = z.infer<typeof DatabaseDeleteCommand>;
 
@@ -202,75 +196,13 @@ export const Database = z
   .meta({
     title: "Database",
     description: "A generic database instance",
-    id: "Database",
   });
 export type Database = z.infer<typeof Database>;
 
 registerMcpServerTool(
-  "database-query-condition-comparison",
-  {
-    title: "Database Query Condition Comparison",
-    description: "A comparison condition for filtering database query results.",
-    inputSchema: DatabaseQueryConditionComparison,
-    outputSchema: z.object({ condition: DatabaseQueryConditionComparison }),
-    annotations: { baklavaCategory: "Database" },
-  },
-  ({ column, operator, value }) => ({
-    condition: {
-      type: "comparison" as const,
-      column,
-      operator,
-      value,
-    },
-  }),
-);
-
-registerMcpServerTool(
-  "database-query-condition-and",
-  {
-    title: "Database Query Condition And",
-    description: "Combines multiple conditions with logical AND.",
-    inputSchema: DatabaseQueryConditionAnd,
-    outputSchema: z.object({ condition: DatabaseQueryConditionAnd }),
-    annotations: { baklavaCategory: "Database" },
-  },
-  ({ conditions }) => ({
-    condition: { type: "and" as const, conditions },
-  }),
-);
-
-registerMcpServerTool(
-  "database-query-condition-or",
-  {
-    title: "Database Query Condition Or",
-    description: "Combines multiple conditions with logical OR.",
-    inputSchema: DatabaseQueryConditionOr,
-    outputSchema: z.object({ condition: DatabaseQueryConditionOr }),
-    annotations: { baklavaCategory: "Database" },
-  },
-  ({ conditions }) => ({
-    condition: { type: "or" as const, conditions },
-  }),
-);
-
-registerMcpServerTool(
-  "database-query-condition-not",
-  {
-    title: "Database Query Condition Not",
-    description: "Negates a single condition.",
-    inputSchema: DatabaseQueryConditionNot,
-    outputSchema: z.object({ condition: DatabaseQueryConditionNot }),
-    annotations: { baklavaCategory: "Database" },
-  },
-  ({ condition }) => ({
-    condition: { type: "not" as const, condition },
-  }),
-);
-
-registerMcpServerTool(
   "database-select",
   {
-    title: "Database Select",
+    title: "Select (Database)",
     description: "Selects rows from a database table.",
     inputSchema: z.object({
       database: Database,
@@ -287,7 +219,7 @@ registerMcpServerTool(
 registerMcpServerTool(
   "database-insert",
   {
-    title: "Database Insert",
+    title: "Insert (Database)",
     description: "Inserts rows into a database table.",
     inputSchema: z.object({
       database: Database,
@@ -305,7 +237,7 @@ registerMcpServerTool(
 registerMcpServerTool(
   "database-update",
   {
-    title: "Database Update",
+    title: "Update (Database)",
     description: "Updates rows in a database table.",
     inputSchema: z.object({
       database: Database,
@@ -323,7 +255,7 @@ registerMcpServerTool(
 registerMcpServerTool(
   "database-delete",
   {
-    title: "Database Delete",
+    title: "Delete (Database)",
     description: "Deletes rows from a database table.",
     inputSchema: z.object({
       database: Database,

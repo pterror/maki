@@ -1,4 +1,9 @@
-import { defineNode, Editor, type NodeInterfaceType } from "baklavajs";
+import {
+  defineNode,
+  Editor,
+  NodeInterface,
+  type NodeInterfaceType,
+} from "baklavajs";
 import type { JSONSchema } from "zod/v4/core";
 import {
   checkboxInterface,
@@ -14,14 +19,37 @@ import {
 import { unsafeEntries } from "../core";
 import { camelCaseToPascalCase, camelCaseToTitleCase } from "../string";
 import { allEditorsNeedingDerivedNodes } from "./core";
+import { normalizeJsonSchema, toNormalizedJsonSchema } from "./zodHelpers";
+import type { z, ZodType } from "zod/v4";
 
 const typesMap = new Map<string, NodeInterfaceType<any>>();
 
-export function upsertBaklavaType(type: JSONSchema.JSONSchema) {
-  const id = JSON.stringify(type);
+export function registerCoreType<T extends ZodType>(type: T, name: string) {
+  const jsonSchema = toNormalizedJsonSchema(type);
+  delete jsonSchema.description;
+  const id = JSON.stringify(jsonSchema);
+  const interfaceType = nodeInterfaceType<z.infer<T>>(name);
+  typesMap.set(id, interfaceType);
+  return interfaceType;
+}
+
+export function upsertBaklavaType(
+  type: JSONSchema.JSONSchema,
+): NodeInterfaceType<unknown> {
+  const id = JSON.stringify(normalizeJsonSchema(type));
   const existing = typesMap.get(id);
   if (existing) return existing;
-  const typeName = type.title;
+  const typeName =
+    type.title ??
+    type.$ref ??
+    (() => {
+      const itemType = Array.isArray(type.items)
+        ? undefined
+        : (type.items ?? type.additionalItems);
+      if (type.type === "array" && typeof itemType === "object") {
+        return `list[${upsertBaklavaType(itemType).name}]`;
+      }
+    })();
   if (typeName === undefined) {
     console.error("Issue with Zod type:", type);
     throw new Error("This Zod type is missing a name.");
@@ -68,7 +96,7 @@ export function upsertBaklavaType(type: JSONSchema.JSONSchema) {
         calculate(inputs) {
           return typeItems.map(
             (_, index) => (inputs as any)[`item${index + 1}`],
-          );
+          ) as never;
         },
       });
       function registerConstructNode(editor: Editor) {
@@ -97,8 +125,11 @@ export function upsertBaklavaType(type: JSONSchema.JSONSchema) {
           ]),
         ),
         calculate(inputs) {
-          return typeItems.map(
-            (_, index) => (inputs as any)[`item${index + 1}`],
+          return Object.fromEntries(
+            typeItems.map((_, index) => [
+              `item${index + 1}`,
+              (inputs.value as readonly unknown[])[index],
+            ]),
           );
         },
       });
@@ -144,22 +175,19 @@ export function upsertBaklavaType(type: JSONSchema.JSONSchema) {
                     () => {
                       const titleCaseKey = camelCaseToTitleCase(key);
                       if (typeof value === "boolean") {
-                        return nodeInterface(titleCaseKey, unknownType);
+                        return nodeInterface(
+                          titleCaseKey,
+                          unknownType,
+                        ) as NodeInterface<any>;
                       }
                       switch (value.type) {
                         case "boolean":
                           return checkboxInterface(titleCaseKey);
                         case "string":
                           return textInputInterface(titleCaseKey);
+                        case "integer":
+                          return integerInterface(titleCaseKey);
                         case "number":
-                          if (
-                            // Zod-specific format for integers between -2^53 and 2^53
-                            value.format === "safeint" ||
-                            // Conventional format for integers
-                            (value.multipleOf && value.multipleOf % 1 === 0)
-                          ) {
-                            return integerInterface(titleCaseKey);
-                          }
                           return numberInterface(titleCaseKey);
                       }
                       return nodeInterface(
