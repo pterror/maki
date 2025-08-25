@@ -1,14 +1,17 @@
 export function camelCaseToPascalCase(input: string): string {
-  return (input[0]?.toUpperCase() ?? "") + input.slice(1);
+  return input.replace(/^(.)/, (_, char) => char.toUpperCase());
 }
 
 export function camelCaseToTitleCase(input: string): string {
+  // TODO: Replace with a single regex replace
   return input
-    .replace(/([a-z])([A-Z])/g, "$1 $2")
-    .replace(/([A-Z])([A-Z][a-z])/g, "$1 $2")
-    .replace(/([a-z])([0-9])/g, "$1 $2")
-    .replace(/([0-9])([a-z])/g, "$1 $2")
-    .replace(/([0-9])([A-Z])/g, "$1 $2")
+    .replace(/[A-Z](?=[A-Za-z])|[a-z](?=[A-Z0-9])|[0-9](?=[A-Za-z])/g, "$& ")
     .replace(/_/g, " ")
     .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+export function kebabCaseToPascalCase(input: string): string {
+  return input
+    .replace(/^./, (char) => char.toUpperCase())
+    .replace(/-(.)/g, (_, char) => char.toUpperCase());
 }

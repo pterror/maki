@@ -2,7 +2,6 @@ import {
   BaklavaInterfaceTypes,
   ButtonInterface,
   CheckboxInterface,
-  defineNode,
   Editor,
   IntegerInterface,
   NodeInterface,
@@ -17,24 +16,8 @@ import {
   type BaklavaInterfaceTypesOptions,
   type SelectInterfaceItem,
 } from "baklavajs";
-import {
-  allEditorsNeedingDerivedNodes,
-  defineListNode,
-  defineStringDictNode,
-} from "./core";
-import {
-  toJSONSchema,
-  z,
-  ZodBoolean,
-  ZodIntersection,
-  ZodNumber,
-  ZodObject,
-  ZodString,
-  ZodUnion,
-  type ZodType,
-} from "zod/v4";
-import { camelCaseToPascalCase, camelCaseToTitleCase } from "../string";
-import { unsafeEntries } from "../core";
+import { defineListNode, defineStringDictNode } from "./core";
+import { toJSONSchema, z, type ZodType } from "zod/v4";
 
 const allInterfaceTypesRegistriesNeedingDerivedTypes = new Set<
   WeakRef<BaklavaInterfaceTypes>
@@ -334,100 +317,4 @@ export function nodeInterface<T>(
   defaultValue: NoInfer<T> = undefined!,
 ) {
   return new NodeInterface(name, defaultValue).use(setType, type);
-}
-
-export function upsertBaklavaType<T extends ZodType>(type: T) {
-  const id = JSON.stringify(toJSONSchema(type));
-  const existing = zodTypesMap.get(id);
-  const typeName = z.globalRegistry.get(type)?.title;
-  if (typeName === undefined) {
-    console.error("Issue with Zod type:", type);
-    throw new Error("This Zod type is missing a name.");
-  }
-  if (existing) {
-    if (typeName !== existing.name) {
-      throw new Error(
-        `Zod type name mismatch. New name '${typeName}' does not match existing name '${existing.name}'.`,
-      );
-    }
-    return existing;
-  }
-  const interfaceType = nodeInterfaceType<z.infer<T>>(typeName);
-  zodTypesMap.set(id, interfaceType);
-  if (type instanceof ZodObject) {
-    const ConstructNode = defineNode({
-      type: `Construct${camelCaseToPascalCase(typeName)}Node`,
-      inputs: Object.fromEntries(
-        unsafeEntries(type.shape).map(([key, value]) => [
-          key,
-          () => {
-            const titleCaseKey = camelCaseToTitleCase(key);
-            if (value instanceof ZodBoolean) {
-              return checkboxInterface(titleCaseKey);
-            }
-            if (value instanceof ZodString) {
-              return textInputInterface(titleCaseKey);
-            }
-            if (value instanceof ZodNumber) {
-              if (value.format === "safeint") {
-                return integerInterface(titleCaseKey);
-              }
-              return numberInterface(titleCaseKey);
-            }
-            return nodeInterface(titleCaseKey, upsertBaklavaType(value));
-          },
-        ]),
-      ),
-      outputs: {
-        value: () => nodeInterface("Value", interfaceType),
-      },
-    });
-    function registerConstructNode(editor: Editor) {
-      editor.registerNodeType(ConstructNode, {
-        category: "Object Construction",
-      });
-    }
-    const DeconstructNode = defineNode({
-      type: `Deconstruct${camelCaseToPascalCase(typeName)}Node`,
-      inputs: {
-        value: () => nodeInterface("Value", interfaceType),
-      },
-      outputs: Object.fromEntries(
-        unsafeEntries(type.shape).map(
-          ([key, value]: readonly [key: string, value: ZodType]) => [
-            key,
-            () =>
-              nodeInterface(
-                camelCaseToTitleCase(key),
-                upsertBaklavaType(value),
-              ),
-          ],
-        ),
-      ),
-    });
-    function registerDeconstructNode(editor: Editor) {
-      editor.registerNodeType(DeconstructNode, {
-        category: "Object Deconstruction",
-      });
-    }
-    for (const editor of allEditorsNeedingDerivedNodes) {
-      const editorInstance = editor.deref();
-      if (!editorInstance) continue;
-      registerConstructNode(editorInstance);
-      registerDeconstructNode(editorInstance);
-    }
-  }
-  if (type instanceof ZodUnion) {
-    for (const member of type.options) {
-      const memberInterfaceType = upsertBaklavaType(member as ZodType);
-      memberInterfaceType.addConversion(interfaceType, (v) => v);
-    }
-  }
-  if (type instanceof ZodIntersection) {
-    const leftInterfaceType = upsertBaklavaType(type.def.left as ZodType);
-    interfaceType.addConversion(leftInterfaceType, (v) => v);
-    const rightInterfaceType = upsertBaklavaType(type.def.right as ZodType);
-    interfaceType.addConversion(rightInterfaceType, (v) => v);
-  }
-  return interfaceType;
 }

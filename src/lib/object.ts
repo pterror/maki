@@ -10,7 +10,7 @@ export function unsafeReplaceNumberWithInteger<
   T,
   KeysToReplace extends keyof T = keyof T,
 >(
-  value: T
+  value: T,
 ): {
   [K in keyof T]: K extends KeysToReplace
     ? ReplaceNumberWithInteger<T[K]>

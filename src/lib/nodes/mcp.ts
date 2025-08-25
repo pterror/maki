@@ -2,10 +2,12 @@ import {
   McpServer,
   type RegisteredTool,
 } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import type {
   CallToolResult,
   ServerNotification,
   ServerRequest,
+  Tool,
   ToolAnnotations,
 } from "@modelcontextprotocol/sdk/types.js";
 import {
@@ -16,9 +18,13 @@ import {
   type ZodType,
 } from "zod/v4";
 import type { RequestHandlerExtra } from "@modelcontextprotocol/sdk/shared/protocol.js";
-import { unsafeEntries } from "../core";
-import { upsertBaklavaType } from "./interfaceTypes";
 import type { objectOutputType } from "zod/v3";
+import type { JSONSchema } from "zod/v4/core";
+import { upsertBaklavaType } from "./baklava";
+import { unsafeValues } from "../core";
+import { defineNode, Editor } from "baklavajs";
+import { kebabCaseToPascalCase } from "../string";
+import { allEditorsNeedingDerivedNodes } from "./core";
 
 export type McpToolConfig = {
   title?: string;
@@ -30,7 +36,7 @@ export type McpToolConfig = {
 
 const EMPTY_OBJECT_JSON_SCHEMA = { type: "object", properties: {} };
 
-const mcpServer = new McpServer({ name: "maki", version: "1.0.0" });
+const mcpServer = new McpServer({ name: "maki-server", version: "0.1.0" });
 
 export type ToolCallback<Args extends undefined | ZodRawShape = undefined> =
   Args extends ZodRawShape
@@ -59,12 +65,6 @@ export function registerMcpServerTool<
     args: z.infer<InputArgs>,
   ) => z.infer<OutputArgs> | Promise<z.infer<OutputArgs>>,
 ): RegisteredTool {
-  for (const [, zodType] of unsafeEntries(config.inputSchema.shape)) {
-    upsertBaklavaType(zodType);
-  }
-  for (const [, zodType] of unsafeEntries(config.outputSchema.shape)) {
-    upsertBaklavaType(zodType);
-  }
   return mcpServer.registerTool(name, config as never, (args) => {
     const result = cb(args as never);
     if (result instanceof Promise) {
@@ -103,4 +103,51 @@ export function getMcpServerToolsJson(server: McpServer) {
         outputSchema: toJSONSchema(tool.outputSchema),
       }),
     }));
+}
+
+export async function mcpClientListAllTools(
+  mcpClient: Client,
+): Promise<readonly Tool[]> {
+  let tools: Tool[] = [];
+  let page = await mcpClient.listTools({});
+  tools.push(...page.tools);
+  while (page.nextCursor) {
+    page = await mcpClient.listTools({ cursor: page.nextCursor });
+    tools.push(...page.tools);
+  }
+  return tools;
+}
+
+const mcpClient = new Client({ name: "maki-client", version: "0.1.0" });
+
+export async function registerAllToolsInBaklava() {
+  const tools = await mcpClientListAllTools(mcpClient);
+  for (const tool of tools) {
+    if (tool.inputSchema.properties) {
+      for (const property of unsafeValues(tool.inputSchema.properties)) {
+        if (typeof property === "boolean") continue;
+        upsertBaklavaType(property as JSONSchema.JSONSchema);
+      }
+    }
+    if (tool.outputSchema?.properties) {
+      for (const property of unsafeValues(tool.outputSchema.properties)) {
+        if (typeof property === "boolean") continue;
+        upsertBaklavaType(property as JSONSchema.JSONSchema);
+      }
+    }
+    const ToolNode = defineNode({
+      title: tool.title,
+      type: `${kebabCaseToPascalCase(tool.name)}Node`,
+    });
+    function registerToolNode(editor: Editor) {
+      editor.registerNodeType(ToolNode, {
+        category: tool.annotations?.baklavaCategory as string | undefined,
+      });
+    }
+    for (const editor of allEditorsNeedingDerivedNodes) {
+      const editorInstance = editor.deref();
+      if (!editorInstance) continue;
+      registerToolNode(editorInstance);
+    }
+  }
 }
