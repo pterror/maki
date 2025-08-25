@@ -1,5 +1,6 @@
 import { z } from "zod/v4";
-import { Schema, schemaType } from "./sharedTypes";
+import { schemaType } from "./sharedTypes";
+import { Schema } from "./zodHelpers";
 import { defineNode, Editor } from "baklavajs";
 import {
   bigintType,

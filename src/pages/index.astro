@@ -1,17 +1,25 @@
 ---
-import NodeGraph from '../components/NodeGraph.vue';
-
+import NodeGraph from "../components/NodeGraph.vue";
 ---
 
 <html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>maki</title>
-	</head>
-	<body>
-		<NodeGraph client:only />
-	</body>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="generator" content={Astro.generator} />
+    <title>maki</title>
+    <style is:global>
+      html {
+        height: 100%;
+      }
+      body {
+        height: 100%;
+        margin: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <NodeGraph client:only />
+  </body>
 </html>

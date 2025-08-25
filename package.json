@@ -39,6 +39,7 @@
     "@ai-sdk/vercel": "^1.0.6",
     "@ai-sdk/xai": "^2.0.6",
     "@astrojs/vue": "^5.1.0",
+    "@baklavajs/themes": "^2.7.0",
     "@modelcontextprotocol/sdk": "^1.17.3",
     "@openrouter/ai-sdk-provider": "^1.1.2",
     "ai": "^5.0.11",

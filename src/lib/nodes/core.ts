@@ -36,7 +36,10 @@ export const CoreBooleanNode = defineNode({
   },
 });
 export function registerCoreBooleanNode(editor: Editor) {
-  editor.registerNodeType(CoreBooleanNode, { category: "Constants" });
+  editor.registerNodeType(CoreBooleanNode, {
+    title: "Boolean",
+    category: "Constants",
+  });
 }
 
 export const CoreStringNode = defineNode({
@@ -52,7 +55,10 @@ export const CoreStringNode = defineNode({
   },
 });
 export function registerCoreStringNode(editor: Editor) {
-  editor.registerNodeType(CoreStringNode, { category: "Constants" });
+  editor.registerNodeType(CoreStringNode, {
+    title: "String",
+    category: "Constants",
+  });
 }
 
 export const CoreIntegerNode = defineNode({
@@ -68,7 +74,10 @@ export const CoreIntegerNode = defineNode({
   },
 });
 export function registerCoreIntegerNode(editor: Editor) {
-  editor.registerNodeType(CoreIntegerNode, { category: "Constants" });
+  editor.registerNodeType(CoreIntegerNode, {
+    title: "Integer",
+    category: "Constants",
+  });
 }
 
 export const CoreNumberNode = defineNode({
@@ -84,7 +93,10 @@ export const CoreNumberNode = defineNode({
   },
 });
 export function registerCoreNumberNode(editor: Editor) {
-  editor.registerNodeType(CoreNumberNode, { category: "Constants" });
+  editor.registerNodeType(CoreNumberNode, {
+    title: "Number",
+    category: "Constants",
+  });
 }
 
 export const CoreSliderNode = defineNode({
@@ -100,7 +112,10 @@ export const CoreSliderNode = defineNode({
   },
 });
 export function registerCoreSliderNode(editor: Editor) {
-  editor.registerNodeType(CoreSliderNode, { category: "Constants" });
+  editor.registerNodeType(CoreSliderNode, {
+    title: "Slider",
+    category: "Constants",
+  });
 }
 
 const allListNodeRegisterFunctions = new Set<(editor: Editor) => void>();

@@ -12,51 +12,52 @@ import {
   InvalidToolInputError,
 } from "ai";
 import { z, ZodType } from "zod/v4";
-import { JSONArray, JSONValue, zFunction } from "./sharedTypes";
+import { JSONArray, JSONValue } from "./sharedTypes";
+import { zCustom, zFunction, zInstanceof } from "./zodHelpers";
 
-export const LanguageModel = z
-  .custom<Exclude<UpstreamLanguageModel, string>>()
-  .register(z.globalRegistry, {
-    id: "LanguageModel",
-    title: "LanguageModel",
-    description: "Common interface for language models.",
-  });
+export const LanguageModel = zCustom<Exclude<UpstreamLanguageModel, string>>(
+  "ai-sdk-language-model",
+).register(z.globalRegistry, {
+  id: "LanguageModel",
+  title: "LanguageModel",
+  description: "Common interface for language models.",
+});
 export type LanguageModel = z.infer<typeof LanguageModel>;
 
-export const TextEmbeddingModel = z
-  .custom<EmbeddingModel<string>>()
-  .register(z.globalRegistry, {
-    id: "TextEmbeddingModel",
-    title: "TextEmbeddingModel",
-    description: "Common interface for text embedding models.",
-  });
+export const TextEmbeddingModel = zCustom<EmbeddingModel<string>>(
+  "ai-sdk-text-embedding-model",
+).register(z.globalRegistry, {
+  id: "TextEmbeddingModel",
+  title: "TextEmbeddingModel",
+  description: "Common interface for text embedding models.",
+});
 export type TextEmbeddingModel = z.infer<typeof TextEmbeddingModel>;
 
-export const ImageModel = z
-  .custom<UpstreamImageModel>()
-  .register(z.globalRegistry, {
-    id: "ImageModel",
-    title: "ImageModel",
-    description: "Common interface for image models.",
-  });
+export const ImageModel = zCustom<UpstreamImageModel>(
+  "ai-sdk-image-model",
+).register(z.globalRegistry, {
+  id: "ImageModel",
+  title: "ImageModel",
+  description: "Common interface for image models.",
+});
 export type ImageModel = z.infer<typeof ImageModel>;
 
-export const SpeechModel = z
-  .custom<UpstreamSpeechModel>()
-  .register(z.globalRegistry, {
-    id: "SpeechModel",
-    title: "SpeechModel",
-    description: "Common interface for speech models.",
-  });
+export const SpeechModel = zCustom<UpstreamSpeechModel>(
+  "ai-sdk-speech-model",
+).register(z.globalRegistry, {
+  id: "SpeechModel",
+  title: "SpeechModel",
+  description: "Common interface for speech models.",
+});
 export type SpeechModel = z.infer<typeof SpeechModel>;
 
-export const TranscriptionModel = z
-  .custom<UpstreamTranscriptionModel>()
-  .register(z.globalRegistry, {
-    id: "TranscriptionModel",
-    title: "TranscriptionModel",
-    description: "Common interface for transcription models.",
-  });
+export const TranscriptionModel = zCustom<UpstreamTranscriptionModel>(
+  "ai-sdk-transcription-model",
+).register(z.globalRegistry, {
+  id: "TranscriptionModel",
+  title: "TranscriptionModel",
+  description: "Common interface for transcription models.",
+});
 export type TranscriptionModel = z.infer<typeof TranscriptionModel>;
 
 export const ProviderMetadata = z
@@ -158,7 +159,7 @@ export type ContentPartSourceDocument = z.infer<
 export const GeneratedFile = z
   .object({
     base64: z.string(),
-    uint8Array: z.instanceof(Uint8Array<ArrayBufferLike>),
+    uint8Array: zInstanceof(Uint8Array<ArrayBufferLike>),
     mediaType: z.string(),
   })
   .meta({
@@ -269,10 +270,10 @@ export type ContentPart = z.infer<typeof ContentPart>;
 export const DataContent = z
   .union([
     z.string(),
-    z.instanceof(Uint8Array<ArrayBufferLike>),
-    z.instanceof(ArrayBuffer),
-    z.instanceof(Buffer),
-    z.instanceof(URL),
+    zInstanceof(Uint8Array<ArrayBufferLike>),
+    zInstanceof(ArrayBuffer),
+    zInstanceof(Buffer),
+    zInstanceof(URL),
   ])
   .meta({
     title: "DataContent",
@@ -296,7 +297,7 @@ export type TextPart = z.infer<typeof TextPart>;
 export const ImagePart = z
   .object({
     type: z.literal("image"),
-    image: DataContent.or(z.instanceof(URL)).describe(`\
+    image: DataContent.or(zInstanceof(URL)).describe(`\
 Image data. Can either be:
 - data: a base64-encoded string, a Uint8Array, an ArrayBuffer, or a Buffer
 - URL: a URL that points to the image`),
@@ -317,7 +318,7 @@ export type ImagePart = z.infer<typeof ImagePart>;
 export const FilePart = z
   .object({
     type: z.literal("file"),
-    data: DataContent.or(z.instanceof(URL)).describe(`\
+    data: DataContent.or(zInstanceof(URL)).describe(`\
 File data. Can either be:
 - data: a base64-encoded string, a Uint8Array, an ArrayBuffer, or a Buffer
 - URL: a URL that points to the file`),
@@ -608,9 +609,9 @@ export type LanguageModelRequestMetadata = z.infer<
 export const LanguageModelResponseMetadata = z
   .object({
     id: z.string().describe("ID for the generated response."),
-    timestamp: z
-      .instanceof(Date)
-      .describe("Timestamp for the start of the generated response."),
+    timestamp: zInstanceof(Date).describe(
+      "Timestamp for the start of the generated response.",
+    ),
     modelId: z
       .string()
       .describe(
@@ -655,7 +656,7 @@ export type LanguageModelResponseMetadataWithMessagesAndBody = z.infer<
   typeof LanguageModelResponseMetadataWithMessagesAndBody
 >;
 
-export const JSONSchema7 = z.custom<UpstreamJSONSchema7>().meta({
+export const JSONSchema7 = zCustom<UpstreamJSONSchema7>("json-schema-7").meta({
   id: "JSONSchema7",
   title: "JSONSchema7",
   description: `\
@@ -714,7 +715,7 @@ export const CallWarningUnsupportedSetting = z.object({
   // Workaround for a bug in `ai` which incorrectly uses `Omit` instead of `Exclude`.
   // See https://github.com/vercel/ai/issues/7906 to track the issue.
   // Once fixed, we can remove this workaround.
-  setting: z.custom<Omit<string, "prompt">>((x) => typeof x),
+  setting: z.string() as ZodType<Omit<string, "prompt">>,
   details: z.string().optional(),
 });
 export type CallWarningUnsupportedSetting = z.infer<
@@ -915,9 +916,9 @@ export type GenerationWarning = z.infer<typeof GenerationWarning>;
 
 export const ImageModelResponseMetadata = z
   .object({
-    timestamp: z
-      .instanceof(Date)
-      .describe("Timestamp for the start of the response."),
+    timestamp: zInstanceof(Date).describe(
+      "Timestamp for the start of the response.",
+    ),
     modelId: z
       .string()
       .describe(
@@ -991,7 +992,7 @@ export const GenerateImageParameters = z
       .describe(
         "Maximum number of retries per image generation call. Set to 0 to disable retries.",
       ),
-    abortSignal: z.instanceof(AbortSignal),
+    abortSignal: zInstanceof(AbortSignal),
     headers: z
       .record(z.string(), z.string())
       .optional()
@@ -1041,9 +1042,9 @@ export type GeneratedAudioFile = z.infer<typeof GeneratedAudioFile>;
 
 export const SpeechModelResponseMetadata = z
   .object({
-    timestamp: z
-      .instanceof(Date)
-      .describe("Timestamp for the start of the generated response."),
+    timestamp: zInstanceof(Date).describe(
+      "Timestamp for the start of the generated response.",
+    ),
     modelId: z
       .string()
       .describe(
@@ -1107,7 +1108,7 @@ export const GenerateSpeechParameters = z
       .describe(
         "Maximum number of retries per speech model call. Set to 0 to disable retries.",
       ),
-    abortSignal: z.instanceof(AbortSignal).optional(),
+    abortSignal: zInstanceof(AbortSignal).optional(),
     headers: z
       .record(z.string(), z.string())
       .optional()
@@ -1148,9 +1149,9 @@ export type GenerateSpeechResult = z.infer<typeof GenerateSpeechResult>;
 
 export const TranscriptionModelResponseMetadata = z
   .object({
-    timestamp: z
-      .instanceof(Date)
-      .describe("Timestamp for the start of the generated response."),
+    timestamp: zInstanceof(Date).describe(
+      "Timestamp for the start of the generated response.",
+    ),
     modelId: z
       .string()
       .describe(
@@ -1190,7 +1191,7 @@ export const TranscribeParameters = z
       "The transcription model to use for transcribing the audio.",
     ),
     audio: z
-      .union([DataContent, z.instanceof(URL)])
+      .union([DataContent, zInstanceof(URL)])
       .describe(
         "The audio data to transcribe. It can be a DataContent or a URL.",
       ),
@@ -1207,8 +1208,7 @@ E.g. \`{"openai": {"temperature": 0}}\`.`,
       .describe(
         "Maximum number of retries per transcript model call. Set to 0 to disable retries.",
       ),
-    abortSignal: z
-      .instanceof(AbortSignal)
+    abortSignal: zInstanceof(AbortSignal)
       .optional()
       .describe("Abort signal for the transcription call."),
     headers: z
@@ -1368,8 +1368,7 @@ export const CallSettings = z
       .default(2)
       .optional()
       .describe("Maximum number of retries. Set to 0 to disable retries."),
-    abortSignal: z
-      .instanceof(AbortSignal)
+    abortSignal: zInstanceof(AbortSignal)
       .optional()
       .describe("Abort signal for the call."),
     headers: z
@@ -1460,7 +1459,9 @@ export const AttributeValue = z
   });
 export type AttributeValue = z.infer<typeof AttributeValue>;
 
-export const Tracer = z.custom<UpstreamTelemetrySettings["tracer"]>().meta({
+export const Tracer = zCustom<UpstreamTelemetrySettings["tracer"]>(
+  "ai-sdk-tracer",
+).meta({
   title: "Tracer",
   description: "An interface for creating spans in the telemetry system.",
 });
@@ -1505,7 +1506,9 @@ export const TelemetrySettings = z
   });
 export type TelemetrySettings = z.infer<typeof TelemetrySettings>;
 
-export const Output = z.custom<UpstreamOutput.Output<unknown, unknown>>().meta({
+export const Output = zCustom<UpstreamOutput.Output<unknown, unknown>>(
+  "ai-sdk-output",
+).meta({
   title: "Output",
   description:
     "Specification for parsing structured outputs from the LLM response. It is experimental and subject to change.",
@@ -1549,8 +1552,7 @@ export const ToolCallOptions = z
       .describe(
         "Messages that were sent to the language model to initiate the response that contained the tool call.\nThe messages **do not** include the system prompt nor the assistant response that contained the tool call.",
       ),
-    abortSignal: z
-      .instanceof(AbortSignal)
+    abortSignal: zInstanceof(AbortSignal)
       .optional()
       .describe(
         "An optional abort signal that indicates that the overall operation should be aborted.",
@@ -1563,8 +1565,7 @@ export const ToolCallOptions = z
   });
 export type ToolCallOptions = z.infer<typeof ToolCallOptions>;
 
-// TODO: Add the proper structure for `Tool`.
-export const Tool = z.custom<UpstreamTool>().meta({
+export const Tool = zCustom<UpstreamTool>("ai-sdk-tool").meta({
   title: "Tool",
   description:
     "A tool that can be called by the language model. It can be a function tool or a provider-defined tool.",
@@ -1651,8 +1652,7 @@ export const TextEmbeddingParameters = z
       .describe(
         "Maximum number of retries per embedding model call. Set to 0 to disable retries.",
       ),
-    abortSignal: z
-      .instanceof(AbortSignal)
+    abortSignal: zInstanceof(AbortSignal)
       .optional()
       .describe("Abort signal for the embedding call."),
     headers: z

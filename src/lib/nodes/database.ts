@@ -1,5 +1,5 @@
 import { z } from "zod/v4";
-import { zFunction } from "./sharedTypes";
+import { zFunction } from "./zodHelpers";
 import { registerMcpServerTool } from "./mcp";
 
 export const DatabaseQueryConditionComparisonOperator = z

@@ -18,6 +18,7 @@ import {
 } from "baklavajs";
 import { defineListNode, defineStringDictNode } from "./core";
 import { toJSONSchema, z, type ZodType } from "zod/v4";
+import { zInstanceof } from "./zodHelpers";
 
 const allInterfaceTypesRegistriesNeedingDerivedTypes = new Set<
   WeakRef<BaklavaInterfaceTypes>
@@ -154,23 +155,31 @@ function registerCoreType<T extends ZodType>(type: T, name: string) {
   return interfaceType;
 }
 
-export const undefinedType = registerCoreType(z.undefined(), "undefined");
+export function withCustomJsonSchemaFormat<T extends ZodType>(
+  type: T,
+  format: string,
+) {
+  type._zod.toJSONSchema = () => ({ format });
+  return type;
+}
+
+export const undefinedType = registerCoreType(
+  withCustomJsonSchemaFormat(z.undefined(), "undefined"),
+  "undefined",
+);
 export const stringType = registerCoreType(z.string(), "string");
 export const integerType = registerCoreType(
   z.int() as unknown as ZodType<Integer>,
   "integer",
 );
 export const numberType = registerCoreType(z.number(), "number");
-export const bigintType = registerCoreType(z.bigint(), "bigint");
+export const bigintType = registerCoreType(
+  withCustomJsonSchemaFormat(z.bigint(), "bigint"),
+  "bigint",
+);
 export const booleanType = registerCoreType(z.boolean(), "boolean");
-export const dateType = registerCoreType(
-  z.instanceof(Date).meta({ title: "Date", id: "Date" }),
-  "date",
-);
-export const regexType = registerCoreType(
-  z.instanceof(RegExp).meta({ title: "RegExp", id: "RegExp" }),
-  "regex",
-);
+export const dateType = registerCoreType(zInstanceof(Date), "date");
+export const regexType = registerCoreType(zInstanceof(RegExp), "regex");
 
 // Only `any` is allowed to have unsafe conversions.
 anyType.addConversion(undefinedType, (v) => {
