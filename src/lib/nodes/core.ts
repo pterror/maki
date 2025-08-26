@@ -1,19 +1,7 @@
-import {
-  defineDynamicNode,
-  Editor,
-  NodeInterfaceType,
-  type IRegisterNodeTypeOptions,
-} from "baklavajs";
-import {
-  Integer,
-  integerType,
-  nodeInterface,
-  stringType,
-} from "./interfaceTypes";
+import { Integer, zInteger } from "./interfaceTypes";
 import { registerMcpServerTool } from "./mcp";
-import { z, ZodType } from "zod/v4";
-
-export const allEditorsNeedingDerivedNodes = new Set<WeakRef<Editor>>();
+import { z } from "zod/v4";
+import { zFormattedString } from "./zodHelpers";
 
 // Note that inputs can be inlined, so these are not strictly necessary for the core functionality,
 // but they are useful for literals that need to stay in sync across multiple nodes.
@@ -55,10 +43,10 @@ registerMcpServerTool(
     title: "Integer (Literal)",
     description: "A literal integer value",
     inputSchema: z.object({
-      value: z.int() as unknown as ZodType<Integer>,
+      value: zInteger,
     }),
     outputSchema: z.object({
-      value: z.int() as unknown as ZodType<Integer>,
+      value: zInteger,
     }),
     annotations: { baklavaCategory: "Constants" },
   },
@@ -81,116 +69,240 @@ registerMcpServerTool(
   ({ value }) => ({ value }),
 );
 
-const allListNodeRegisterFunctions = new Set<(editor: Editor) => void>();
+registerMcpServerTool(
+  "to-json",
+  {
+    title: "To JSON",
+    description: "Converts an arbitrary value to a JSON string",
+    inputSchema: z.object({
+      value: z.unknown(),
+    }),
+    outputSchema: z.object({
+      value: zFormattedString("text-display"),
+    }),
+    annotations: { baklavaCategory: "Data Transformation" },
+  },
+  ({ value }) => ({ value: JSON.stringify(value) ?? "" }),
+);
 
-export function defineListNode<T>(
-  type: NodeInterfaceType<T>,
-  listType: NodeInterfaceType<T[]>,
-  options: IRegisterNodeTypeOptions,
-) {
-  const node = defineDynamicNode({
-    type: "CoreListNode",
-    inputs: {
-      size: () => nodeInterface("Size", integerType, Integer(0)),
-    },
-    outputs: {
-      items: () => nodeInterface("Items", listType, []),
-    },
-    onUpdate({ size }) {
-      return {
-        inputs: {
-          size: () => nodeInterface("Size", integerType, Integer(0)),
-          ...Object.fromEntries(
-            Array.from({ length: size }, (_, i) => [
-              `element${i}`,
-              nodeInterface(`${i}`, undefined!, type),
-            ]),
-          ),
-        },
-      };
-    },
-    calculate(inputs) {
-      return {
-        items: Array.from(
-          { length: inputs.size },
-          (_, i) => inputs[`element${i}`] as T,
-        ),
-      };
-    },
-  });
-  const register = function registerCoreListNode(editor: Editor) {
-    editor.registerNodeType(node, options);
-  };
-  allListNodeRegisterFunctions.add(register);
-  for (const editorRef of allEditorsNeedingDerivedNodes) {
-    const editor = editorRef.deref();
-    if (!editor) continue;
-    register(editor);
-  }
-  return { node, register };
-}
+registerMcpServerTool(
+  "number-add",
+  {
+    title: "Add (Numbers)",
+    description: "Adds two numbers",
+    inputSchema: z.object({
+      a: z.number(),
+      b: z.number(),
+    }),
+    outputSchema: z.object({
+      result: z.number(),
+    }),
+    annotations: { baklavaCategory: "Math" },
+  },
+  ({ a, b }) => ({ result: a + b }),
+);
 
-const allStringDictNodeRegisterFunctions = new Set<(editor: Editor) => void>();
+registerMcpServerTool(
+  "number-subtract",
+  {
+    title: "Subtract (Numbers)",
+    description: "Subtracts two numbers",
+    inputSchema: z.object({
+      a: z.number(),
+      b: z.number(),
+    }),
+    outputSchema: z.object({
+      result: z.number(),
+    }),
+    annotations: { baklavaCategory: "Math" },
+  },
+  ({ a, b }) => ({ result: a - b }),
+);
 
-export function defineStringDictNode<V>(
-  valueType: NodeInterfaceType<V>,
-  dictType: NodeInterfaceType<Record<string, V>>,
-  options: IRegisterNodeTypeOptions,
-) {
-  const node = defineDynamicNode({
-    type: "CoreStringDictNode",
-    inputs: {
-      size: () => nodeInterface("Size", integerType, Integer(0)),
-    },
-    outputs: {
-      items: () => nodeInterface("Items", dictType, {}),
-    },
-    onUpdate({ size }) {
-      return {
-        inputs: {
-          size: () => nodeInterface("Size", integerType, Integer(0)),
-          ...Object.fromEntries(
-            Array(size)
-              .fill(null)
-              .flatMap((_, i) => [
-                [`key${i}`, nodeInterface(`Key ${i}`, stringType, "")],
-                [
-                  `value${i}`,
-                  nodeInterface(`Value ${i}`, valueType, undefined),
-                ],
-              ]),
-          ),
-        },
-      };
-    },
-    calculate(inputs) {
-      const items: Record<string, V> = Object.fromEntries(
-        Array.from({ length: inputs.size }, (_, i) => [
-          inputs[`key${i}`] as string,
-          inputs[`value${i}`] as V,
-        ]),
-      );
-      return { items };
-    },
-  });
-  const register = function registerCoreStringDictNode(editor: Editor) {
-    editor.registerNodeType(node, options);
-  };
-  allStringDictNodeRegisterFunctions.add(register);
-  for (const editorRef of allEditorsNeedingDerivedNodes) {
-    const editor = editorRef.deref();
-    if (!editor) continue;
-    register(editor);
-  }
-  return { node, register };
-}
+registerMcpServerTool(
+  "number-multiply",
+  {
+    title: "Multiply (Numbers)",
+    description: "Multiplies two numbers",
+    inputSchema: z.object({
+      a: z.number(),
+      b: z.number(),
+    }),
+    outputSchema: z.object({
+      result: z.number(),
+    }),
+    annotations: { baklavaCategory: "Math" },
+  },
+  ({ a, b }) => ({ result: a * b }),
+);
 
-export function registerDerivedNodes(editor: Editor) {
-  allEditorsNeedingDerivedNodes.add(new WeakRef(editor));
-  for (const register of allListNodeRegisterFunctions) {
-    register(editor);
-  }
-  for (const register of allStringDictNodeRegisterFunctions) {
-    register(editor);
-  }
-}
+registerMcpServerTool(
+  "number-divide",
+  {
+    title: "Divide (Numbers)",
+    description: "Divides two numbers",
+    inputSchema: z.object({
+      a: z.number(),
+      b: z.number(),
+    }),
+    outputSchema: z.object({
+      result: z.number(),
+    }),
+    annotations: { baklavaCategory: "Math" },
+  },
+  ({ a, b }) => ({ result: a / b }),
+);
+
+registerMcpServerTool(
+  "number-modulo",
+  {
+    title: "Modulo (Numbers)",
+    description: "Calculates the modulo of two numbers",
+    inputSchema: z.object({
+      a: z.number(),
+      b: z.number(),
+    }),
+    outputSchema: z.object({
+      result: z.number(),
+    }),
+    annotations: { baklavaCategory: "Math" },
+  },
+  ({ a, b }) => ({ result: a % b }),
+);
+
+registerMcpServerTool(
+  "number-power",
+  {
+    title: "Power (Numbers)",
+    description: "Calculates the power of a number",
+    inputSchema: z.object({
+      base: z.number(),
+      exponent: z.number(),
+    }),
+    outputSchema: z.object({
+      result: z.number(),
+    }),
+    annotations: { baklavaCategory: "Math" },
+  },
+  ({ base, exponent }) => ({ result: Math.pow(base, exponent) }),
+);
+
+registerMcpServerTool(
+  "integer-add",
+  {
+    title: "Add (Integers)",
+    description: "Adds two integers",
+    inputSchema: z.object({
+      a: zInteger,
+      b: zInteger,
+    }),
+    outputSchema: z.object({
+      result: zInteger,
+    }),
+    annotations: { baklavaCategory: "Math" },
+  },
+  ({ a, b }) => ({ result: Integer(a + b) }),
+);
+
+registerMcpServerTool(
+  "integer-subtract",
+  {
+    title: "Subtract (Integers)",
+    description: "Subtracts two integers",
+    inputSchema: z.object({
+      a: zInteger,
+      b: zInteger,
+    }),
+    outputSchema: z.object({
+      result: zInteger,
+    }),
+    annotations: { baklavaCategory: "Math" },
+  },
+  ({ a, b }) => ({ result: Integer(a - b) }),
+);
+
+registerMcpServerTool(
+  "integer-multiply",
+  {
+    title: "Multiply (Integers)",
+    description: "Multiplies two integers",
+    inputSchema: z.object({
+      a: zInteger,
+      b: zInteger,
+    }),
+    outputSchema: z.object({
+      result: zInteger,
+    }),
+    annotations: { baklavaCategory: "Math" },
+  },
+  ({ a, b }) => ({ result: Integer(a * b) }),
+);
+
+registerMcpServerTool(
+  "integer-divide",
+  {
+    title: "Divide (Integers)",
+    description: "Divides two integers. Truncates the result.",
+    inputSchema: z.object({
+      a: zInteger,
+      b: zInteger,
+    }),
+    outputSchema: z.object({
+      result: zInteger,
+    }),
+    annotations: { baklavaCategory: "Math" },
+  },
+  ({ a, b }) => ({ result: Integer(Math.trunc(a / b)) }),
+);
+
+registerMcpServerTool(
+  "integer-modulo",
+  {
+    title: "Modulo (Integers)",
+    description: "Calculates the modulo of two integers",
+    inputSchema: z.object({
+      a: zInteger,
+      b: zInteger,
+    }),
+    outputSchema: z.object({
+      result: zInteger,
+    }),
+    annotations: { baklavaCategory: "Math" },
+  },
+  ({ a, b }) => ({ result: Integer(a % b) }),
+);
+
+registerMcpServerTool(
+  "integer-power",
+  {
+    title: "Power (Integers)",
+    description: "Calculates the power of an integer. Truncates the result.",
+    inputSchema: z.object({
+      base: zInteger,
+      exponent: zInteger,
+    }),
+    outputSchema: z.object({
+      result: zInteger,
+    }),
+    annotations: { baklavaCategory: "Math" },
+  },
+  ({ base, exponent }) => ({
+    result: Integer(Math.trunc(Math.pow(base, exponent))),
+  }),
+);
+
+registerMcpServerTool(
+  "text-display",
+  {
+    title: "Display Text",
+    description: "Displays a text string",
+    inputSchema: z.object({
+      text: z.string(),
+    }),
+    outputSchema: z.object({
+      text: zFormattedString("text-display"),
+    }),
+    annotations: { baklavaCategory: "Display" },
+  },
+  ({ text }) => ({ text }),
+);

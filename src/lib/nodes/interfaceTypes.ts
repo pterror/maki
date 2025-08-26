@@ -16,7 +16,7 @@ import {
   type BaklavaInterfaceTypesOptions,
   type SelectInterfaceItem,
 } from "baklavajs";
-import { defineListNode, defineStringDictNode } from "./core";
+import { defineListNode, defineStringDictNode } from "./derivedNodes";
 import { z, type ZodType } from "zod/v4";
 import { zInstanceof } from "./zodHelpers";
 import { registerCoreType } from "./baklava";
@@ -155,6 +155,7 @@ export function withCustomJsonSchemaFormat<T extends ZodType>(
   return type;
 }
 
+export const zInteger = z.int() as unknown as ZodType<Integer>;
 registerCoreType(z.unknown(), "unknown");
 registerCoreType(z.any(), "any");
 export const undefinedType = registerCoreType(
@@ -162,10 +163,7 @@ export const undefinedType = registerCoreType(
   "undefined",
 );
 export const stringType = registerCoreType(z.string(), "string");
-export const integerType = registerCoreType(
-  z.int() as unknown as ZodType<Integer>,
-  "integer",
-);
+export const integerType = registerCoreType(zInteger, "integer");
 export const numberType = registerCoreType(z.number(), "number");
 export const bigintType = registerCoreType(
   withCustomJsonSchemaFormat(z.bigint(), "bigint"),
@@ -251,7 +249,7 @@ export function buttonInterface(name: string, callback: () => void) {
   return new ButtonInterface(name, callback).use(setType, undefinedType);
 }
 
-export function textInterface(name: string, defaultValue: string = undefined!) {
+export function textInterface(name: string, defaultValue = "") {
   return new TextInterface(name, defaultValue).use(setType, stringType);
 }
 
@@ -294,7 +292,10 @@ export function selectInterface<T>(
   name: string,
   type: NodeInterfaceType<T>,
   options: SelectInterfaceItem<T>[],
-  defaultValue: NoInfer<T> = undefined!,
+  defaultValue: NoInfer<T> = (typeof options[0] === "object" &&
+  "value" in options[0]
+    ? options[0].value
+    : options[0]) as T,
 ) {
   return new SelectInterface(name, defaultValue, options).use(setType, type);
 }

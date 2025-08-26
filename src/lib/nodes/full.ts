@@ -9,8 +9,7 @@ import {
   registerCoreInterfaceTypes,
   registerDerivedInterfaceTypes,
 } from "./interfaceTypes";
-// TODO: Move core nodes to MCP as well.
-import { registerDerivedNodes } from "./core";
+import { registerDerivedNodes } from "./derivedNodes";
 import {
   initializeMcpClient,
   initializeMcpServer,
@@ -20,8 +19,7 @@ import {
 // All modules containing nodes.
 import "./core";
 import "./database";
-// FIXME: Implement client-server communication?
-// Some stuff (e.g. FS access) require a server anyway
+// FIXME: MCP supports client-server communication!
 // import "./databaseSqlite";
 // import "./aiGeneration";
 import "./proceduralAudio";
@@ -30,7 +28,7 @@ export function useFullBaklava() {
   const baklava = useBaklava();
   const engine = new DependencyEngine(baklava.editor);
 
-  const { interfaceTypes } = setupBaklava(baklava, {
+  const { interfaceTypes, promise } = setupBaklava(baklava, {
     engine,
     viewPlugin: baklava,
   });
@@ -43,7 +41,7 @@ export function useFullBaklava() {
   });
   engine.start();
 
-  return { baklava, engine, interfaceTypes };
+  return { baklava, engine, interfaceTypes, promise };
 }
 
 export function setupBaklava(
@@ -55,6 +53,6 @@ export function setupBaklava(
   registerDerivedInterfaceTypes(interfaceTypes);
   initializeMcpServer();
   initializeMcpClient();
-  registerAllToolsInBaklava();
-  return { interfaceTypes };
+  const promise = registerAllToolsInBaklava();
+  return { interfaceTypes, promise };
 }

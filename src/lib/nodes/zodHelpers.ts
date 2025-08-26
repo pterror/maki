@@ -46,28 +46,40 @@ export function toNormalizedJsonSchema(schema: z.ZodType) {
   return normalizeJsonSchema(toJSONSchema(schema));
 }
 
-export const zodShape = (schema: z.ZodType): Record<string, z.ZodType> =>
-  schema instanceof z.ZodObject ? schema.shape : {};
+export function zodShape(schema: z.ZodType): Record<string, z.ZodType> {
+  return schema instanceof z.ZodObject ? schema.shape : {};
+}
 
-export const zInstanceof = <Class extends typeof z.core.util.Class>(
+export function zInstanceof<Class extends typeof z.core.util.Class>(
   ctor: Class,
   name?: string,
-) =>
-  withCustomJsonSchemaFormat(z.instanceof(ctor), name ?? ctor.name).meta({
-    title: name ?? ctor.name,
-  });
+) {
+  return withCustomJsonSchemaFormat(z.instanceof(ctor), name ?? ctor.name).meta(
+    { title: name ?? ctor.name },
+  );
+}
 
-export const zCustom = <T>(
+export function zCustom<T>(
   name: string,
   predicate?: (value: unknown) => boolean,
-) =>
-  withCustomJsonSchemaFormat(z.custom<T>(predicate), name).meta({
+) {
+  return withCustomJsonSchemaFormat(z.custom<T>(predicate), name).meta({
     title: name,
   });
+}
 
-export const zFunction = <
+export function zFunction<
   T extends (...args: never) => unknown = (...args: never) => unknown,
->() => zCustom<T>("function", (x) => typeof x === "function");
+>() {
+  return zCustom<T>("function", (x) => typeof x === "function");
+}
+
+export function zFormattedString(format: string) {
+  const result = z.string();
+  result._zod.bag.format = format;
+  result.format = format;
+  return result;
+}
 
 export const Integer = z.int() as unknown as ZodType<UpstreamInteger>;
 // TODO: Consider whether zod schemas are required, or whether JSON Schemas should be used directly.

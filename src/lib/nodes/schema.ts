@@ -14,7 +14,7 @@ import {
   undefinedType,
   unknownType,
 } from "./interfaceTypes";
-import { defineListNode, defineStringDictNode } from "./core";
+import { defineListNode, defineStringDictNode } from "./derivedNodes";
 
 export const Literal = z.union([
   z.string(),

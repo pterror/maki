@@ -12,15 +12,17 @@ import {
   nodeInterface,
   nodeInterfaceType,
   numberInterface,
+  selectInterface,
   stringDictType,
   textInputInterface,
+  textInterface,
   unknownType,
 } from "./interfaceTypes";
 import { unsafeEntries } from "../core";
 import { camelCaseToPascalCase, camelCaseToTitleCase } from "../string";
-import { allEditorsNeedingDerivedNodes } from "./core";
 import { normalizeJsonSchema, toNormalizedJsonSchema } from "./zodHelpers";
 import type { z, ZodType } from "zod/v4";
+import { allEditorsNeedingDerivedNodes } from "./derivedNodes";
 
 const typesMap = new Map<string, NodeInterfaceType<any>>();
 
@@ -41,14 +43,42 @@ export function jsonSchemaToNodeInterface(
     return nodeInterface(key, unknownType) as NodeInterface<any>;
   }
   switch (value.type) {
-    case "boolean":
+    case "boolean": {
       return checkboxInterface(key);
-    case "string":
+    }
+    case "string": {
+      if (value.enum) {
+        return selectInterface(
+          key,
+          upsertBaklavaType(value),
+          value.enum.map((value) => ({ text: String(value), value })),
+        );
+      }
       return textInputInterface(key);
-    case "integer":
+    }
+    case "integer": {
       return integerInterface(key);
-    case "number":
+    }
+    case "number": {
       return numberInterface(key);
+    }
+  }
+  return nodeInterface(key, upsertBaklavaType(value));
+}
+
+export function jsonSchemaToOutputNodeInterface(
+  key: string,
+  value: JSONSchema._JSONSchema,
+) {
+  if (typeof value === "boolean") {
+    return nodeInterface(key, unknownType) as NodeInterface<any>;
+  }
+  switch (value.type) {
+    case "string": {
+      if (value.format === "text-display") {
+        return textInterface(key);
+      }
+    }
   }
   return nodeInterface(key, upsertBaklavaType(value));
 }
@@ -68,6 +98,10 @@ export function upsertBaklavaType(
         : (type.items ?? type.additionalItems);
       if (type.type === "array" && typeof itemType === "object") {
         return `list[${upsertBaklavaType(itemType).name}]`;
+      }
+      if (type.type !== "object" && type.type !== "array") {
+        // It is a primitive, its base type will be close enough.
+        return type.type;
       }
     })();
   if (typeName === undefined) {
@@ -98,25 +132,21 @@ export function upsertBaklavaType(
       const typeItems = type.items;
       const ConstructNode = defineNode({
         type: `Construct${camelCaseToPascalCase(typeName)}Node`,
-        inputs: {
-          value: () => nodeInterface("Value", interfaceType),
-        },
-        outputs: Object.fromEntries(
-          type.items.map((item, index) => [
+        inputs: Object.fromEntries(
+          type.items.map((schema, index) => [
             `item${index + 1}`,
-            () =>
-              nodeInterface(
-                `Item ${index + 1}`,
-                typeof item === "boolean"
-                  ? unknownType
-                  : upsertBaklavaType(item),
-              ),
+            () => jsonSchemaToNodeInterface(`Item ${index + 1}`, schema),
           ]),
         ),
+        outputs: {
+          value: () => nodeInterface("Value", interfaceType),
+        },
         calculate(inputs) {
-          return typeItems.map(
-            (_, index) => (inputs as any)[`item${index + 1}`],
-          ) as never;
+          return {
+            value: typeItems.map(
+              (_, index) => (inputs as any)[`item${index + 1}`],
+            ) as never,
+          };
         },
       });
       function registerConstructNode(editor: Editor) {
@@ -186,8 +216,8 @@ export function upsertBaklavaType(
       const ConstructNode = defineNode({
         type: `Construct${camelCaseToPascalCase(typeName)}Node`,
         inputs: Object.fromEntries(
-          unsafeEntries(type.properties).flatMap(([key, value]) =>
-            value === false
+          unsafeEntries(type.properties).flatMap(([key, schema]) =>
+            schema === false
               ? []
               : [
                   [
@@ -195,7 +225,7 @@ export function upsertBaklavaType(
                     () =>
                       jsonSchemaToNodeInterface(
                         camelCaseToTitleCase(key),
-                        value,
+                        schema,
                       ),
                   ],
                 ],

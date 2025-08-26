@@ -20,17 +20,20 @@ import {
 import type { RequestHandlerExtra } from "@modelcontextprotocol/sdk/shared/protocol.js";
 import type { objectOutputType } from "zod/v3";
 import type { JSONSchema } from "zod/v4/core";
-import { jsonSchemaToNodeInterface, upsertBaklavaType } from "./baklava";
+import {
+  jsonSchemaToNodeInterface,
+  jsonSchemaToOutputNodeInterface,
+  upsertBaklavaType,
+} from "./baklava";
 import { unsafeValues } from "../core";
 import { defineNode, Editor } from "baklavajs";
 import { kebabCaseToPascalCase } from "../string";
-import { allEditorsNeedingDerivedNodes } from "./core";
 import {
   MemoryClientTransport,
   MemoryServerTransport,
 } from "./memoryTransport";
 import { zodShape } from "./zodHelpers";
-import { nodeInterface } from "./interfaceTypes";
+import { allEditorsNeedingDerivedNodes } from "./derivedNodes";
 
 export type McpToolConfig = {
   title?: string;
@@ -170,13 +173,9 @@ export async function registerAllToolsInBaklava() {
           ([key, schema]) => [
             key,
             () =>
-              nodeInterface(
+              jsonSchemaToOutputNodeInterface(
                 key,
-                upsertBaklavaType(
-                  typeof schema === "boolean"
-                    ? {}
-                    : (schema as JSONSchema.JSONSchema),
-                ),
+                schema as JSONSchema._JSONSchema,
               ),
           ],
         ),
