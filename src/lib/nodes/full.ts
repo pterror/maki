@@ -10,7 +10,7 @@ import {
   registerDerivedInterfaceTypes,
 } from "./interfaceTypes";
 // TODO: Move core nodes to MCP as well.
-import { registerCoreNodes, registerDerivedNodes } from "./core";
+import { registerDerivedNodes } from "./core";
 import {
   initializeMcpClient,
   initializeMcpServer,
@@ -50,7 +50,6 @@ export function setupBaklava(
   baklava: IBaklavaViewModel,
   options: Required<BaklavaInterfaceTypesOptions>,
 ) {
-  registerCoreNodes(baklava.editor);
   const interfaceTypes = registerCoreInterfaceTypes(baklava.editor, options);
   registerDerivedNodes(baklava.editor);
   registerDerivedInterfaceTypes(interfaceTypes);

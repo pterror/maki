@@ -1,122 +1,85 @@
 import {
   defineDynamicNode,
-  defineNode,
   Editor,
   NodeInterfaceType,
   type IRegisterNodeTypeOptions,
 } from "baklavajs";
 import {
-  anyType,
-  booleanType,
-  checkboxInterface,
   Integer,
-  integerInterface,
   integerType,
   nodeInterface,
-  numberInterface,
-  sliderInterface,
   stringType,
-  textInterface,
 } from "./interfaceTypes";
+import { registerMcpServerTool } from "./mcp";
+import { z, ZodType } from "zod/v4";
 
 export const allEditorsNeedingDerivedNodes = new Set<WeakRef<Editor>>();
 
 // Note that inputs can be inlined, so these are not strictly necessary for the core functionality,
 // but they are useful for literals that need to stay in sync across multiple nodes.
-export const CoreBooleanNode = defineNode({
-  type: "CoreBooleanNode",
-  inputs: {
-    value: () => checkboxInterface("Value"),
+registerMcpServerTool(
+  "literal-boolean",
+  {
+    title: "Boolean (Literal)",
+    description: "A literal boolean value (true/false)",
+    inputSchema: z.object({
+      value: z.boolean(),
+    }),
+    outputSchema: z.object({
+      value: z.boolean(),
+    }),
+    annotations: { baklavaCategory: "Constants" },
   },
-  outputs: {
-    value: () => nodeInterface("Value", booleanType, false),
-  },
-  calculate(args) {
-    return args;
-  },
-});
-export function registerCoreBooleanNode(editor: Editor) {
-  editor.registerNodeType(CoreBooleanNode, {
-    title: "Boolean",
-    category: "Constants",
-  });
-}
+  ({ value }) => ({ value }),
+);
 
-export const CoreStringNode = defineNode({
-  type: "CoreTextNode",
-  inputs: {
-    value: () => textInterface("Value"),
+registerMcpServerTool(
+  "literal-string",
+  {
+    title: "String (Literal)",
+    description: "A literal string value",
+    inputSchema: z.object({
+      value: z.string(),
+    }),
+    outputSchema: z.object({
+      value: z.string(),
+    }),
+    annotations: { baklavaCategory: "Constants" },
   },
-  outputs: {
-    value: () => nodeInterface("Value", anyType, ""),
-  },
-  calculate(args) {
-    return args;
-  },
-});
-export function registerCoreStringNode(editor: Editor) {
-  editor.registerNodeType(CoreStringNode, {
-    title: "String",
-    category: "Constants",
-  });
-}
+  ({ value }) => ({ value }),
+);
 
-export const CoreIntegerNode = defineNode({
-  type: "CoreIntegerNode",
-  inputs: {
-    value: () => integerInterface("Value"),
+registerMcpServerTool(
+  "literal-integer",
+  {
+    title: "Integer (Literal)",
+    description: "A literal integer value",
+    inputSchema: z.object({
+      value: z.int() as unknown as ZodType<Integer>,
+    }),
+    outputSchema: z.object({
+      value: z.int() as unknown as ZodType<Integer>,
+    }),
+    annotations: { baklavaCategory: "Constants" },
   },
-  outputs: {
-    value: () => nodeInterface("Value", integerType, Integer(0)),
-  },
-  calculate({ value }) {
-    return { value: Integer(value) };
-  },
-});
-export function registerCoreIntegerNode(editor: Editor) {
-  editor.registerNodeType(CoreIntegerNode, {
-    title: "Integer",
-    category: "Constants",
-  });
-}
+  ({ value }) => ({ value }),
+);
 
-export const CoreNumberNode = defineNode({
-  type: "CoreNumberNode",
-  inputs: {
-    value: () => numberInterface("Value"),
+registerMcpServerTool(
+  "literal-number",
+  {
+    title: "Number (Literal)",
+    description: "A literal number value",
+    inputSchema: z.object({
+      value: z.number(),
+    }),
+    outputSchema: z.object({
+      value: z.number(),
+    }),
+    annotations: { baklavaCategory: "Constants" },
   },
-  outputs: {
-    value: () => nodeInterface("Value", anyType),
-  },
-  calculate(args) {
-    return args;
-  },
-});
-export function registerCoreNumberNode(editor: Editor) {
-  editor.registerNodeType(CoreNumberNode, {
-    title: "Number",
-    category: "Constants",
-  });
-}
-
-export const CoreSliderNode = defineNode({
-  type: "CoreSliderNode",
-  inputs: {
-    value: () => sliderInterface("Value"),
-  },
-  outputs: {
-    value: () => nodeInterface("Value", anyType),
-  },
-  calculate(args) {
-    return args;
-  },
-});
-export function registerCoreSliderNode(editor: Editor) {
-  editor.registerNodeType(CoreSliderNode, {
-    title: "Slider",
-    category: "Constants",
-  });
-}
+  ({ value }) => ({ value }),
+);
 
 const allListNodeRegisterFunctions = new Set<(editor: Editor) => void>();
 
@@ -230,12 +193,4 @@ export function registerDerivedNodes(editor: Editor) {
   for (const register of allStringDictNodeRegisterFunctions) {
     register(editor);
   }
-}
-
-export function registerCoreNodes(editor: Editor) {
-  registerCoreBooleanNode(editor);
-  registerCoreStringNode(editor);
-  registerCoreIntegerNode(editor);
-  registerCoreNumberNode(editor);
-  registerCoreSliderNode(editor);
 }

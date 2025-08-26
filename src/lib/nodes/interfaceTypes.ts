@@ -255,34 +255,22 @@ export function textInterface(name: string, defaultValue: string = undefined!) {
   return new TextInterface(name, defaultValue).use(setType, stringType);
 }
 
-export function textInputInterface(
-  name: string,
-  defaultValue: string = undefined!,
-) {
+export function textInputInterface(name: string, defaultValue = "") {
   return new TextInputInterface(name, defaultValue).use(setType, stringType);
 }
 
-export function textareaInputInterface(
-  name: string,
-  defaultValue: string = undefined!,
-) {
+export function textareaInputInterface(name: string, defaultValue = "") {
   return new TextareaInputInterface(name, defaultValue).use(
     setType,
     stringType,
   );
 }
 
-export function numberInterface(
-  name: string,
-  defaultValue: number = undefined!,
-) {
+export function numberInterface(name: string, defaultValue = 0) {
   return new NumberInterface(name, defaultValue).use(setType, numberType);
 }
 
-export function integerInterface(
-  name: string,
-  defaultValue: Integer = undefined!,
-) {
+export function integerInterface(name: string, defaultValue = Integer(0)) {
   return new IntegerInterface(name, defaultValue).use(setType, integerType);
 }
 
@@ -298,10 +286,7 @@ export function sliderInterface(
   );
 }
 
-export function checkboxInterface(
-  name: string,
-  defaultValue: boolean = undefined!,
-) {
+export function checkboxInterface(name: string, defaultValue = false) {
   return new CheckboxInterface(name, defaultValue).use(setType, booleanType);
 }
 

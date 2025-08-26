@@ -20,7 +20,7 @@ import {
 import type { RequestHandlerExtra } from "@modelcontextprotocol/sdk/shared/protocol.js";
 import type { objectOutputType } from "zod/v3";
 import type { JSONSchema } from "zod/v4/core";
-import { upsertBaklavaType } from "./baklava";
+import { jsonSchemaToNodeInterface, upsertBaklavaType } from "./baklava";
 import { unsafeValues } from "../core";
 import { defineNode, Editor } from "baklavajs";
 import { kebabCaseToPascalCase } from "../string";
@@ -30,6 +30,7 @@ import {
   MemoryServerTransport,
 } from "./memoryTransport";
 import { zodShape } from "./zodHelpers";
+import { nodeInterface } from "./interfaceTypes";
 
 export type McpToolConfig = {
   title?: string;
@@ -155,6 +156,38 @@ export async function registerAllToolsInBaklava() {
     const ToolNode = defineNode({
       title: tool.title,
       type: `${kebabCaseToPascalCase(tool.name)}Node`,
+      inputs: Object.fromEntries(
+        Object.entries(tool.inputSchema.properties ?? {}).map(
+          ([key, schema]) => [
+            key,
+            () =>
+              jsonSchemaToNodeInterface(key, schema as JSONSchema._JSONSchema),
+          ],
+        ),
+      ) as never,
+      outputs: Object.fromEntries(
+        Object.entries(tool.outputSchema?.properties ?? {}).map(
+          ([key, schema]) => [
+            key,
+            () =>
+              nodeInterface(
+                key,
+                upsertBaklavaType(
+                  typeof schema === "boolean"
+                    ? {}
+                    : (schema as JSONSchema.JSONSchema),
+                ),
+              ),
+          ],
+        ),
+      ) as never,
+      async calculate(inputs) {
+        const result = await mcpClient.callTool({
+          name: tool.name,
+          arguments: inputs as never,
+        });
+        return result.structuredContent;
+      },
     });
     function registerToolNode(editor: Editor) {
       editor.registerNodeType(ToolNode, {

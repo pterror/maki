@@ -139,7 +139,7 @@ export const DatabaseInsertCommand = z
   .object({
     table: z.string().describe("Name of the table to insert into"),
     columns: z.array(z.string()).describe("Columns of the objects to insert"),
-    // TODO: `z.looseObject({})`  
+    // TODO: `z.looseObject({})`
     values: z.array(z.unknown()).describe("Values to insert into the table"),
   })
   .meta({

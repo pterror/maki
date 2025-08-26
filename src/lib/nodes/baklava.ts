@@ -33,6 +33,26 @@ export function registerCoreType<T extends ZodType>(type: T, name: string) {
   return interfaceType;
 }
 
+export function jsonSchemaToNodeInterface(
+  key: string,
+  value: JSONSchema._JSONSchema,
+) {
+  if (typeof value === "boolean") {
+    return nodeInterface(key, unknownType) as NodeInterface<any>;
+  }
+  switch (value.type) {
+    case "boolean":
+      return checkboxInterface(key);
+    case "string":
+      return textInputInterface(key);
+    case "integer":
+      return integerInterface(key);
+    case "number":
+      return numberInterface(key);
+  }
+  return nodeInterface(key, upsertBaklavaType(value));
+}
+
 export function upsertBaklavaType(
   type: JSONSchema.JSONSchema,
 ): NodeInterfaceType<unknown> {
@@ -172,29 +192,11 @@ export function upsertBaklavaType(
               : [
                   [
                     key,
-                    () => {
-                      const titleCaseKey = camelCaseToTitleCase(key);
-                      if (typeof value === "boolean") {
-                        return nodeInterface(
-                          titleCaseKey,
-                          unknownType,
-                        ) as NodeInterface<any>;
-                      }
-                      switch (value.type) {
-                        case "boolean":
-                          return checkboxInterface(titleCaseKey);
-                        case "string":
-                          return textInputInterface(titleCaseKey);
-                        case "integer":
-                          return integerInterface(titleCaseKey);
-                        case "number":
-                          return numberInterface(titleCaseKey);
-                      }
-                      return nodeInterface(
-                        titleCaseKey,
-                        upsertBaklavaType(value),
-                      );
-                    },
+                    () =>
+                      jsonSchemaToNodeInterface(
+                        camelCaseToTitleCase(key),
+                        value,
+                      ),
                   ],
                 ],
           ),
