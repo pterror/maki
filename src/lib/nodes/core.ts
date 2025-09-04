@@ -306,3 +306,61 @@ registerMcpServerTool(
   },
   ({ text }) => ({ text }),
 );
+
+registerMcpServerTool(
+  "random-choice",
+  {
+    title: "Random Choice",
+    description: "Chooses a random item from a list",
+    inputSchema: z.object({
+      list: z.unknown(),
+      // TODO: Fix type conversions
+      // list: z.array(z.unknown()),
+    }),
+    outputSchema: z.object({
+      choice: z.unknown(),
+    }),
+    annotations: { baklavaCategory: "Random" },
+  },
+  ({ list }) => ({
+    choice: Array.isArray(list)
+      ? list[Math.floor(Math.random() * list.length)]
+      : null,
+  }),
+);
+
+registerMcpServerTool(
+  "list-get",
+  {
+    title: "Get Item (List)",
+    description: "Gets an item from an list by position",
+    inputSchema: z.object({
+      list: z.unknown(),
+      // TODO: Fix type conversions
+      // list: z.array(z.unknown()),
+      index: zInteger,
+    }),
+    outputSchema: z.object({
+      item: z.unknown(),
+    }),
+    annotations: { baklavaCategory: "List" },
+  },
+  ({ list, index }) => ({ item: Array.isArray(list) ? list[index] : null }),
+);
+
+registerMcpServerTool(
+  "string-dict-get",
+  {
+    title: "Get Item (String Dict)",
+    description: "Gets an item from a string dictionary by key",
+    inputSchema: z.object({
+      dict: z.record(z.string(), z.unknown()),
+      key: z.string(),
+    }),
+    outputSchema: z.object({
+      value: z.unknown(),
+    }),
+    annotations: { baklavaCategory: "String Dict" },
+  },
+  ({ dict, key }) => ({ value: dict[key] }),
+);

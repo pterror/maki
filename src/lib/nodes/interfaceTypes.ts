@@ -17,7 +17,7 @@ import {
   type SelectInterfaceItem,
 } from "baklavajs";
 import { defineListNode, defineStringDictNode } from "./derivedNodes";
-import { z, type ZodType } from "zod/v4";
+import { string, z, type ZodType } from "zod/v4";
 import { zInstanceof } from "./zodHelpers";
 import { registerCoreType } from "./baklava";
 
@@ -42,13 +42,41 @@ export function unsafeAsOptionalNodeInterfaceType<T>(
 export const unknownType = new NodeInterfaceType<unknown>("unknown");
 // It should behave like `any`, but we do not want to hide type errors.
 export const anyType = new NodeInterfaceType<unknown>("any");
+let unknownListType: NodeInterfaceType<unknown[]> | undefined;
+let anyListType: NodeInterfaceType<unknown[]> | undefined;
+let unknownStringDictType:
+  | NodeInterfaceType<Record<string, unknown>>
+  | undefined;
+let anyStringDictType: NodeInterfaceType<Record<string, unknown>> | undefined;
 anyType.addConversion(unknownType, (v) => v);
 unknownType.addConversion(anyType, (v) => v);
 
-export function nodeInterfaceType<T>(name: string): NodeInterfaceType<T> {
+export interface NodeInterfaceTypeOptions {
+  isList?: boolean;
+  isStringDict?: boolean;
+}
+
+export function nodeInterfaceType<T>(
+  name: string,
+  { isList = false, isStringDict = false }: NodeInterfaceTypeOptions = {},
+): NodeInterfaceType<T> {
   const interfaceType = new NodeInterfaceType<T>(name);
   interfaceType.addConversion(unknownType, (v) => v);
   interfaceType.addConversion(anyType, (v) => v);
+  if (isList && unknownListType && anyListType) {
+    interfaceType.addConversion(unknownListType, (v) => v as unknown[]);
+    interfaceType.addConversion(anyListType, (v) => v as unknown[]);
+  }
+  if (isStringDict && unknownStringDictType && anyStringDictType) {
+    interfaceType.addConversion(
+      unknownStringDictType,
+      (v) => v as Record<string, unknown>,
+    );
+    interfaceType.addConversion(
+      anyStringDictType,
+      (v) => v as Record<string, unknown>,
+    );
+  }
   return interfaceType;
 }
 
@@ -70,7 +98,9 @@ export function listType<T>(
   if (cached) {
     return cached as NodeInterfaceType<T[]>;
   }
-  const interfaceType = nodeInterfaceType<T[]>(`array[${itemType.name}]`);
+  const interfaceType = nodeInterfaceType<T[]>(`array[${itemType.name}]`, {
+    isList: true,
+  });
   listTypeMapping.set(itemType, interfaceType);
   listTypeReverseMapping.set(interfaceType, itemType);
   allListTypes.add(new WeakRef(interfaceType));
@@ -79,7 +109,10 @@ export function listType<T>(
     if (!types) continue;
     types.addTypes(interfaceType);
   }
-  defineListNode(itemType, interfaceType, { category: "Derived Types" });
+  defineListNode(itemType, interfaceType, {
+    title: `Create List (${itemType.name})`,
+    category: "Derived Types",
+  });
   return interfaceType;
 }
 
@@ -118,6 +151,7 @@ export function stringDictType<V>(
   }
   const interfaceType = nodeInterfaceType<Record<string, V>>(
     `stringDict[${valueType.name}]`,
+    { isStringDict: true },
   );
   stringDictTypeMapping.set(valueType, interfaceType);
   stringDictTypeReverseMapping.set(interfaceType, valueType);
@@ -127,7 +161,10 @@ export function stringDictType<V>(
     if (!types) continue;
     types.addTypes(interfaceType);
   }
-  defineStringDictNode(valueType, interfaceType, { category: "Derived Types" });
+  defineStringDictNode(valueType, interfaceType, {
+    title: `Create String Dict (${valueType.name})`,
+    category: "Derived Types",
+  });
   return interfaceType;
 }
 
@@ -250,7 +287,9 @@ export function buttonInterface(name: string, callback: () => void) {
 }
 
 export function textInterface(name: string, defaultValue = "") {
-  return new TextInterface(name, defaultValue).use(setType, stringType);
+  return new TextInterface(name, defaultValue)
+    .use(setType, stringType)
+    .setPort(true);
 }
 
 export function textInputInterface(name: string, defaultValue = "") {
@@ -307,3 +346,8 @@ export function nodeInterface<T>(
 ) {
   return new NodeInterface(name, defaultValue).use(setType, type);
 }
+
+listType(unknownType);
+listType(anyType);
+stringDictType(unknownType);
+stringDictType(anyType);

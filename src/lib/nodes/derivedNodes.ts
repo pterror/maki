@@ -8,8 +8,9 @@ import {
   nodeInterface,
   integerType,
   Integer,
-  stringType,
+  textInterface,
 } from "./interfaceTypes";
+import { nodeInterfaceTypeToNodeInterface } from "./baklava";
 
 export const allEditorsNeedingDerivedNodes = new Set<WeakRef<Editor>>();
 
@@ -21,21 +22,23 @@ export function defineListNode<T>(
   options: IRegisterNodeTypeOptions,
 ) {
   const node = defineDynamicNode({
-    type: "CoreListNode",
+    type: `Create List (${type.name})`,
     inputs: {
       size: () => nodeInterface("Size", integerType, Integer(0)),
     },
     outputs: {
       items: () => nodeInterface("Items", listType, []),
     },
-    onUpdate({ size }) {
+    onUpdate(_inputs, outputs) {
+      // FIXME: Debug why `inputs` has an outdated value (always 0)
+      const size = outputs.items.length;
       return {
         inputs: {
           size: () => nodeInterface("Size", integerType, Integer(0)),
           ...Object.fromEntries(
             Array.from({ length: size }, (_, i) => [
-              `element${i}`,
-              nodeInterface(`${i}`, undefined!, type),
+              `item${i}`,
+              () => nodeInterfaceTypeToNodeInterface(`Item ${i}`, type),
             ]),
           ),
         },
@@ -45,7 +48,7 @@ export function defineListNode<T>(
       return {
         items: Array.from(
           { length: inputs.size },
-          (_, i) => inputs[`element${i}`] as T,
+          (_, i) => inputs[`item${i}`] as T,
         ),
       };
     },
@@ -69,7 +72,7 @@ export function defineStringDictNode<V>(
   options: IRegisterNodeTypeOptions,
 ) {
   const node = defineDynamicNode({
-    type: "CoreStringDictNode",
+    type: `Create String Dict (${valueType.name})`,
     inputs: {
       size: () => nodeInterface("Size", integerType, Integer(0)),
     },
@@ -84,10 +87,11 @@ export function defineStringDictNode<V>(
             Array(size)
               .fill(null)
               .flatMap((_, i) => [
-                [`key${i}`, nodeInterface(`Key ${i}`, stringType, "")],
+                [`key${i}`, () => textInterface(`Key ${i}`)],
                 [
                   `value${i}`,
-                  nodeInterface(`Value ${i}`, valueType, undefined),
+                  () =>
+                    nodeInterfaceTypeToNodeInterface(`Value ${i}`, valueType),
                 ],
               ]),
           ),

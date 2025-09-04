@@ -6,14 +6,18 @@ import {
 } from "baklavajs";
 import type { JSONSchema } from "zod/v4/core";
 import {
+  booleanType,
   checkboxInterface,
   integerInterface,
+  integerType,
   listType,
   nodeInterface,
   nodeInterfaceType,
   numberInterface,
+  numberType,
   selectInterface,
   stringDictType,
+  stringType,
   textInputInterface,
   textInterface,
   unknownType,
@@ -33,6 +37,22 @@ export function registerCoreType<T extends ZodType>(type: T, name: string) {
   const interfaceType = nodeInterfaceType<z.infer<T>>(name);
   typesMap.set(id, interfaceType);
   return interfaceType;
+}
+
+export function nodeInterfaceTypeToNodeInterface(
+  key: string,
+  value: NodeInterfaceType<any>,
+): NodeInterface<any> {
+  if (value === stringType) {
+    return textInputInterface(key);
+  } else if (value === integerType) {
+    return integerInterface(key);
+  } else if (value === numberType) {
+    return numberInterface(key);
+  } else if (value === booleanType) {
+    return checkboxInterface(key);
+  }
+  return nodeInterface(key, value);
 }
 
 export function jsonSchemaToNodeInterface(
@@ -99,6 +119,12 @@ export function upsertBaklavaType(
       if (type.type === "array" && typeof itemType === "object") {
         return `list[${upsertBaklavaType(itemType).name}]`;
       }
+      if (
+        type.type === "object" &&
+        typeof type.additionalProperties === "object"
+      ) {
+        return `stringDict[${upsertBaklavaType(type.additionalProperties).name}]`;
+      }
       if (type.type !== "object" && type.type !== "array") {
         // It is a primitive, its base type will be close enough.
         return type.type;
@@ -114,18 +140,14 @@ export function upsertBaklavaType(
     case "array": {
       if (!type.items || !Array.isArray(type.items)) {
         const itemsSchema = Array.isArray(type.items)
-          ? type.items
-          : type.additionalItems;
+          ? type.additionalItems
+          : type.items;
         if (itemsSchema) {
-          if (itemsSchema === true) {
-            const actualInterfaceType = listType(unknownType);
-            typesMap.set(id, actualInterfaceType);
-          } else if (typeof itemsSchema === "object") {
-            const actualInterfaceType = listType(
-              upsertBaklavaType(itemsSchema),
-            );
-            typesMap.set(id, actualInterfaceType);
-          }
+          const actualInterfaceType =
+            typeof itemsSchema === "object"
+              ? listType(upsertBaklavaType(itemsSchema))
+              : listType(unknownType);
+          typesMap.set(id, actualInterfaceType);
         }
         break;
       }
