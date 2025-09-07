@@ -14,7 +14,6 @@ import {
   undefinedType,
   unknownType,
 } from "./interfaceTypes";
-import { defineStringDictNode } from "./derivedNodes";
 
 export const Literal = z.union([
   z.string(),
@@ -36,13 +35,6 @@ booleanType.addConversion(literalType, (v) => v);
 undefinedType.addConversion(literalType, (v) => v);
 
 const unknownSchema = z.unknown();
-
-export const {
-  node: SchemaStringDictNode,
-  register: registerSchemaStringDictNode,
-} = defineStringDictNode(schemaType, stringDictType(schemaType), {
-  category: "Schema",
-});
 
 export function schemaInterfaceFactory(name: string) {
   return () => nodeInterface(name, schemaType, unknownSchema);
@@ -236,5 +228,4 @@ export function registerSchemaNodes(editor: Editor) {
   registerUnknownSchemaNode(editor);
   registerOptionalSchemaNode(editor);
   registerNullableSchemaNode(editor);
-  registerSchemaStringDictNode(editor);
 }

@@ -16,7 +16,6 @@ import {
   type BaklavaInterfaceTypesOptions,
   type SelectInterfaceItem,
 } from "baklavajs";
-import { defineStringDictNode } from "./derivedNodes";
 import { toJSONSchema, z, type ZodType } from "zod/v4";
 import { zInstanceof } from "./zodHelpers";
 import { registerCoreType, upsertBaklavaType } from "./baklava";
@@ -151,10 +150,6 @@ export function stringDictType<V>(
     if (!types) continue;
     types.addTypes(interfaceType);
   }
-  defineStringDictNode(valueType, interfaceType, {
-    title: `Create String Dict (${valueType.name})`,
-    category: "Derived Types",
-  });
   return interfaceType;
 }
 
