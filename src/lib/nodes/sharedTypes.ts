@@ -2,7 +2,9 @@ import { z } from "zod/v4";
 import { nodeInterfaceType } from "./interfaceTypes";
 import type { Schema } from "./zodHelpers";
 
-export const schemaType = nodeInterfaceType<Schema>("Schema");
+export const schemaType = nodeInterfaceType<Schema>("Schema", {
+  format: "zod-schema",
+});
 
 export const JSONValue = z
   .union([
@@ -26,7 +28,9 @@ export type JSONValue =
   | boolean
   | { [key: string]: JSONValue }
   | JSONValue[];
-export const jsonValueType = nodeInterfaceType<JSONValue>("JSONValue");
+export const jsonValueType = nodeInterfaceType<JSONValue>("JSONValue", {
+  format: "json-value",
+});
 
 export const JSONArray = z.array(JSONValue);
 export type JSONArray = z.infer<typeof JSONArray>;

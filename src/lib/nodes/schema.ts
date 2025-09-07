@@ -26,7 +26,9 @@ export const Literal = z.union([
 ]);
 export type Literal = z.infer<typeof Literal>;
 
-export const literalType = nodeInterfaceType<Literal>("Literal");
+export const literalType = nodeInterfaceType<Literal>("Literal", {
+  format: "literal",
+});
 stringType.addConversion(literalType, (v) => v);
 numberType.addConversion(literalType, (v) => v);
 bigintType.addConversion(literalType, (v) => v);

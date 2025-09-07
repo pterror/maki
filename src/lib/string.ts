@@ -15,3 +15,12 @@ export function kebabCaseToPascalCase(input: string): string {
     .replace(/^./, (char) => char.toUpperCase())
     .replace(/-(.)/g, (_, char) => char.toUpperCase());
 }
+
+export function ellipsis(value: string, characters = 100): string {
+  const stringValue: string =
+    typeof value?.toString === "function" ? String(value) : "";
+  if (stringValue.length > characters) {
+    return stringValue.slice(0, characters) + "...";
+  }
+  return stringValue;
+}

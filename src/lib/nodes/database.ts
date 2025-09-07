@@ -153,7 +153,7 @@ export const DatabaseUpdateCommand = z
     table: z.string().describe("Name of the table to update"),
     columns: z.array(z.string()).describe("Columns to update"),
     // TODO: `z.looseObject({})`
-    set: z.unknown().describe("Values to update"),
+    set: z.record(z.string(), z.unknown()).describe("Values to update"),
     where: DatabaseQueryCondition.optional().describe(
       "Conditions to filter which rows to update",
     ),

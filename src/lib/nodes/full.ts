@@ -23,6 +23,7 @@ import "./database";
 // import "./databaseSqlite";
 // import "./aiGeneration";
 import "./proceduralAudio";
+import { reactive } from "vue";
 
 export function useFullBaklava() {
   const baklava = useBaklava();
@@ -49,6 +50,9 @@ export function setupBaklava(
   options: Required<BaklavaInterfaceTypesOptions>,
 ) {
   const interfaceTypes = registerCoreInterfaceTypes(baklava.editor, options);
+  // @ts-expect-error
+  baklava.editor.graph._nodes = reactive(baklava.editor.graph._nodes);
+  baklava.editor.graph.interfaceTypes = interfaceTypes;
   registerDerivedNodes(baklava.editor);
   registerDerivedInterfaceTypes(interfaceTypes);
   initializeMcpServer();

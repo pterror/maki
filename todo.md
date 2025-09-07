@@ -1,3 +1,9 @@
+## code
+
+- debug and fix/add `dynamicNode`s that take in `list[T]` and `stringDict[T]` with dynamic interface types
+
+## features
+
 - flow should be controlled with a structural editor (node and/or block based)G
 - rpg style inventory management
 - message pre/postprocessing

@@ -1,6 +1,6 @@
 import { Integer, zInteger } from "./interfaceTypes";
 import { registerMcpServerTool } from "./mcp";
-import { z } from "zod/v4";
+import { toJSONSchema, z } from "zod/v4";
 import { zFormattedString } from "./zodHelpers";
 
 // Note that inputs can be inlined, so these are not strictly necessary for the core functionality,
@@ -313,19 +313,15 @@ registerMcpServerTool(
     title: "Random Choice",
     description: "Chooses a random item from a list",
     inputSchema: z.object({
-      list: z.unknown(),
-      // TODO: Fix type conversions
-      // list: z.array(z.unknown()),
+      list: z.array(z.unknown().meta({ "x-generic": "T" })),
     }),
     outputSchema: z.object({
-      choice: z.unknown(),
+      choice: z.unknown().meta({ "x-generic": "T" }),
     }),
     annotations: { baklavaCategory: "Random" },
   },
   ({ list }) => ({
-    choice: Array.isArray(list)
-      ? list[Math.floor(Math.random() * list.length)]
-      : null,
+    choice: list[Math.floor(Math.random() * list.length)],
   }),
 );
 
@@ -333,19 +329,17 @@ registerMcpServerTool(
   "list-get",
   {
     title: "Get Item (List)",
-    description: "Gets an item from an list by position",
+    description: "Gets an item from a list by position",
     inputSchema: z.object({
-      list: z.unknown(),
-      // TODO: Fix type conversions
-      // list: z.array(z.unknown()),
+      list: z.array(z.unknown().meta({ "x-generic": "T" })),
       index: zInteger,
     }),
     outputSchema: z.object({
-      item: z.unknown(),
+      item: z.unknown().meta({ "x-generic": "T" }),
     }),
     annotations: { baklavaCategory: "List" },
   },
-  ({ list, index }) => ({ item: Array.isArray(list) ? list[index] : null }),
+  ({ list, index }) => ({ item: list[index] }),
 );
 
 registerMcpServerTool(
@@ -363,4 +357,42 @@ registerMcpServerTool(
     annotations: { baklavaCategory: "String Dict" },
   },
   ({ dict, key }) => ({ value: dict[key] }),
+);
+
+registerMcpServerTool(
+  "list-join",
+  {
+    title: "Join (List)",
+    description: "Joins a list, inserting another list between every sublist",
+    inputSchema: z.object({
+      list: z.array(z.array(z.unknown().meta({ "x-generic": "T" }))),
+      separator: z.array(z.unknown().meta({ "x-generic": "T" })),
+    }),
+    outputSchema: z.object({
+      list: z.array(z.unknown().meta({ "x-generic": "T" })),
+    }),
+    annotations: { baklavaCategory: "List" },
+  },
+  ({ list, separator }) => ({
+    list: list.flatMap((sublist, i) =>
+      i ? [...separator, ...sublist] : sublist,
+    ),
+  }),
+);
+
+registerMcpServerTool(
+  "string-list-join",
+  {
+    title: "Join (String List)",
+    description: "Joins a list into a single string",
+    inputSchema: z.object({
+      list: z.array(z.string()),
+      separator: z.string(),
+    }),
+    outputSchema: z.object({
+      string: z.string(),
+    }),
+    annotations: { baklavaCategory: "List" },
+  },
+  ({ list, separator }) => ({ string: list.join(separator) }),
 );

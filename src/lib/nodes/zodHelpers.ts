@@ -9,6 +9,7 @@ import { unsafeEntries } from "../core";
 export function normalizeJsonSchema(schema: JSONSchema.JSONSchema) {
   delete schema.$schema;
   delete schema.description;
+  delete schema["x-generic"];
   switch (schema.type) {
     case "object":
       if (schema.properties) {

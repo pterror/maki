@@ -28,14 +28,13 @@ import { normalizeJsonSchema, toNormalizedJsonSchema } from "./zodHelpers";
 import type { z, ZodType } from "zod/v4";
 import { allEditorsNeedingDerivedNodes } from "./derivedNodes";
 
-const typesMap = new Map<string, NodeInterfaceType<any>>();
+const interfaceTypesById = new Map<string, NodeInterfaceType<any>>();
 
 export function registerCoreType<T extends ZodType>(type: T, name: string) {
   const jsonSchema = toNormalizedJsonSchema(type);
-  delete jsonSchema.description;
   const id = JSON.stringify(jsonSchema);
-  const interfaceType = nodeInterfaceType<z.infer<T>>(name);
-  typesMap.set(id, interfaceType);
+  const interfaceType = nodeInterfaceType<z.infer<T>>(name, jsonSchema);
+  interfaceTypesById.set(id, interfaceType);
   return interfaceType;
 }
 
@@ -106,8 +105,9 @@ export function jsonSchemaToOutputNodeInterface(
 export function upsertBaklavaType(
   type: JSONSchema.JSONSchema,
 ): NodeInterfaceType<unknown> {
-  const id = JSON.stringify(normalizeJsonSchema(type));
-  const existing = typesMap.get(id);
+  const jsonSchema = normalizeJsonSchema(structuredClone(type));
+  const id = JSON.stringify(jsonSchema);
+  const existing = interfaceTypesById.get(id);
   if (existing) return existing;
   const typeName =
     type.title ??
@@ -131,11 +131,11 @@ export function upsertBaklavaType(
       }
     })();
   if (typeName === undefined) {
-    console.error("Issue with Zod type:", type);
+    console.error("Issue with type:", type, `(id: ${id})`);
     throw new Error("This Zod type is missing a name.");
   }
-  const interfaceType = nodeInterfaceType(typeName);
-  typesMap.set(id, interfaceType);
+  const interfaceType = nodeInterfaceType(typeName, jsonSchema);
+  interfaceTypesById.set(id, interfaceType);
   switch (type.type) {
     case "array": {
       if (!type.items || !Array.isArray(type.items)) {
@@ -143,11 +143,12 @@ export function upsertBaklavaType(
           ? type.additionalItems
           : type.items;
         if (itemsSchema) {
-          const actualInterfaceType =
+          const actualInterfaceType = listType(
             typeof itemsSchema === "object"
-              ? listType(upsertBaklavaType(itemsSchema))
-              : listType(unknownType);
-          typesMap.set(id, actualInterfaceType);
+              ? upsertBaklavaType(itemsSchema)
+              : unknownType,
+          );
+          interfaceTypesById.set(id, actualInterfaceType);
         }
         break;
       }
@@ -225,12 +226,12 @@ export function upsertBaklavaType(
         if (type.additionalProperties) {
           if (type.additionalProperties === true) {
             const actualInterfaceType = stringDictType(unknownType);
-            typesMap.set(id, actualInterfaceType);
+            interfaceTypesById.set(id, actualInterfaceType);
           } else if (typeof type.additionalProperties === "object") {
             const actualInterfaceType = stringDictType(
               upsertBaklavaType(type.additionalProperties),
             );
-            typesMap.set(id, actualInterfaceType);
+            interfaceTypesById.set(id, actualInterfaceType);
           }
         }
         break;

@@ -1,23 +1,66 @@
-.baklava-node-interface[data-interface-type="unknown"] {
+.baklava-node-interface .__port {
+  .__tooltip {
+    display: flex;
+    flex-flow: column nowrap;
+    align-items: center;
+  }
+
+  .__type {
+    color: var(--baklava-node-interface-port-color);
+  }
+}
+
+.baklava-node-interface[data-interface-type^="list["] .__port {
+  border-radius: 0%;
+}
+
+.baklava-node-interface[data-interface-type^="stringDict["] .__port {
+  background: none;
+
+  &.--selected {
+    outline: none;
+  }
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-color: var(--baklava-node-interface-port-color);
+    transform: rotate(45deg);
+  }
+
+  &.--selected::before {
+    outline: 2px var(--baklava-color-connection-default) solid;
+    outline-offset: 4px;
+  }
+}
+
+.baklava-node-interface[data-interface-type="unknown"],
+.baklava-node-interface[data-interface-type*="[unknown]"] {
   --baklava-node-interface-port-color: oklch(70% 0.05 240);
 }
 
-.baklava-node-interface[data-interface-type="any"] {
+.baklava-node-interface[data-interface-type="any"],
+.baklava-node-interface[data-interface-type*="[any]"] {
   --baklava-node-interface-port-color: oklch(70% 0.25 0);
 }
 
-.baklava-node-interface[data-interface-type="string"] {
+.baklava-node-interface[data-interface-type="string"],
+.baklava-node-interface[data-interface-type*="[string]"] {
   --baklava-node-interface-port-color: oklch(70% 0.2 180);
 }
 
-.baklava-node-interface[data-interface-type="number"] {
+.baklava-node-interface[data-interface-type="number"],
+.baklava-node-interface[data-interface-type*="[number]"] {
   --baklava-node-interface-port-color: oklch(70% 0.2 320);
 }
 
-.baklava-node-interface[data-interface-type="integer"] {
+.baklava-node-interface[data-interface-type="integer"],
+.baklava-node-interface[data-interface-type*="[integer]"] {
   --baklava-node-interface-port-color: oklch(70% 0.2 310);
 }
 
-.baklava-node-interface[data-interface-type="boolean"] {
+.baklava-node-interface[data-interface-type="boolean"],
+.baklava-node-interface[data-interface-type*="[boolean]"] {
   --baklava-node-interface-port-color: oklch(70% 0.2 280);
 }

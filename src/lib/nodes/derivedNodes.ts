@@ -8,13 +8,45 @@ import {
   nodeInterface,
   integerType,
   Integer,
-  textInterface,
+  textInputInterface,
 } from "./interfaceTypes";
 import { nodeInterfaceTypeToNodeInterface } from "./baklava";
 
 export const allEditorsNeedingDerivedNodes = new Set<WeakRef<Editor>>();
 
 const allListNodeRegisterFunctions = new Set<(editor: Editor) => void>();
+
+const CreateListNode = defineDynamicNode({
+  type: "Create (List)",
+  inputs: {
+    size: () => nodeInterface("Size", integerType, Integer(0)),
+  },
+  outputs: {},
+  onUpdate(inputs, outputs) {
+    const inputType = this;
+    // FIXME: Debug why `inputs.size` has an outdated value (always 0)
+    const size = outputs.items.length;
+    return {
+      inputs: {
+        size: () => nodeInterface("Size", integerType, Integer(0)),
+        ...Object.fromEntries(
+          Array.from({ length: size }, (_, i) => [
+            `item${i}`,
+            () => nodeInterfaceTypeToNodeInterface(`Item ${i}`, type),
+          ]),
+        ),
+      },
+      outputs: {
+        items: 0,
+      },
+    };
+  },
+  calculate(inputs) {
+    return {
+      items: Array.from({ length: inputs.size }, (_, i) => inputs[`item${i}`]),
+    };
+  },
+});
 
 export function defineListNode<T>(
   type: NodeInterfaceType<T>,
@@ -29,8 +61,8 @@ export function defineListNode<T>(
     outputs: {
       items: () => nodeInterface("Items", listType, []),
     },
-    onUpdate(_inputs, outputs) {
-      // FIXME: Debug why `inputs` has an outdated value (always 0)
+    onUpdate(inputs, outputs) {
+      // FIXME: Debug why `inputs.size` has an outdated value (always 0)
       const size = outputs.items.length;
       return {
         inputs: {
@@ -71,6 +103,8 @@ export function defineStringDictNode<V>(
   dictType: NodeInterfaceType<Record<string, V>>,
   options: IRegisterNodeTypeOptions,
 ) {
+  // FIXME: This node acts really funky when disconnecting and reconnecting wires
+  // in other parts of the graph. This needs to be investigated and fixed.
   const node = defineDynamicNode({
     type: `Create String Dict (${valueType.name})`,
     inputs: {
@@ -79,7 +113,10 @@ export function defineStringDictNode<V>(
     outputs: {
       items: () => nodeInterface("Items", dictType, {}),
     },
-    onUpdate({ size }) {
+    onUpdate(inputs, outputs) {
+      const size = Object.keys(outputs.items).length;
+      console.log(":0", inputs, outputs, size);
+      // FIXME: Debug why `inputs.size` has an outdated value (always 0)
       return {
         inputs: {
           size: () => nodeInterface("Size", integerType, Integer(0)),
@@ -87,7 +124,7 @@ export function defineStringDictNode<V>(
             Array(size)
               .fill(null)
               .flatMap((_, i) => [
-                [`key${i}`, () => textInterface(`Key ${i}`)],
+                [`key${i}`, () => textInputInterface(`Key ${i}`)],
                 [
                   `value${i}`,
                   () =>
@@ -101,7 +138,7 @@ export function defineStringDictNode<V>(
     calculate(inputs) {
       const items: Record<string, V> = Object.fromEntries(
         Array.from({ length: inputs.size }, (_, i) => [
-          inputs[`key${i}`] as string,
+          (inputs[`key${i}`] as string | undefined) ?? String(i),
           inputs[`value${i}`] as V,
         ]),
       );

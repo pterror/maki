@@ -17,9 +17,10 @@ import {
   type SelectInterfaceItem,
 } from "baklavajs";
 import { defineListNode, defineStringDictNode } from "./derivedNodes";
-import { string, z, type ZodType } from "zod/v4";
+import { toJSONSchema, z, type ZodType } from "zod/v4";
 import { zInstanceof } from "./zodHelpers";
-import { registerCoreType } from "./baklava";
+import { registerCoreType, upsertBaklavaType } from "./baklava";
+import type { JSONSchema } from "zod/v4/core";
 
 const allInterfaceTypesRegistriesNeedingDerivedTypes = new Set<
   WeakRef<BaklavaInterfaceTypes>
@@ -39,17 +40,11 @@ export function unsafeAsOptionalNodeInterfaceType<T>(
   return type as NodeInterfaceType<T | undefined>;
 }
 
-export const unknownType = new NodeInterfaceType<unknown>("unknown");
-// It should behave like `any`, but we do not want to hide type errors.
-export const anyType = new NodeInterfaceType<unknown>("any");
+export let unknownType!: NodeInterfaceType<unknown>;
 let unknownListType: NodeInterfaceType<unknown[]> | undefined;
-let anyListType: NodeInterfaceType<unknown[]> | undefined;
 let unknownStringDictType:
   | NodeInterfaceType<Record<string, unknown>>
   | undefined;
-let anyStringDictType: NodeInterfaceType<Record<string, unknown>> | undefined;
-anyType.addConversion(unknownType, (v) => v);
-unknownType.addConversion(anyType, (v) => v);
 
 export interface NodeInterfaceTypeOptions {
   isList?: boolean;
@@ -58,22 +53,20 @@ export interface NodeInterfaceTypeOptions {
 
 export function nodeInterfaceType<T>(
   name: string,
+  jsonSchema: JSONSchema.JSONSchema,
   { isList = false, isStringDict = false }: NodeInterfaceTypeOptions = {},
 ): NodeInterfaceType<T> {
   const interfaceType = new NodeInterfaceType<T>(name);
-  interfaceType.addConversion(unknownType, (v) => v);
-  interfaceType.addConversion(anyType, (v) => v);
-  if (isList && unknownListType && anyListType) {
-    interfaceType.addConversion(unknownListType, (v) => v as unknown[]);
-    interfaceType.addConversion(anyListType, (v) => v as unknown[]);
+  interfaceType.schema = jsonSchema;
+  if (unknownType) {
+    interfaceType.addConversion(unknownType, (v) => v);
   }
-  if (isStringDict && unknownStringDictType && anyStringDictType) {
+  if (isList && unknownListType) {
+    interfaceType.addConversion(unknownListType, (v) => v as unknown[]);
+  }
+  if (isStringDict && unknownStringDictType) {
     interfaceType.addConversion(
       unknownStringDictType,
-      (v) => v as Record<string, unknown>,
-    );
-    interfaceType.addConversion(
-      anyStringDictType,
       (v) => v as Record<string, unknown>,
     );
   }
@@ -98,9 +91,11 @@ export function listType<T>(
   if (cached) {
     return cached as NodeInterfaceType<T[]>;
   }
-  const interfaceType = nodeInterfaceType<T[]>(`array[${itemType.name}]`, {
-    isList: true,
-  });
+  const interfaceType = nodeInterfaceType<T[]>(
+    `list[${itemType.name}]`,
+    { type: "array", items: itemType.schema },
+    { isList: true },
+  );
   listTypeMapping.set(itemType, interfaceType);
   listTypeReverseMapping.set(interfaceType, itemType);
   allListTypes.add(new WeakRef(interfaceType));
@@ -151,6 +146,7 @@ export function stringDictType<V>(
   }
   const interfaceType = nodeInterfaceType<Record<string, V>>(
     `stringDict[${valueType.name}]`,
+    { type: "object", additionalProperties: valueType.schema },
     { isStringDict: true },
   );
   stringDictTypeMapping.set(valueType, interfaceType);
@@ -193,8 +189,7 @@ export function withCustomJsonSchemaFormat<T extends ZodType>(
 }
 
 export const zInteger = z.int() as unknown as ZodType<Integer>;
-registerCoreType(z.unknown(), "unknown");
-registerCoreType(z.any(), "any");
+unknownType = registerCoreType(z.unknown(), "unknown");
 export const undefinedType = registerCoreType(
   withCustomJsonSchemaFormat(z.undefined(), "undefined"),
   "undefined",
@@ -210,43 +205,6 @@ export const booleanType = registerCoreType(z.boolean(), "boolean");
 export const dateType = registerCoreType(zInstanceof(Date), "date");
 export const regexType = registerCoreType(zInstanceof(RegExp), "regex");
 
-// Only `any` is allowed to have unsafe conversions.
-anyType.addConversion(undefinedType, (v) => {
-  if (v !== undefined) {
-    throw new Error(`Cannot convert value '${JSON.stringify(v)}' to undefined`);
-  }
-  return v;
-});
-anyType.addConversion(stringType, (v) => {
-  if (typeof v !== "string") {
-    throw new Error(`Cannot convert value '${JSON.stringify(v)}' to string`);
-  }
-  return v;
-});
-anyType.addConversion(integerType, (v) => {
-  if (typeof v !== "number" || !Number.isInteger(v)) {
-    throw new Error(`Cannot convert value '${JSON.stringify(v)}' to integer`);
-  }
-  return Integer(v);
-});
-anyType.addConversion(numberType, (v) => {
-  if (typeof v !== "number") {
-    throw new Error(`Cannot convert value '${JSON.stringify(v)}' to number`);
-  }
-  return v;
-});
-anyType.addConversion(bigintType, (v) => {
-  if (typeof v !== "bigint") {
-    throw new Error(`Cannot convert value '${JSON.stringify(v)}' to bigint`);
-  }
-  return v;
-});
-anyType.addConversion(booleanType, (v) => {
-  if (typeof v !== "boolean") {
-    throw new Error(`Cannot convert value '${JSON.stringify(v)}' to boolean`);
-  }
-  return v;
-});
 integerType.addConversion(numberType, (v) => v);
 
 export function registerCoreInterfaceTypes(
@@ -255,8 +213,7 @@ export function registerCoreInterfaceTypes(
 ) {
   const nodeInterfaceTypes = new BaklavaInterfaceTypes(editor, options);
   nodeInterfaceTypes.addTypes(
-    unknownType,
-    anyType,
+    ...(unknownType ? [unknownType] : []),
     undefinedType,
     stringType,
     integerType,
@@ -308,7 +265,10 @@ export function numberInterface(name: string, defaultValue = 0) {
 }
 
 export function integerInterface(name: string, defaultValue = Integer(0)) {
-  return new IntegerInterface(name, defaultValue).use(setType, integerType);
+  return new IntegerInterface(name, defaultValue).use(
+    setType,
+    integerType as unknown as NodeInterfaceType<number>,
+  );
 }
 
 export function sliderInterface(
@@ -347,7 +307,9 @@ export function nodeInterface<T>(
   return new NodeInterface(name, defaultValue).use(setType, type);
 }
 
-listType(unknownType);
-listType(anyType);
-stringDictType(unknownType);
-stringDictType(anyType);
+unknownListType = upsertBaklavaType(
+  toJSONSchema(z.array(z.unknown())),
+) as never;
+unknownStringDictType = upsertBaklavaType(
+  toJSONSchema(z.record(z.string(), z.unknown())),
+) as never;

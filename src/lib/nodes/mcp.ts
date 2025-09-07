@@ -12,7 +12,7 @@ import type {
 } from "@modelcontextprotocol/sdk/types.js";
 import {
   toJSONSchema,
-  type z,
+  z,
   type ZodObject,
   type ZodRawShape,
   type ZodType,
@@ -26,7 +26,13 @@ import {
   upsertBaklavaType,
 } from "./baklava";
 import { unsafeValues } from "../core";
-import { defineNode, Editor } from "baklavajs";
+import {
+  defineDynamicNode,
+  defineNode,
+  Editor,
+  NodeInterfaceType,
+  type INodeDefinition,
+} from "baklavajs";
 import { kebabCaseToPascalCase } from "../string";
 import {
   MemoryClientTransport,
@@ -34,6 +40,12 @@ import {
 } from "./memoryTransport";
 import { zodShape } from "./zodHelpers";
 import { allEditorsNeedingDerivedNodes } from "./derivedNodes";
+import {
+  doesSchemaContainGeneric,
+  extractGenericTypesFromSchema,
+  substituteGenericTypesIntoSchema,
+} from "../jsonSchema";
+import { toRaw } from "vue";
 
 export type McpToolConfig = {
   title?: string;
@@ -44,6 +56,7 @@ export type McpToolConfig = {
 };
 
 const EMPTY_OBJECT_JSON_SCHEMA = { type: "object", properties: {} };
+const token = Symbol("Generic node event token");
 
 const mcpServer = new McpServer({ name: "maki-server", version: "0.1.0" });
 const serverTransport = new MemoryServerTransport();
@@ -156,7 +169,10 @@ export async function registerAllToolsInBaklava() {
         upsertBaklavaType(property as JSONSchema.JSONSchema);
       }
     }
-    const ToolNode = defineNode({
+    const isGeneric = doesSchemaContainGeneric(
+      tool.inputSchema as JSONSchema._JSONSchema,
+    );
+    const commonNodeConfig = {
       title: tool.title,
       type: `${kebabCaseToPascalCase(tool.name)}Node`,
       inputs: Object.fromEntries(
@@ -187,7 +203,158 @@ export async function registerAllToolsInBaklava() {
         });
         return result.structuredContent;
       },
-    });
+    } satisfies INodeDefinition<unknown, unknown>;
+    const ToolNode = isGeneric
+      ? defineDynamicNode({
+          ...commonNodeConfig,
+          inputs: {},
+          outputs: {},
+          onPlaced() {
+            const updateInterfaces = () => {
+              const connections = this.graph?.connections;
+              // If there are no connections, we can't infer any concrete types,
+              // so just return the original schemas.
+              // This is a shortcut to avoid doing unnecessary work.
+              if (!connections || connections.length === 0) {
+                return {
+                  inputs: Object.fromEntries(
+                    Object.entries(tool.inputSchema.properties ?? {}).map(
+                      ([key, schema]) => [
+                        key,
+                        () =>
+                          jsonSchemaToNodeInterface(
+                            key,
+                            schema as JSONSchema._JSONSchema,
+                          ),
+                      ],
+                    ),
+                  ) as never,
+                  outputs: Object.fromEntries(
+                    Object.entries(tool.outputSchema?.properties ?? {}).map(
+                      ([key, schema]) => [
+                        key,
+                        () =>
+                          jsonSchemaToOutputNodeInterface(
+                            key,
+                            schema as JSONSchema._JSONSchema,
+                          ),
+                      ],
+                    ),
+                  ) as never,
+                };
+              }
+              // @ts-expect-error We are intentionally accessing a private property.
+              const interfaceTypes = toRaw(this.graph?.interfaceTypes.types) as
+                | Map<string, NodeInterfaceType<any>>
+                | undefined;
+              const concreteInputs = {
+                type: "object",
+                properties: Object.fromEntries(
+                  Object.entries(this.inputs).map(([k, v]) => {
+                    const typeName = connections.find((c) => c.to === v)?.from
+                      .type;
+                    const type = typeName
+                      ? interfaceTypes?.get(typeName)?.schema
+                      : undefined;
+                    return [
+                      k,
+                      // The `!`s are safe because the input schema is guaranteed to have `properties`,
+                      // and is guaranteed to have a property for every input
+                      // (because the node was created from the schema).
+                      type ?? tool.inputSchema.properties![k]!,
+                    ];
+                  }),
+                ),
+              };
+              const concreteOutputs = {
+                type: "object",
+                properties: Object.fromEntries(
+                  Object.entries(this.outputs).map(([k, v]) => {
+                    const typeName = connections.find((c) => c.to === v)?.from
+                      .type;
+                    const type = typeName
+                      ? interfaceTypes?.get(typeName)?.schema
+                      : undefined;
+                    return [
+                      k,
+                      // The `!`s are safe because the output schema is guaranteed to have `properties`,
+                      // and is guaranteed to have a property for every output
+                      // (because the node was created from the schema).
+                      type ?? tool.outputSchema!.properties![k]!,
+                    ];
+                  }),
+                ),
+              };
+              // Extract from outputs first, since inputs should take precedence
+              // (e.g. if both input and output are generic `T`, and input is
+              // connected to `string`, then `T = string`).
+              const genericParameters = extractGenericTypesFromSchema(
+                tool.outputSchema as JSONSchema._JSONSchema,
+                concreteOutputs as JSONSchema._JSONSchema,
+              );
+              extractGenericTypesFromSchema(
+                tool.inputSchema as JSONSchema._JSONSchema,
+                concreteInputs as JSONSchema._JSONSchema,
+                genericParameters,
+              );
+              const filledInputs = substituteGenericTypesIntoSchema(
+                tool.inputSchema as JSONSchema.JSONSchema,
+                genericParameters,
+              ) as JSONSchema.JSONSchema;
+              const filledOutputs = substituteGenericTypesIntoSchema(
+                tool.outputSchema as JSONSchema.JSONSchema,
+                genericParameters,
+              ) as JSONSchema.JSONSchema;
+              console.log(
+                ":)",
+                connections,
+                genericParameters,
+                concreteInputs,
+                concreteOutputs,
+                filledInputs.properties,
+                filledOutputs.properties,
+              );
+              for (const key in filledInputs.properties!) {
+                const input = this.inputs[key];
+                if (!input) continue;
+                const schema = filledInputs.properties![key];
+                if (schema === undefined || typeof schema === "boolean")
+                  continue;
+                const intf = jsonSchemaToNodeInterface(
+                  key,
+                  schema as JSONSchema._JSONSchema,
+                );
+                input.type = intf.type;
+                Object.setPrototypeOf(input, Object.getPrototypeOf(intf));
+              }
+              for (const key in filledOutputs.properties!) {
+                const output = this.outputs[key];
+                if (!output) continue;
+                const schema = filledOutputs.properties![key];
+                if (schema === undefined || typeof schema === "boolean")
+                  continue;
+                const intf = jsonSchemaToOutputNodeInterface(
+                  key,
+                  schema as JSONSchema._JSONSchema,
+                );
+                output.type = intf.type;
+                Object.setPrototypeOf(output, Object.getPrototypeOf(intf));
+              }
+            };
+            this.graph!.events.addConnection.subscribe(token, updateInterfaces);
+            this.graph!.events.removeConnection.subscribe(
+              token,
+              updateInterfaces,
+            );
+          },
+          onUpdate() {
+            return {
+              inputs: commonNodeConfig.inputs,
+              outputs: commonNodeConfig.outputs,
+            };
+          },
+        })
+      : defineNode(commonNodeConfig);
     function registerToolNode(editor: Editor) {
       editor.registerNodeType(ToolNode, {
         category: tool.annotations?.baklavaCategory as string | undefined,
