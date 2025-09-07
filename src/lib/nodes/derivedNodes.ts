@@ -9,6 +9,7 @@ import {
   integerType,
   Integer,
   textInputInterface,
+  integerInterface,
 } from "./interfaceTypes";
 import { nodeInterfaceTypeToNodeInterface } from "./baklava";
 
@@ -19,7 +20,7 @@ const allListNodeRegisterFunctions = new Set<(editor: Editor) => void>();
 const CreateListNode = defineDynamicNode({
   type: "Create (List)",
   inputs: {
-    size: () => nodeInterface("Size", integerType, Integer(0)),
+    size: () => nodeInterface("size", integerType, Integer(0)),
   },
   outputs: {},
   onUpdate(inputs, outputs) {
@@ -27,15 +28,12 @@ const CreateListNode = defineDynamicNode({
     // FIXME: Debug why `inputs.size` has an outdated value (always 0)
     const size = outputs.items.length;
     return {
-      inputs: {
-        size: () => nodeInterface("Size", integerType, Integer(0)),
-        ...Object.fromEntries(
-          Array.from({ length: size }, (_, i) => [
-            `item${i}`,
-            () => nodeInterfaceTypeToNodeInterface(`Item ${i}`, type),
-          ]),
-        ),
-      },
+      inputs: Object.fromEntries(
+        Array.from({ length: size }, (_, i) => [
+          `item${i}`,
+          () => nodeInterfaceTypeToNodeInterface(`Item ${i}`, type),
+        ]),
+      ),
       outputs: {
         items: 0,
       },
@@ -56,24 +54,19 @@ export function defineListNode<T>(
   const node = defineDynamicNode({
     type: `Create List (${type.name})`,
     inputs: {
-      size: () => nodeInterface("Size", integerType, Integer(0)),
+      size: () => integerInterface("Size"),
     },
     outputs: {
       items: () => nodeInterface("Items", listType, []),
     },
-    onUpdate(inputs, outputs) {
-      // FIXME: Debug why `inputs.size` has an outdated value (always 0)
-      const size = outputs.items.length;
+    onUpdate({ size }) {
       return {
-        inputs: {
-          size: () => nodeInterface("Size", integerType, Integer(0)),
-          ...Object.fromEntries(
-            Array.from({ length: size }, (_, i) => [
-              `item${i}`,
-              () => nodeInterfaceTypeToNodeInterface(`Item ${i}`, type),
-            ]),
-          ),
-        },
+        inputs: Object.fromEntries(
+          Array.from({ length: size }, (_, i) => [
+            `item${i}`,
+            () => nodeInterfaceTypeToNodeInterface(`Item ${i}`, type),
+          ]),
+        ),
       };
     },
     calculate(inputs) {
@@ -108,31 +101,25 @@ export function defineStringDictNode<V>(
   const node = defineDynamicNode({
     type: `Create String Dict (${valueType.name})`,
     inputs: {
-      size: () => nodeInterface("Size", integerType, Integer(0)),
+      size: () => integerInterface("Size"),
     },
     outputs: {
       items: () => nodeInterface("Items", dictType, {}),
     },
-    onUpdate(inputs, outputs) {
-      const size = Object.keys(outputs.items).length;
-      console.log(":0", inputs, outputs, size);
+    onUpdate({ size }) {
       // FIXME: Debug why `inputs.size` has an outdated value (always 0)
       return {
-        inputs: {
-          size: () => nodeInterface("Size", integerType, Integer(0)),
-          ...Object.fromEntries(
-            Array(size)
-              .fill(null)
-              .flatMap((_, i) => [
-                [`key${i}`, () => textInputInterface(`Key ${i}`)],
-                [
-                  `value${i}`,
-                  () =>
-                    nodeInterfaceTypeToNodeInterface(`Value ${i}`, valueType),
-                ],
-              ]),
-          ),
-        },
+        inputs: Object.fromEntries(
+          Array(size)
+            .fill(null)
+            .flatMap((_, i) => [
+              [`key${i}`, () => textInputInterface(`Key ${i}`)],
+              [
+                `value${i}`,
+                () => nodeInterfaceTypeToNodeInterface(`Value ${i}`, valueType),
+              ],
+            ]),
+        ),
       };
     },
     calculate(inputs) {
