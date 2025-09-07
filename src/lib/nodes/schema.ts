@@ -14,7 +14,7 @@ import {
   undefinedType,
   unknownType,
 } from "./interfaceTypes";
-import { defineListNode, defineStringDictNode } from "./derivedNodes";
+import { defineStringDictNode } from "./derivedNodes";
 
 export const Literal = z.union([
   z.string(),
@@ -36,8 +36,6 @@ booleanType.addConversion(literalType, (v) => v);
 undefinedType.addConversion(literalType, (v) => v);
 
 const unknownSchema = z.unknown();
-export const { node: SchemaListNode, register: registerSchemaListNode } =
-  defineListNode(schemaType, listType(schemaType), { category: "Schema" });
 
 export const {
   node: SchemaStringDictNode,
@@ -238,6 +236,5 @@ export function registerSchemaNodes(editor: Editor) {
   registerUnknownSchemaNode(editor);
   registerOptionalSchemaNode(editor);
   registerNullableSchemaNode(editor);
-  registerSchemaListNode(editor);
   registerSchemaStringDictNode(editor);
 }

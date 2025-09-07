@@ -200,7 +200,12 @@ export async function registerAllToolsInBaklava() {
         for (const k in inputs as object) {
           const v = (inputs as any)[k];
           if (v !== undefined) continue;
-          if (tool.inputSchema.required?.includes(k)) return null;
+          if (tool.inputSchema.required?.includes(k))
+            return Object.fromEntries(
+              Object.entries(tool.outputSchema?.properties ?? {}).map(
+                ([k, v]) => [k, null],
+              ),
+            );
         }
         const result = await mcpClient.callTool({
           name: tool.name,
@@ -217,37 +222,6 @@ export async function registerAllToolsInBaklava() {
           onPlaced() {
             const updateInterfaces = () => {
               const connections = this.graph?.connections;
-              // If there are no connections, we can't infer any concrete types,
-              // so just return the original schemas.
-              // This is a shortcut to avoid doing unnecessary work.
-              if (!connections || connections.length === 0) {
-                return {
-                  inputs: Object.fromEntries(
-                    Object.entries(tool.inputSchema.properties ?? {}).map(
-                      ([key, schema]) => [
-                        key,
-                        () =>
-                          jsonSchemaToNodeInterface(
-                            key,
-                            schema as JSONSchema._JSONSchema,
-                          ),
-                      ],
-                    ),
-                  ) as never,
-                  outputs: Object.fromEntries(
-                    Object.entries(tool.outputSchema?.properties ?? {}).map(
-                      ([key, schema]) => [
-                        key,
-                        () =>
-                          jsonSchemaToOutputNodeInterface(
-                            key,
-                            schema as JSONSchema._JSONSchema,
-                          ),
-                      ],
-                    ),
-                  ) as never,
-                };
-              }
               // @ts-expect-error We are intentionally accessing a private property.
               const interfaceTypes = toRaw(this.graph?.interfaceTypes.types) as
                 | Map<string, NodeInterfaceType<any>>
@@ -256,7 +230,7 @@ export async function registerAllToolsInBaklava() {
                 type: "object",
                 properties: Object.fromEntries(
                   Object.entries(this.inputs).map(([k, v]) => {
-                    const typeName = connections.find((c) => c.to === v)?.from
+                    const typeName = connections?.find((c) => c.to === v)?.from
                       .type;
                     const type = typeName
                       ? interfaceTypes?.get(typeName)?.schema
@@ -275,7 +249,7 @@ export async function registerAllToolsInBaklava() {
                 type: "object",
                 properties: Object.fromEntries(
                   Object.entries(this.outputs).map(([k, v]) => {
-                    const typeName = connections.find((c) => c.to === v)?.from
+                    const typeName = connections?.find((c) => c.to === v)?.from
                       .type;
                     const type = typeName
                       ? interfaceTypes?.get(typeName)?.schema
@@ -310,15 +284,6 @@ export async function registerAllToolsInBaklava() {
                 tool.outputSchema as JSONSchema.JSONSchema,
                 genericParameters,
               ) as JSONSchema.JSONSchema;
-              console.log(
-                ":)",
-                connections,
-                genericParameters,
-                concreteInputs,
-                concreteOutputs,
-                filledInputs.properties,
-                filledOutputs.properties,
-              );
               for (const key in filledInputs.properties!) {
                 const input = this.inputs[key];
                 if (!input) continue;

@@ -16,7 +16,7 @@ import {
   type BaklavaInterfaceTypesOptions,
   type SelectInterfaceItem,
 } from "baklavajs";
-import { defineListNode, defineStringDictNode } from "./derivedNodes";
+import { defineStringDictNode } from "./derivedNodes";
 import { toJSONSchema, z, type ZodType } from "zod/v4";
 import { zInstanceof } from "./zodHelpers";
 import { registerCoreType, upsertBaklavaType } from "./baklava";
@@ -41,10 +41,8 @@ export function unsafeAsOptionalNodeInterfaceType<T>(
 }
 
 export let unknownType!: NodeInterfaceType<unknown>;
-let unknownListType: NodeInterfaceType<unknown[]> | undefined;
-let unknownStringDictType:
-  | NodeInterfaceType<Record<string, unknown>>
-  | undefined;
+export let unknownListType!: NodeInterfaceType<unknown[]>;
+export let unknownStringDictType!: NodeInterfaceType<Record<string, unknown>>;
 
 export interface NodeInterfaceTypeOptions {
   isList?: boolean;
@@ -104,10 +102,6 @@ export function listType<T>(
     if (!types) continue;
     types.addTypes(interfaceType);
   }
-  defineListNode(itemType, interfaceType, {
-    title: `Create List (${itemType.name})`,
-    category: "Derived Types",
-  });
   return interfaceType;
 }
 

@@ -1,8 +1,10 @@
 import {
   Editor,
   NodeInterfaceType,
-  type IRegisterNodeTypeOptions,
   defineDynamicNode,
+  DynamicNode,
+  SelectInterface,
+  type IRegisterNodeTypeOptions,
 } from "baklavajs";
 import {
   nodeInterface,
@@ -10,33 +12,60 @@ import {
   Integer,
   textInputInterface,
   integerInterface,
+  selectInterface,
+  stringType,
+  unknownListType,
 } from "./interfaceTypes";
-import { nodeInterfaceTypeToNodeInterface } from "./baklava";
+import {
+  jsonSchemaToNodeInterface,
+  jsonSchemaToOutputNodeInterface,
+  nodeInterfaceTypeToNodeInterface,
+} from "./baklava";
+import { toRaw } from "vue";
 
 export const allEditorsNeedingDerivedNodes = new Set<WeakRef<Editor>>();
 
 const allListNodeRegisterFunctions = new Set<(editor: Editor) => void>();
 
-const CreateListNode = defineDynamicNode({
+export const CreateListNode = defineDynamicNode({
   type: "Create (List)",
   inputs: {
-    size: () => nodeInterface("size", integerType, Integer(0)),
+    size: () => integerInterface("size"),
+    type: () => selectInterface("type", stringType, ["unknown"], "unknown"),
   },
-  outputs: {},
-  onUpdate(inputs, outputs) {
-    const inputType = this;
-    // FIXME: Debug why `inputs.size` has an outdated value (always 0)
-    const size = outputs.items.length;
+  outputs: {
+    items: () => nodeInterface("items", unknownListType),
+  },
+  onPlaced() {
+    // @ts-expect-error We are intentionally accessing a private property.
+    const interfaceTypes = toRaw(this.graph?.interfaceTypes.types) as
+      | Map<string, NodeInterfaceType<any>>
+      | undefined;
+    const typeInterface = this.inputs.type as SelectInterface;
+    typeInterface.items = [...(interfaceTypes?.keys() ?? [])];
+  },
+  onUpdate({ size, type }) {
+    const self = this as unknown as DynamicNode<unknown, unknown>;
+    // @ts-expect-error We are intentionally accessing a private property.
+    const interfaceTypes = toRaw(self.graph?.interfaceTypes.types) as
+      | Map<string, NodeInterfaceType<any>>
+      | undefined;
+    const newType = interfaceTypes?.get(type)?.schema;
+    if (!newType) return {};
+    if (self.outputs.items) {
+      self.outputs.items.type = `list[${type}]`;
+    }
     return {
       inputs: Object.fromEntries(
         Array.from({ length: size }, (_, i) => [
           `item${i}`,
-          () => nodeInterfaceTypeToNodeInterface(`Item ${i}`, type),
+          () => jsonSchemaToNodeInterface(`item${i}`, newType),
         ]),
       ),
-      outputs: {
-        items: 0,
-      },
+      forceUpdateInputs: Array.from(
+        { length: size },
+        (_, i) => `item${i}`,
+      ).filter((k) => self.inputs[k]?.type !== type),
     };
   },
   calculate(inputs) {
@@ -45,51 +74,9 @@ const CreateListNode = defineDynamicNode({
     };
   },
 });
-
-export function defineListNode<T>(
-  type: NodeInterfaceType<T>,
-  listType: NodeInterfaceType<T[]>,
-  options: IRegisterNodeTypeOptions,
-) {
-  const node = defineDynamicNode({
-    type: `Create List (${type.name})`,
-    inputs: {
-      size: () => integerInterface("Size"),
-    },
-    outputs: {
-      items: () => nodeInterface("Items", listType, []),
-    },
-    onUpdate({ size }) {
-      return {
-        inputs: Object.fromEntries(
-          Array.from({ length: size }, (_, i) => [
-            `item${i}`,
-            () => nodeInterfaceTypeToNodeInterface(`Item ${i}`, type),
-          ]),
-        ),
-      };
-    },
-    calculate(inputs) {
-      return {
-        items: Array.from(
-          { length: inputs.size },
-          (_, i) => inputs[`item${i}`] as T,
-        ),
-      };
-    },
-  });
-  const register = function registerCoreListNode(editor: Editor) {
-    editor.registerNodeType(node, options);
-  };
-  allListNodeRegisterFunctions.add(register);
-  for (const editorRef of allEditorsNeedingDerivedNodes) {
-    const editor = editorRef.deref();
-    if (!editor) continue;
-    register(editor);
-  }
-  return { node, register };
+export function registerListNode(editor: Editor) {
+  editor.registerNodeType(CreateListNode, { category: "Constants" });
 }
-const allStringDictNodeRegisterFunctions = new Set<(editor: Editor) => void>();
 
 export function defineStringDictNode<V>(
   valueType: NodeInterfaceType<V>,
@@ -135,7 +122,6 @@ export function defineStringDictNode<V>(
   const register = function registerCoreStringDictNode(editor: Editor) {
     editor.registerNodeType(node, options);
   };
-  allStringDictNodeRegisterFunctions.add(register);
   for (const editorRef of allEditorsNeedingDerivedNodes) {
     const editor = editorRef.deref();
     if (!editor) continue;
@@ -145,11 +131,9 @@ export function defineStringDictNode<V>(
 }
 
 export function registerDerivedNodes(editor: Editor) {
+  registerListNode(editor);
   allEditorsNeedingDerivedNodes.add(new WeakRef(editor));
   for (const register of allListNodeRegisterFunctions) {
-    register(editor);
-  }
-  for (const register of allStringDictNodeRegisterFunctions) {
     register(editor);
   }
 }

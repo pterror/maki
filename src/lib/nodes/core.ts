@@ -1,6 +1,6 @@
 import { Integer, zInteger } from "./interfaceTypes";
 import { registerMcpServerTool } from "./mcp";
-import { toJSONSchema, z } from "zod/v4";
+import { z } from "zod/v4";
 import { zFormattedString } from "./zodHelpers";
 
 // Note that inputs can be inlined, so these are not strictly necessary for the core functionality,
