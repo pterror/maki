@@ -197,6 +197,11 @@ export async function registerAllToolsInBaklava() {
         ),
       ) as never,
       async calculate(inputs) {
+        for (const k in inputs as object) {
+          const v = (inputs as any)[k];
+          if (v !== undefined) continue;
+          if (tool.inputSchema.required?.includes(k)) return null;
+        }
         const result = await mcpClient.callTool({
           name: tool.name,
           arguments: inputs as never,
