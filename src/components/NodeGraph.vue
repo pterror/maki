@@ -1,12 +1,22 @@
 <script setup lang="ts">
 import "@baklavajs/themes/dist/syrup-dark.css";
-import { BaklavaEditor, Components } from "baklavajs";
+import { BaklavaEditor, Components, NodeInterfaceType } from "baklavajs";
 import { useFullBaklava } from "../lib/nodes/full";
-import { nextTick, onMounted, onUnmounted, useTemplateRef } from "vue";
+import {
+  computed,
+  nextTick,
+  onMounted,
+  onUnmounted,
+  toRaw,
+  useTemplateRef,
+} from "vue";
 import { debounce } from "../lib/debounce";
 import BaklavaSidebar from "./BaklavaSidebar.vue";
 import BaklavaNodeInterface from "./BaklavaNodeInterface.vue";
 import { ellipsis } from "../lib/string";
+import { escapeCssIdentifier } from "../lib/css";
+import { coreTypeNames } from "../lib/nodes/baklava";
+import BaklavaNodePalette from "./BaklavaNodePalette.vue";
 
 const { Node: BaklavaNode } = Components;
 
@@ -76,11 +86,35 @@ onUnmounted(() => {
 });
 
 // TODO: add sidebar toggle to toolbar?
+const nodeColors = computed(() => {
+  let styles = "";
+  // @ts-expect-error We are intentionally accessing a private property.
+  const interfaceTypes = toRaw(baklava.editor.graph?.interfaceTypes.types) as
+    | Map<string, NodeInterfaceType<any>>
+    | undefined;
+  for (const nodeType of interfaceTypes?.values() ?? []) {
+    // Skip generics, which should be distinguished by shape.
+    if (/[\[\]]/.test(nodeType.name) || coreTypeNames.has(nodeType.name)) {
+      continue;
+    }
+    const nodeTypeName = escapeCssIdentifier(nodeType.name);
+    const hue = Math.floor(Math.random() * 360);
+    styles += `
+      .baklava-node-interface[data-interface-type="${nodeTypeName}"],
+      .baklava-node-interface[data-interface-type*="[${nodeTypeName}]"] {
+        --baklava-node-interface-port-color: oklch(70% 0.05 ${hue}deg);
+      }
+    `;
+  }
+  return styles;
+});
 </script>
 
 <template>
   <BaklavaEditor ref="editorRef" :view-model="baklava">
-    <template #sidebar>HELLO WORLD</template>
+    <template #palette="paletteProps">
+      <BaklavaNodePalette v-bind="paletteProps" />
+    </template>
     <template #node="nodeProps">
       <!-- @vue-expect-error The definition for the `node` slot is incorrect - it should not require `$event` in `onselect`. -->
       <BaklavaNode :key="nodeProps.node.id" v-bind="nodeProps">
@@ -97,4 +131,5 @@ onUnmounted(() => {
       </BaklavaNode>
     </template>
   </BaklavaEditor>
+  <component is="style" v-html="nodeColors"></component>
 </template>

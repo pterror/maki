@@ -21,7 +21,13 @@ import { zInstanceof } from "./zodHelpers";
 import { registerCoreType, upsertBaklavaType } from "./baklava";
 import type { JSONSchema } from "zod/v4/core";
 
-const allInterfaceTypesRegistriesNeedingDerivedTypes = new Set<
+// TODO: Reconsider whether this constant is really a good architecture decision.
+// It would be better to have a more explicit way to register derived types,
+// for example by creating an event system where derived types can register themselves
+// when a new core type is registered.
+// The problem with that approach is that we still need to keep track of all the
+// derived types somewhere.
+export const allInterfaceTypesRegistriesNeedingDerivedTypes = new Set<
   WeakRef<BaklavaInterfaceTypes>
 >();
 
@@ -200,8 +206,8 @@ export function registerCoreInterfaceTypes(
   editor: Editor,
   options: Required<BaklavaInterfaceTypesOptions>,
 ) {
-  const nodeInterfaceTypes = new BaklavaInterfaceTypes(editor, options);
-  nodeInterfaceTypes.addTypes(
+  const types = new BaklavaInterfaceTypes(editor, options);
+  types.addTypes(
     ...(unknownType ? [unknownType] : []),
     undefinedType,
     stringType,
@@ -211,21 +217,19 @@ export function registerCoreInterfaceTypes(
     dateType,
     regexType,
   );
-  return nodeInterfaceTypes;
+  return types;
 }
 
 export function registerDerivedInterfaceTypes(
-  interfaceTypes: BaklavaInterfaceTypes,
+  types: BaklavaInterfaceTypes,
 ): void {
   for (const type of getAllListTypes()) {
-    interfaceTypes.addTypes(type);
+    types.addTypes(type);
   }
   for (const type of getAllStringDictTypes()) {
-    interfaceTypes.addTypes(type);
+    types.addTypes(type);
   }
-  allInterfaceTypesRegistriesNeedingDerivedTypes.add(
-    new WeakRef(interfaceTypes),
-  );
+  allInterfaceTypesRegistriesNeedingDerivedTypes.add(new WeakRef(types));
 }
 
 export function buttonInterface(name: string, callback: () => void) {

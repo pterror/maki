@@ -6,6 +6,7 @@ import {
 } from "baklavajs";
 import type { JSONSchema } from "zod/v4/core";
 import {
+  allInterfaceTypesRegistriesNeedingDerivedTypes,
   booleanType,
   checkboxInterface,
   integerInterface,
@@ -28,12 +29,14 @@ import { normalizeJsonSchema, toNormalizedJsonSchema } from "./zodHelpers";
 import type { z, ZodType } from "zod/v4";
 import { allEditorsNeedingDerivedNodes } from "./derivedNodes";
 
+export const coreTypeNames = new Set<string>();
 const interfaceTypesById = new Map<string, NodeInterfaceType<any>>();
 
 export function registerCoreType<T extends ZodType>(type: T, name: string) {
   const jsonSchema = toNormalizedJsonSchema(type);
   const id = JSON.stringify(jsonSchema);
   const interfaceType = nodeInterfaceType<z.infer<T>>(name, jsonSchema);
+  coreTypeNames.add(name);
   interfaceTypesById.set(id, interfaceType);
   return interfaceType;
 }
@@ -136,6 +139,11 @@ export function upsertBaklavaType(
   }
   const interfaceType = nodeInterfaceType(typeName, jsonSchema);
   interfaceTypesById.set(id, interfaceType);
+  for (const typesRef of allInterfaceTypesRegistriesNeedingDerivedTypes) {
+    const types = typesRef.deref();
+    if (!types) continue;
+    types.addTypes(interfaceType);
+  }
   switch (type.type) {
     case "array": {
       if (!type.items || !Array.isArray(type.items)) {

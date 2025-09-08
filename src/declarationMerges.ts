@@ -14,6 +14,7 @@ declare module "baklavajs" {
     schema: JSONSchema.JSONSchema;
   }
 
+  // oxlint-disable-next-line no-unused-vars
   interface DynamicNode<I, O> {
     /** @deprecated This is an internal private method that should not be used. */
     updateInterfaces(

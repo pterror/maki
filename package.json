@@ -42,6 +42,7 @@
     "@baklavajs/themes": "^2.7.0",
     "@modelcontextprotocol/sdk": "github:socotra/typescript-sdk#zod-v4",
     "@openrouter/ai-sdk-provider": "^1.1.2",
+    "@vueuse/core": "^13.9.0",
     "ai": "^5.0.28",
     "ai-gateway-provider": "^0.0.11",
     "ai-sdk-provider-gemini-cli": "^0.1.3",
