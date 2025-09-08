@@ -17,6 +17,7 @@ import { ellipsis } from "../lib/string";
 import { escapeCssIdentifier } from "../lib/css";
 import { coreTypeNames } from "../lib/nodes/baklava";
 import BaklavaNodePalette from "./BaklavaNodePalette.vue";
+import { allInterfaceTypeNames } from "../lib/nodes/interfaceTypes";
 
 const { Node: BaklavaNode } = Components;
 
@@ -88,21 +89,17 @@ onUnmounted(() => {
 // TODO: add sidebar toggle to toolbar?
 const nodeColors = computed(() => {
   let styles = "";
-  // @ts-expect-error We are intentionally accessing a private property.
-  const interfaceTypes = toRaw(baklava.editor.graph?.interfaceTypes.types) as
-    | Map<string, NodeInterfaceType<any>>
-    | undefined;
-  for (const nodeType of interfaceTypes?.values() ?? []) {
+  for (const nodeTypeName of allInterfaceTypeNames) {
     // Skip generics, which should be distinguished by shape.
-    if (/[\[\]]/.test(nodeType.name) || coreTypeNames.has(nodeType.name)) {
+    if (/[[\]]/.test(nodeTypeName) || coreTypeNames.has(nodeTypeName)) {
       continue;
     }
-    const nodeTypeName = escapeCssIdentifier(nodeType.name);
+    const escaped = escapeCssIdentifier(nodeTypeName);
     const hue = Math.floor(Math.random() * 360);
     styles += `
-      .baklava-node-interface[data-interface-type="${nodeTypeName}"],
-      .baklava-node-interface[data-interface-type*="[${nodeTypeName}]"] {
-        --baklava-node-interface-port-color: oklch(70% 0.05 ${hue}deg);
+      .baklava-node-interface[data-interface-type="${escaped}"],
+      .baklava-node-interface[data-interface-type*="[${escaped}]"] {
+        --baklava-node-interface-port-color: oklch(70% 0.2 ${hue}deg);
       }
     `;
   }

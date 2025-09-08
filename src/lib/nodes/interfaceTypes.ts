@@ -20,7 +20,11 @@ import { toJSONSchema, z, type ZodType } from "zod/v4";
 import { zInstanceof } from "./zodHelpers";
 import { registerCoreType, upsertBaklavaType } from "./baklava";
 import type { JSONSchema } from "zod/v4/core";
+import { reactive, type Reactive } from "vue";
 
+const interfaceTypeNames = reactive(new Set<string>());
+export const allInterfaceTypeNames: Reactive<ReadonlySet<string>> =
+  interfaceTypeNames;
 // TODO: Reconsider whether this constant is really a good architecture decision.
 // It would be better to have a more explicit way to register derived types,
 // for example by creating an event system where derived types can register themselves
@@ -60,6 +64,7 @@ export function nodeInterfaceType<T>(
   { isList = false, isStringDict = false }: NodeInterfaceTypeOptions = {},
 ): NodeInterfaceType<T> {
   const interfaceType = new NodeInterfaceType<T>(name);
+  interfaceTypeNames.add(name);
   interfaceType.schema = jsonSchema;
   if (unknownType) {
     interfaceType.addConversion(unknownType, (v) => v);

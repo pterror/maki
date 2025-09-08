@@ -40,11 +40,6 @@
   --baklava-node-interface-port-color: oklch(70% 0.05 240);
 }
 
-.baklava-node-interface[data-interface-type="any"],
-.baklava-node-interface[data-interface-type*="[any]"] {
-  --baklava-node-interface-port-color: oklch(70% 0.25 0);
-}
-
 .baklava-node-interface[data-interface-type="string"],
 .baklava-node-interface[data-interface-type*="[string]"] {
   --baklava-node-interface-port-color: oklch(70% 0.2 180);
