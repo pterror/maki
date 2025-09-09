@@ -1,0 +1,25 @@
+[project]
+name = "maki"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "pterror",email = "pterrorbird@gmail.com"}
+]
+readme = "readme.md"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "diffusers (>=0.35.1,<0.36.0)",
+    "torch (>=2.8.0,<3.0.0)",
+    "fastmcp (>=2.12.2,<3.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.group.dev.dependencies]
+black = "^25.1.0"
+
+[tool.pyright]
+typeCheckingMode = "strict"

@@ -15,6 +15,8 @@
             packages = with pkgs; [
 	            nodejs_20
               corepack
+              python313
+              poetry
             ];
           });
     };
