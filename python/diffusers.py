@@ -6,10 +6,6 @@ import torch
 from torch import FloatTensor
 from PIL.Image import Image
 
-# TODO: Check that this correctly gets generated as a union in JSON Schema
-# If not, we should just define it as `Image`.
-# from diffusers.image_processor import PipelineImageInput
-PipelineImageInput = ImageType
 from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion import (
     StableDiffusionPipeline,
 )
@@ -47,6 +43,11 @@ from diffusers.pipelines.stable_diffusion_3.pipeline_stable_diffusion_3_inpaint 
     StableDiffusion3InpaintPipeline,
 )
 from fastmcp import FastMCP
+
+# TODO: Check that this correctly gets generated as a union in JSON Schema
+# If not, we should just define it as `Image`.
+# from diffusers.image_processor import PipelineImageInput
+PipelineImageInput = ImageType
 
 # https://huggingface.co/docs/diffusers/en/optimization/fp16#torchcompile
 inductor: Any = torch._inductor  # pyright: ignore[reportPrivateUsage]
@@ -87,9 +88,7 @@ def stable_diffusion_text_to_image(
     """Generate an image from a prompt using Stable Diffusion"""
     pipeline = StableDiffusionPipeline.from_pretrained(  # pyright: ignore[reportUnknownMemberType]
         model_id_or_path, torch_dtype=torch.float16
-    ).to(
-        "cuda"
-    )
+    ).to("cuda")
     result = pipeline(
         prompt=prompt,
         height=height,
@@ -148,9 +147,7 @@ def stable_diffusion_img2img(
     """Generate an image from a prompt and input image using Stable Diffusion"""
     pipeline = StableDiffusionImg2ImgPipeline.from_pretrained(  # pyright: ignore[reportUnknownMemberType]
         model_id_or_path, torch_dtype=torch.float16
-    ).to(
-        "cuda"
-    )
+    ).to("cuda")
     result = pipeline(
         prompt=prompt,
         image=image,
@@ -213,9 +210,7 @@ def stable_diffusion_inpaint(
     """Inpaint an image using Stable Diffusion"""
     pipeline = StableDiffusionInpaintPipeline.from_pretrained(  # pyright: ignore[reportUnknownMemberType]
         model_id_or_path, torch_dtype=torch.float16
-    ).to(
-        "cuda"
-    )
+    ).to("cuda")
     result = pipeline(
         prompt=prompt,
         image=image,
@@ -291,9 +286,7 @@ def stable_diffusion_xl_text_to_image(
     """Generate an image from a prompt using Stable Diffusion XL"""
     pipeline = StableDiffusionXLPipeline.from_pretrained(  # pyright: ignore[reportUnknownMemberType]
         model_id_or_path, torch_dtype=torch.float16
-    ).to(
-        "cuda"
-    )
+    ).to("cuda")
     result = pipeline(  # pyright: ignore[reportUnknownVariableType]
         prompt=prompt,
         prompt_2=prompt_2,
@@ -379,9 +372,7 @@ def stable_diffusion_xl_img2img(
     """Generate an image from a prompt and input image using Stable Diffusion XL"""
     pipeline = StableDiffusionXLImg2ImgPipeline.from_pretrained(  # pyright: ignore[reportUnknownMemberType]
         model_id_or_path, torch_dtype=torch.float16
-    ).to(
-        "cuda"
-    )
+    ).to("cuda")
     result = pipeline(
         prompt=prompt,
         image=image,
@@ -475,9 +466,7 @@ def stable_diffusion_xl_inpaint(
     """Inpaint an image using Stable Diffusion XL"""
     pipeline = StableDiffusionXLInpaintPipeline.from_pretrained(  # pyright: ignore[reportUnknownMemberType]
         model_id_or_path, torch_dtype=torch.float16
-    ).to(
-        "cuda"
-    )
+    ).to("cuda")
     result = pipeline(
         prompt=prompt,
         prompt_2=prompt_2,
@@ -566,9 +555,7 @@ def stable_diffusion_3_text_to_image(
     """Generate an image from a prompt using Stable Diffusion 3"""
     pipeline = StableDiffusion3Pipeline.from_pretrained(  # pyright: ignore[reportUnknownMemberType]
         model_id_or_path, torch_dtype=torch.float16
-    ).to(
-        "cuda"
-    )
+    ).to("cuda")
     result = pipeline(  # pyright: ignore[reportUnknownVariableType]
         prompt=prompt,
         prompt_2=prompt_2,
@@ -645,9 +632,7 @@ def stable_diffusion_3_img2img(
     """Generate an image from a prompt and input image using Stable Diffusion 3"""
     pipeline = StableDiffusion3Img2ImgPipeline.from_pretrained(  # pyright: ignore[reportUnknownMemberType]
         model_id_or_path, torch_dtype=torch.float16
-    ).to(
-        "cuda"
-    )
+    ).to("cuda")
     result = pipeline(
         prompt=prompt,
         image=image,
@@ -725,9 +710,7 @@ def stable_diffusion_3_inpaint(
     """Inpaint an image using Stable Diffusion 3"""
     pipeline = StableDiffusion3InpaintPipeline.from_pretrained(  # pyright: ignore[reportUnknownMemberType]
         model_id_or_path, torch_dtype=torch.float16
-    ).to(
-        "cuda"
-    )
+    ).to("cuda")
     result = pipeline(
         prompt=prompt,
         image=image,

@@ -21,7 +21,8 @@
             nodejs_24
             corepack
             python313
-            poetry
+            uv
+            ruff
           ];
           LD_LIBRARY_PATH = "${pkgs.lib.makeLibraryPath packages}:$LD_LIBRARY_PATH";
         }
