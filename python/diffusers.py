@@ -1,13 +1,15 @@
 from typing import Any, List, Dict, Tuple
 
 from .core import assert_unchecked
+from .pydantic_types import GeneratorType, TensorType, ImageType
 import torch
-from torch import Generator, Tensor, FloatTensor
+from torch import FloatTensor
 from PIL.Image import Image
 
 # TODO: Check that this correctly gets generated as a union in JSON Schema
 # If not, we should just define it as `Image`.
-from diffusers.image_processor import PipelineImageInput
+# from diffusers.image_processor import PipelineImageInput
+PipelineImageInput = ImageType
 from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion import (
     StableDiffusionPipeline,
 )
@@ -54,6 +56,7 @@ inductor.config.epilogue_fusion = False
 inductor.config.coordinate_descent_check_all_directions = True
 
 mcp = FastMCP("diffusers")
+diffusers_mcp = mcp
 
 
 @mcp.tool
@@ -69,18 +72,18 @@ def stable_diffusion_text_to_image(
     negative_prompt: str | List[str] | None = None,
     num_images_per_prompt: int | None = 1,
     eta: float = 0,
-    generator: Generator | List[Generator] | None = None,
-    latents: Tensor | None = None,
-    prompt_embeds: Tensor | None = None,
-    negative_prompt_embeds: Tensor | None = None,
+    generator: GeneratorType | List[GeneratorType] | None = None,
+    latents: TensorType | None = None,
+    prompt_embeds: TensorType | None = None,
+    negative_prompt_embeds: TensorType | None = None,
     ip_adapter_image: PipelineImageInput | None = None,
-    ip_adapter_image_embeds: List[Tensor] | None = None,
+    ip_adapter_image_embeds: List[TensorType] | None = None,
     output_type: str | None = "pil",
     return_dict: bool = True,
     cross_attention_kwargs: Dict[str, Any] | None = None,
     guidance_rescale: float = 0,
     clip_skip: int | None = None,
-) -> Image:
+) -> ImageType:
     """Generate an image from a prompt using Stable Diffusion"""
     pipeline = StableDiffusionPipeline.from_pretrained(  # pyright: ignore[reportUnknownMemberType]
         model_id_or_path, torch_dtype=torch.float16
@@ -132,16 +135,16 @@ def stable_diffusion_img2img(
     negative_prompt: str | List[str] | None = None,
     num_images_per_prompt: int | None = 1,
     eta: float | None = 0,
-    generator: Generator | List[Generator] | None = None,
-    prompt_embeds: Tensor | None = None,
-    negative_prompt_embeds: Tensor | None = None,
+    generator: GeneratorType | List[GeneratorType] | None = None,
+    prompt_embeds: TensorType | None = None,
+    negative_prompt_embeds: TensorType | None = None,
     ip_adapter_image: PipelineImageInput | None = None,
-    ip_adapter_image_embeds: List[Tensor] | None = None,
+    ip_adapter_image_embeds: List[TensorType] | None = None,
     output_type: str | None = "pil",
     return_dict: bool = True,
     cross_attention_kwargs: Dict[str, Any] | None = None,
     clip_skip: int | None = None,
-) -> Image:
+) -> ImageType:
     """Generate an image from a prompt and input image using Stable Diffusion"""
     pipeline = StableDiffusionImg2ImgPipeline.from_pretrained(  # pyright: ignore[reportUnknownMemberType]
         model_id_or_path, torch_dtype=torch.float16
@@ -184,7 +187,7 @@ def stable_diffusion_inpaint(
     prompt: str | List[str],
     image: PipelineImageInput,
     mask_image: PipelineImageInput,
-    masked_image_latents: Tensor | None = None,
+    masked_image_latents: TensorType | None = None,
     height: int | None = None,
     width: int | None = None,
     padding_mask_crop: int | None = None,
@@ -196,17 +199,17 @@ def stable_diffusion_inpaint(
     negative_prompt: str | List[str] | None = None,
     num_images_per_prompt: int | None = 1,
     eta: float = 0,
-    generator: Generator | List[Generator] | None = None,
-    latents: Tensor | None = None,
-    prompt_embeds: Tensor | None = None,
-    negative_prompt_embeds: Tensor | None = None,
+    generator: GeneratorType | List[GeneratorType] | None = None,
+    latents: TensorType | None = None,
+    prompt_embeds: TensorType | None = None,
+    negative_prompt_embeds: TensorType | None = None,
     ip_adapter_image: PipelineImageInput | None = None,
-    ip_adapter_image_embeds: List[Tensor] | None = None,
+    ip_adapter_image_embeds: List[TensorType] | None = None,
     output_type: str | None = "pil",
     return_dict: bool = True,
     cross_attention_kwargs: Dict[str, Any] | None = None,
     clip_skip: int | None = None,
-) -> Image:
+) -> ImageType:
     """Inpaint an image using Stable Diffusion"""
     pipeline = StableDiffusionInpaintPipeline.from_pretrained(  # pyright: ignore[reportUnknownMemberType]
         model_id_or_path, torch_dtype=torch.float16
@@ -241,12 +244,12 @@ def stable_diffusion_inpaint(
         clip_skip=assert_unchecked(clip_skip),
     )
     if isinstance(result, StableDiffusionPipelineOutput):
-        image = result.images[0]
+        output_image = result.images[0]
     else:
-        image = result[0]
-    if not isinstance(image, Image):
+        output_image = result[0]
+    if not isinstance(output_image, Image):
         raise ValueError("Expected image to be a PIL Image")
-    return image
+    return output_image
 
 
 @mcp.tool
@@ -265,14 +268,14 @@ def stable_diffusion_xl_text_to_image(
     negative_prompt_2: str | List[str] | None = None,
     num_images_per_prompt: int | None = 1,
     eta: float = 0,
-    generator: Generator | List[Generator] | None = None,
-    latents: Tensor | None = None,
-    prompt_embeds: Tensor | None = None,
-    negative_prompt_embeds: Tensor | None = None,
-    pooled_prompt_embeds: Tensor | None = None,
-    negative_pooled_prompt_embeds: Tensor | None = None,
+    generator: GeneratorType | List[GeneratorType] | None = None,
+    latents: TensorType | None = None,
+    prompt_embeds: TensorType | None = None,
+    negative_prompt_embeds: TensorType | None = None,
+    pooled_prompt_embeds: TensorType | None = None,
+    negative_pooled_prompt_embeds: TensorType | None = None,
     ip_adapter_image: PipelineImageInput | None = None,
-    ip_adapter_image_embeds: List[Tensor] | None = None,
+    ip_adapter_image_embeds: List[TensorType] | None = None,
     output_type: str | None = "pil",
     return_dict: bool = True,
     cross_attention_kwargs: Dict[str, Any] | None = None,
@@ -284,7 +287,7 @@ def stable_diffusion_xl_text_to_image(
     negative_crops_coords_top_left: Tuple[int, int] = (0, 0),
     negative_target_size: Tuple[int, int] | None = None,
     clip_skip: int | None = None,
-) -> Image:
+) -> ImageType:
     """Generate an image from a prompt using Stable Diffusion XL"""
     pipeline = StableDiffusionXLPipeline.from_pretrained(  # pyright: ignore[reportUnknownMemberType]
         model_id_or_path, torch_dtype=torch.float16
@@ -351,14 +354,14 @@ def stable_diffusion_xl_img2img(
     negative_prompt_2: str | List[str] | None = None,
     num_images_per_prompt: int | None = 1,
     eta: float = 0,
-    generator: Generator | List[Generator] | None = None,
-    latents: Tensor | None = None,
-    prompt_embeds: Tensor | None = None,
-    negative_prompt_embeds: Tensor | None = None,
-    pooled_prompt_embeds: Tensor | None = None,
-    negative_pooled_prompt_embeds: Tensor | None = None,
+    generator: GeneratorType | List[GeneratorType] | None = None,
+    latents: TensorType | None = None,
+    prompt_embeds: TensorType | None = None,
+    negative_prompt_embeds: TensorType | None = None,
+    pooled_prompt_embeds: TensorType | None = None,
+    negative_pooled_prompt_embeds: TensorType | None = None,
     ip_adapter_image: PipelineImageInput | None = None,
-    ip_adapter_image_embeds: List[Tensor] | None = None,
+    ip_adapter_image_embeds: List[TensorType] | None = None,
     output_type: str | None = "pil",
     return_dict: bool = True,
     cross_attention_kwargs: Dict[str, Any] | None = None,
@@ -372,7 +375,7 @@ def stable_diffusion_xl_img2img(
     aesthetic_score: float = 6,
     negative_aesthetic_score: float = 2.5,
     clip_skip: int | None = None,
-) -> Image:
+) -> ImageType:
     """Generate an image from a prompt and input image using Stable Diffusion XL"""
     pipeline = StableDiffusionXLImg2ImgPipeline.from_pretrained(  # pyright: ignore[reportUnknownMemberType]
         model_id_or_path, torch_dtype=torch.float16
@@ -432,7 +435,7 @@ def stable_diffusion_xl_inpaint(
     image: PipelineImageInput,
     mask_image: PipelineImageInput,
     prompt_2: str | List[str] | None = None,
-    masked_image_latents: Tensor | None = None,
+    masked_image_latents: TensorType | None = None,
     height: int | None = None,
     width: int | None = None,
     padding_mask_crop: int | None = None,
@@ -447,14 +450,14 @@ def stable_diffusion_xl_inpaint(
     negative_prompt_2: str | List[str] | None = None,
     num_images_per_prompt: int | None = 1,
     eta: float = 0,
-    generator: Generator | List[Generator] | None = None,
-    latents: Tensor | None = None,
-    prompt_embeds: Tensor | None = None,
-    negative_prompt_embeds: Tensor | None = None,
-    pooled_prompt_embeds: Tensor | None = None,
-    negative_pooled_prompt_embeds: Tensor | None = None,
+    generator: GeneratorType | List[GeneratorType] | None = None,
+    latents: TensorType | None = None,
+    prompt_embeds: TensorType | None = None,
+    negative_prompt_embeds: TensorType | None = None,
+    pooled_prompt_embeds: TensorType | None = None,
+    negative_pooled_prompt_embeds: TensorType | None = None,
     ip_adapter_image: PipelineImageInput | None = None,
-    ip_adapter_image_embeds: List[Tensor] | None = None,
+    ip_adapter_image_embeds: List[TensorType] | None = None,
     output_type: str | None = "pil",
     return_dict: bool = True,
     cross_attention_kwargs: Dict[str, Any] | None = None,
@@ -468,7 +471,7 @@ def stable_diffusion_xl_inpaint(
     aesthetic_score: float = 6,
     negative_aesthetic_score: float = 2.5,
     clip_skip: int | None = None,
-) -> Image:
+) -> ImageType:
     """Inpaint an image using Stable Diffusion XL"""
     pipeline = StableDiffusionXLInpaintPipeline.from_pretrained(  # pyright: ignore[reportUnknownMemberType]
         model_id_or_path, torch_dtype=torch.float16
@@ -518,12 +521,12 @@ def stable_diffusion_xl_inpaint(
         clip_skip=clip_skip,
     )
     if isinstance(result, StableDiffusionXLPipelineOutput):
-        image = result.images[0]
+        output_image = result.images[0]
     else:
-        image = result[0]
-    if not isinstance(image, Image):
+        output_image = result[0]
+    if not isinstance(output_image, Image):
         raise ValueError("Expected image to be a PIL Image")
-    return image
+    return output_image
 
 
 @mcp.tool
@@ -541,14 +544,14 @@ def stable_diffusion_3_text_to_image(
     negative_prompt_2: str | List[str] | None = None,
     negative_prompt_3: str | List[str] | None = None,
     num_images_per_prompt: int | None = 1,
-    generator: Generator | List[Generator] | None = None,
+    generator: GeneratorType | List[GeneratorType] | None = None,
     latents: FloatTensor | None = None,
     prompt_embeds: FloatTensor | None = None,
     negative_prompt_embeds: FloatTensor | None = None,
     pooled_prompt_embeds: FloatTensor | None = None,
     negative_pooled_prompt_embeds: FloatTensor | None = None,
     ip_adapter_image: PipelineImageInput | None = None,
-    ip_adapter_image_embeds: Tensor | None = None,
+    ip_adapter_image_embeds: TensorType | None = None,
     output_type: str | None = "pil",
     return_dict: bool = True,
     joint_attention_kwargs: Dict[str, Any] | None = None,
@@ -559,7 +562,7 @@ def stable_diffusion_3_text_to_image(
     skip_layer_guidance_stop: float = 0.2,
     skip_layer_guidance_start: float = 0.01,
     mu: float | None = None,
-) -> Image:
+) -> ImageType:
     """Generate an image from a prompt using Stable Diffusion 3"""
     pipeline = StableDiffusion3Pipeline.from_pretrained(  # pyright: ignore[reportUnknownMemberType]
         model_id_or_path, torch_dtype=torch.float16
@@ -624,7 +627,7 @@ def stable_diffusion_3_img2img(
     negative_prompt_2: str | List[str] | None = None,
     negative_prompt_3: str | List[str] | None = None,
     num_images_per_prompt: int | None = 1,
-    generator: Generator | List[Generator] | None = None,
+    generator: GeneratorType | List[GeneratorType] | None = None,
     latents: FloatTensor | None = None,
     prompt_embeds: FloatTensor | None = None,
     negative_prompt_embeds: FloatTensor | None = None,
@@ -632,13 +635,13 @@ def stable_diffusion_3_img2img(
     negative_pooled_prompt_embeds: FloatTensor | None = None,
     output_type: str | None = "pil",
     ip_adapter_image: PipelineImageInput | None = None,
-    ip_adapter_image_embeds: Tensor | None = None,
+    ip_adapter_image_embeds: TensorType | None = None,
     return_dict: bool = True,
     joint_attention_kwargs: Dict[str, Any] | None = None,
     clip_skip: int | None = None,
     max_sequence_length: int = 256,
     mu: float | None = None,
-) -> Image:
+) -> ImageType:
     """Generate an image from a prompt and input image using Stable Diffusion 3"""
     pipeline = StableDiffusion3Img2ImgPipeline.from_pretrained(  # pyright: ignore[reportUnknownMemberType]
         model_id_or_path, torch_dtype=torch.float16
@@ -676,12 +679,12 @@ def stable_diffusion_3_img2img(
         mu=mu,
     )
     if isinstance(result, StableDiffusionXLPipelineOutput):
-        image = result.images[0]
+        output_image = result.images[0]
     else:
-        image = result[0]
-    if not isinstance(image, Image):
+        output_image = result[0]
+    if not isinstance(output_image, Image):
         raise ValueError("Expected image to be a PIL Image")
-    return image
+    return output_image
 
 
 @mcp.tool
@@ -704,21 +707,21 @@ def stable_diffusion_3_inpaint(
     negative_prompt_2: str | List[str] | None = None,
     negative_prompt_3: str | List[str] | None = None,
     num_images_per_prompt: int | None = 1,
-    generator: Generator | List[Generator] | None = None,
-    latents: Tensor | None = None,
-    prompt_embeds: Tensor | None = None,
-    negative_prompt_embeds: Tensor | None = None,
-    pooled_prompt_embeds: Tensor | None = None,
-    negative_pooled_prompt_embeds: Tensor | None = None,
+    generator: GeneratorType | List[GeneratorType] | None = None,
+    latents: TensorType | None = None,
+    prompt_embeds: TensorType | None = None,
+    negative_prompt_embeds: TensorType | None = None,
+    pooled_prompt_embeds: TensorType | None = None,
+    negative_pooled_prompt_embeds: TensorType | None = None,
     ip_adapter_image: PipelineImageInput | None = None,
-    ip_adapter_image_embeds: Tensor | None = None,
+    ip_adapter_image_embeds: TensorType | None = None,
     output_type: str | None = "pil",
     return_dict: bool = True,
     joint_attention_kwargs: Dict[str, Any] | None = None,
     clip_skip: int | None = None,
     max_sequence_length: int = 256,
     mu: float | None = None,
-) -> Image:
+) -> ImageType:
     """Inpaint an image using Stable Diffusion 3"""
     pipeline = StableDiffusion3InpaintPipeline.from_pretrained(  # pyright: ignore[reportUnknownMemberType]
         model_id_or_path, torch_dtype=torch.float16
@@ -759,12 +762,12 @@ def stable_diffusion_3_inpaint(
         mu=mu,
     )
     if isinstance(result, StableDiffusion3PipelineOutput):
-        image = result.images[0]
+        output_image = result.images[0]
     else:
-        image = result[0]
-    if not isinstance(image, Image):
+        output_image = result[0]
+    if not isinstance(output_image, Image):
         raise ValueError("Expected image to be a PIL Image")
-    return image
+    return output_image
 
 
 if __name__ == "__main__":

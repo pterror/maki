@@ -12,8 +12,8 @@ import {
   InvalidToolInputError,
 } from "ai";
 import { z, ZodType } from "zod/v4";
-import { JSONArray, JSONValue } from "./sharedTypes";
-import { zCustom, zFunction, zInstanceof } from "./zodHelpers";
+import { JSONArray, JSONValue } from "./sharedTypes.ts";
+import { zCustom, zFunction, zInstanceof } from "./zodHelpers.ts";
 
 export const LanguageModel = zCustom<Exclude<UpstreamLanguageModel, string>>(
   "ai-sdk-language-model",

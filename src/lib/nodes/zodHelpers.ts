@@ -1,10 +1,6 @@
 import type { JSONSchema } from "zod/v4/core";
-import {
-  withCustomJsonSchemaFormat,
-  Integer as UpstreamInteger,
-} from "./interfaceTypes";
 import { toJSONSchema, z, type ZodType } from "zod/v4";
-import { unsafeEntries } from "../core";
+import { unsafeEntries } from "../core.ts";
 
 export function normalizeJsonSchema(schema: JSONSchema.JSONSchema) {
   delete schema.$schema;
@@ -82,12 +78,10 @@ export function zFormattedString(format: string) {
   return result;
 }
 
-export const Integer = z.int() as unknown as ZodType<UpstreamInteger>;
-// TODO: Consider whether zod schemas are required, or whether JSON Schemas should be used directly.
-
-export const Schema = zCustom<z.ZodType>("zod-schema").meta({
-  title: "Schema",
-  description:
-    "A schema that can be used to define the input and output schemas of tools.",
-});
-export type Schema = z.infer<typeof Schema>;
+export function withCustomJsonSchemaFormat<T extends ZodType>(
+  type: T,
+  format: string,
+) {
+  type._zod.toJSONSchema = () => ({ format });
+  return type;
+}

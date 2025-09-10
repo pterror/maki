@@ -16,9 +16,10 @@ import {
   type BaklavaInterfaceTypesOptions,
   type SelectInterfaceItem,
 } from "baklavajs";
-import { toJSONSchema, z, type ZodType } from "zod/v4";
-import { zInstanceof } from "./zodHelpers";
-import { registerCoreType, upsertBaklavaType } from "./baklava";
+import { withCustomJsonSchemaFormat, zInstanceof } from "./zodHelpers.ts";
+import { registerCoreType } from "./baklava.ts";
+import { Integer, zInteger } from "../type.ts";
+import { z, type ZodType } from "zod/v4";
 import type { JSONSchema } from "zod/v4/core";
 import { reactive, type Reactive } from "vue";
 
@@ -26,7 +27,7 @@ const interfaceTypeNames = reactive(new Set<string>());
 export const allInterfaceTypeNames: Reactive<ReadonlySet<string>> =
   interfaceTypeNames;
 // TODO: Reconsider whether this constant is really a good architecture decision.
-// It would be better to have a more explicit way to register derived types,
+// It would I better to have a more explicit way to register derived types,
 // for example by creating an event system where derived types can register themselves
 // when a new core type is registered.
 // The problem with that approach is that we still need to keep track of all the
@@ -34,14 +35,6 @@ export const allInterfaceTypeNames: Reactive<ReadonlySet<string>> =
 export const allInterfaceTypesRegistriesNeedingDerivedTypes = new Set<
   WeakRef<BaklavaInterfaceTypes>
 >();
-
-export type Integer = number & { __integer: true };
-export function Integer(value: number) {
-  if (!Number.isInteger(value)) {
-    throw new Error(`Value ${value} is not an integer`);
-  }
-  return value as Integer;
-}
 
 export function unsafeAsOptionalNodeInterfaceType<T>(
   type: NodeInterfaceType<T>,
@@ -52,6 +45,11 @@ export function unsafeAsOptionalNodeInterfaceType<T>(
 export let unknownType!: NodeInterfaceType<unknown>;
 export let unknownListType!: NodeInterfaceType<unknown[]>;
 export let unknownStringDictType!: NodeInterfaceType<Record<string, unknown>>;
+unknownListType = registerCoreType(z.array(z.unknown()), "list[unknown]");
+unknownStringDictType = registerCoreType(
+  z.record(z.string(), z.unknown()),
+  "stringDict[unknown]",
+);
 
 export interface NodeInterfaceTypeOptions {
   isList?: boolean;
@@ -180,15 +178,6 @@ export function getAllStringDictTypes(): NodeInterfaceType<
   });
 }
 
-export function withCustomJsonSchemaFormat<T extends ZodType>(
-  type: T,
-  format: string,
-) {
-  type._zod.toJSONSchema = () => ({ format });
-  return type;
-}
-
-export const zInteger = z.int() as unknown as ZodType<Integer>;
 unknownType = registerCoreType(z.unknown(), "unknown");
 export const undefinedType = registerCoreType(
   withCustomJsonSchemaFormat(z.undefined(), "undefined"),
@@ -304,10 +293,3 @@ export function nodeInterface<T>(
 ) {
   return new NodeInterface(name, defaultValue).use(setType, type);
 }
-
-unknownListType = upsertBaklavaType(
-  toJSONSchema(z.array(z.unknown())),
-) as never;
-unknownStringDictType = upsertBaklavaType(
-  toJSONSchema(z.record(z.string(), z.unknown())),
-) as never;

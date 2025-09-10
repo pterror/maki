@@ -1,10 +1,6 @@
 import { z } from "zod/v4";
-import { nodeInterfaceType } from "./interfaceTypes";
-import type { Schema } from "./zodHelpers";
-
-export const schemaType = nodeInterfaceType<Schema>("Schema", {
-  format: "zod-schema",
-});
+import { zCustom } from "./zodHelpers.ts";
+import type { JSONSchema } from "zod/v4/core";
 
 export const JSONValue = z
   .union([
@@ -28,9 +24,13 @@ export type JSONValue =
   | boolean
   | { [key: string]: JSONValue }
   | JSONValue[];
-export const jsonValueType = nodeInterfaceType<JSONValue>("JSONValue", {
-  format: "json-value",
-});
 
 export const JSONArray = z.array(JSONValue);
 export type JSONArray = z.infer<typeof JSONArray>;
+
+export const Schema = zCustom<JSONSchema.JSONSchema>("json-schema").meta({
+  title: "JSON Schema",
+  description:
+    "A schema that can be used to define the input and output schemas of tools.",
+});
+export type Schema = z.infer<typeof Schema>;

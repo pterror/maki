@@ -8,6 +8,8 @@
     // "exactOptionalPropertyTypes": true,
     "verbatimModuleSyntax": true,
     "erasableSyntaxOnly": true,
-    "jsx": "preserve"
+    "jsx": "preserve",
+    "allowImportingTsExtensions": true,
+    "moduleResolution": "bundler"
   }
 }

@@ -1,3 +1,4 @@
+import { reactive } from "vue";
 import {
   applyResult,
   DependencyEngine,
@@ -8,22 +9,20 @@ import {
 import {
   registerCoreInterfaceTypes,
   registerDerivedInterfaceTypes,
-} from "./interfaceTypes";
-import { registerDerivedNodes } from "./derivedNodes";
+} from "./interfaceTypes.ts";
+import { registerDerivedNodes } from "./derived.ts";
+import { mcpClient, registerAllToolsInBaklava } from "../mcpClient.ts";
 import {
-  initializeMcpClient,
-  initializeMcpServer,
-  registerAllToolsInBaklava,
-} from "./mcp";
+  MemoryClientTransport,
+  MemoryServerTransport,
+} from "../memoryTransport.ts";
+import { mcpServer } from "../mcpServer.ts";
 
 // All modules containing nodes.
-import "./core";
-import "./database";
-// FIXME: MCP supports client-server communication!
-// import "./databaseSqlite";
-// import "./aiGeneration";
-import "./proceduralAudio";
-import { reactive } from "vue";
+import "./coreNodes.ts";
+import "./jsonSchemaNodes.ts";
+import "./databaseNodes.ts";
+import "./proceduralAudioNodes.ts";
 
 export function useFullBaklava() {
   const baklava = useBaklava();
@@ -50,13 +49,18 @@ export function setupBaklava(
   options: Required<BaklavaInterfaceTypesOptions>,
 ) {
   const interfaceTypes = registerCoreInterfaceTypes(baklava.editor, options);
-  // @ts-expect-error
+  // @ts-expect-error We are making changes to a protected member here.
   baklava.editor.graph._nodes = reactive(baklava.editor.graph._nodes);
   baklava.editor.graph.interfaceTypes = interfaceTypes;
   registerDerivedNodes(baklava.editor);
   registerDerivedInterfaceTypes(interfaceTypes);
-  initializeMcpServer();
-  initializeMcpClient();
-  const promise = registerAllToolsInBaklava();
+  const serverTransport = new MemoryServerTransport();
+  const serverPromise = mcpServer.connect(serverTransport);
+  const clientPromise = mcpClient.connect(
+    new MemoryClientTransport(serverTransport),
+  );
+  const promise = Promise.all([serverPromise, clientPromise]).then(
+    registerAllToolsInBaklava,
+  );
   return { interfaceTypes, promise };
 }

@@ -1,4 +1,4 @@
-import type { ReplaceNumberWithInteger } from "./type";
+import type { ReplaceNumberWithInteger } from "./type.ts";
 
 export function unsafeReplaceOptionalWithUndefined<T>(value: T): {
   [K in keyof T]-?: T[K];

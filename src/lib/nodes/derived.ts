@@ -13,11 +13,10 @@ import {
   stringType,
   unknownListType,
   unknownStringDictType,
-} from "./interfaceTypes";
-import { jsonSchemaToNodeInterface, upsertBaklavaType } from "./baklava";
+} from "./interfaceTypes.ts";
+import { jsonSchemaToNodeInterface, upsertBaklavaType } from "./baklava.ts";
 import { toRaw } from "vue";
-
-export const allEditorsNeedingDerivedNodes = new Set<WeakRef<Editor>>();
+import { allEditorsNeedingDerivedNodes } from "./allEditorsNeedingDerivedNodes.ts";
 
 export const CreateListNode = defineDynamicNode({
   type: "List (Literal)",

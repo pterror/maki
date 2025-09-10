@@ -26,13 +26,14 @@ import { revai } from "@ai-sdk/revai";
 import { togetherai } from "@ai-sdk/togetherai";
 import { vercel } from "@ai-sdk/vercel";
 import { xai } from "@ai-sdk/xai";
+import { z } from "zod/v4";
 import {
   generateText,
   experimental_generateImage as generateImage,
   experimental_transcribe as transcribe,
   experimental_generateSpeech as generateSpeech,
 } from "ai";
-import { assertStrict } from "../core";
+import { assertStrict } from "../core.ts";
 import {
   GenerateTextParameters,
   GenerateTextResult,
@@ -47,9 +48,8 @@ import {
   TextEmbeddingModel,
   TranscriptionModel,
   SpeechModel,
-} from "./aiGenerationTypes";
-import { registerMcpServerTool } from "./mcp";
-import { z } from "zod/v4";
+} from "./aiGenerationTypes.ts";
+import { registerMcpServerTool } from "../mcpServer.ts";
 
 registerMcpServerTool(
   "generate-text",

@@ -1,4 +1,5 @@
-import { Database as Sqlite3Database } from "sqlite3";
+import Sqlite3Database from "better-sqlite3";
+import { z } from "zod/v4";
 import {
   Database,
   type DatabaseQueryCondition,
@@ -6,16 +7,16 @@ import {
   type DatabaseQueryConditionComparison,
   type DatabaseQueryConditionNot,
   type DatabaseQueryConditionOr,
-} from "./database";
-import { registerMcpServerTool } from "./mcp";
-import { z } from "zod/v4";
+} from "./databaseNodes.ts";
+import { registerMcpServerTool } from "../mcpServer.ts";
+import { escapeSqlIdentifier } from "../sql.ts";
 
 function sqlite3StringifyDatabaseQueryConditionComparison(
   condition: DatabaseQueryConditionComparison,
   parameters: unknown[],
 ): string {
   parameters.push(condition.value);
-  return `${condition.column} ${condition.operator} ?`;
+  return `${escapeSqlIdentifier(condition.column)} ${condition.operator} ?`;
 }
 
 function sqlite3StringifyDatabaseQueryConditionAnd(
@@ -83,50 +84,31 @@ registerMcpServerTool(
     annotations: { baklavaCategory: "Database" },
   },
   async ({ path }: { path: string }) => {
-    const sqlite3Database = new Sqlite3Database(path, (error) => {
-      if (error) {
-        throw new Error(
-          `Failed to open SQLite3 database at ${path}: ${error.message}`,
-        );
-      }
-    });
+    const db = Sqlite3Database(path);
+    db.pragma("journal_mode = WAL");
     const database: Database = {
       type: "sqlite3",
       select: async (command) => {
         const parameters: unknown[] = [];
-        const query = `SELECT ${command.columns.join(", ")} FROM ${command.table}${
+        const query = `SELECT ${command.columns.map(escapeSqlIdentifier).join(", ")} FROM ${command.table}${
           command.where
             ? ` WHERE ${sqlite3StringifyDatabaseQueryCondition(command.where, parameters)}`
             : ""
         }${command.orderBy ? ` ORDER BY ${command.orderBy}` : ""}${
           command.limit ? ` LIMIT ${command.limit}` : ""
         }`;
-        return new Promise((resolve, reject) => {
-          sqlite3Database.all(query, parameters, (error, rows) => {
-            if (error) {
-              reject(new Error(`Failed to execute query: ${error.message}`));
-            } else {
-              resolve(rows);
-            }
-          });
-        });
+        const preparedStatement = db.prepare(query);
+        return preparedStatement.all();
       },
       insert: async (command) => {
         const placeholders = command.values.map(() => "?").join(", ");
-        const query = `INSERT INTO ${command.table} (${command.columns.join(", ")}) VALUES (${placeholders})`;
-        return new Promise((resolve, reject) => {
-          sqlite3Database.run(query, command.values, function (error) {
-            if (error) {
-              reject(new Error(`Failed to execute insert: ${error.message}`));
-            } else {
-              resolve();
-            }
-          });
-        });
+        const query = `INSERT INTO ${command.table} (${command.columns.map(escapeSqlIdentifier).join(", ")}) VALUES (${placeholders})`;
+        const preparedStatement = db.prepare(query);
+        preparedStatement.run(...command.values);
       },
       update: async (command) => {
         const setClause = command.columns
-          .map((column) => `${column} = ?`)
+          .map((column) => `${escapeSqlIdentifier(column)} = ?`)
           .join(", ");
         const parameters: unknown[] = command.columns.map(
           (column) => command.set[column],
@@ -136,15 +118,8 @@ registerMcpServerTool(
             ? ` WHERE ${sqlite3StringifyDatabaseQueryCondition(command.where, parameters)}`
             : ""
         }`;
-        return new Promise((resolve, reject) => {
-          sqlite3Database.run(query, parameters, function (error) {
-            if (error) {
-              reject(new Error(`Failed to execute update: ${error.message}`));
-            } else {
-              resolve();
-            }
-          });
-        });
+        const preparedStatement = db.prepare(query);
+        preparedStatement.run(...parameters);
       },
       delete: async (command) => {
         const parameters: unknown[] = [];
@@ -153,15 +128,8 @@ registerMcpServerTool(
             ? ` WHERE ${sqlite3StringifyDatabaseQueryCondition(command.where, parameters)}`
             : ""
         }`;
-        return new Promise((resolve, reject) => {
-          sqlite3Database.run(query, parameters, function (error) {
-            if (error) {
-              reject(new Error(`Failed to execute delete: ${error.message}`));
-            } else {
-              resolve();
-            }
-          });
-        });
+        const preparedStatement = db.prepare(query);
+        preparedStatement.run(...parameters);
       },
     };
     return { database };

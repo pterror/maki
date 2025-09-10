@@ -1,143 +1,30 @@
+import { Client } from "@modelcontextprotocol/sdk/client";
+import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import {
-  McpServer,
-  type RegisteredTool,
-} from "@modelcontextprotocol/sdk/server/mcp.js";
-import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import type {
-  CallToolResult,
-  ServerNotification,
-  ServerRequest,
-  Tool,
-  ToolAnnotations,
-} from "@modelcontextprotocol/sdk/types.js";
-import {
-  toJSONSchema,
-  z,
-  type ZodObject,
-  type ZodRawShape,
-  type ZodType,
-} from "zod/v4";
-import type { RequestHandlerExtra } from "@modelcontextprotocol/sdk/shared/protocol.js";
-import type { objectOutputType } from "zod/v3";
-import type { JSONSchema } from "zod/v4/core";
-import {
-  jsonSchemaToNodeInterface,
-  jsonSchemaToOutputNodeInterface,
-  upsertBaklavaType,
-} from "./baklava";
-import { unsafeValues } from "../core";
-import {
+  type INodeDefinition,
   defineDynamicNode,
   defineNode,
   Editor,
   NodeInterfaceType,
-  type INodeDefinition,
 } from "baklavajs";
-import { kebabCaseToPascalCase } from "../string";
-import {
-  MemoryClientTransport,
-  MemoryServerTransport,
-} from "./memoryTransport";
-import { zodShape } from "./zodHelpers";
-import { allEditorsNeedingDerivedNodes } from "./derivedNodes";
+import { toRaw } from "vue";
+import { unsafeValues } from "./core.ts";
 import {
   doesSchemaContainGeneric,
   extractGenericTypesFromSchema,
   substituteGenericTypesIntoSchema,
-} from "../jsonSchema";
-import { toRaw } from "vue";
+} from "./jsonSchema.ts";
+import { token } from "./mcpServer.ts";
+import {
+  upsertBaklavaType,
+  jsonSchemaToNodeInterface,
+  jsonSchemaToOutputNodeInterface,
+} from "./nodes/baklava.ts";
+import { allEditorsNeedingDerivedNodes } from "./nodes/allEditorsNeedingDerivedNodes.ts";
+import { kebabCaseToPascalCase } from "./string.ts";
+import type { JSONSchema } from "zod/v4/core";
 
-export type McpToolConfig = {
-  title?: string;
-  description?: string;
-  inputSchema?: ZodObject;
-  outputSchema?: ZodObject;
-  annotations?: ToolAnnotations;
-};
-
-const EMPTY_OBJECT_JSON_SCHEMA = { type: "object", properties: {} };
-const token = Symbol("Generic node event token");
-
-const mcpServer = new McpServer({ name: "maki-server", version: "0.1.0" });
-const serverTransport = new MemoryServerTransport();
-export function initializeMcpServer() {
-  mcpServer.connect(serverTransport);
-}
-
-export type ToolCallback<Args extends undefined | ZodRawShape = undefined> =
-  Args extends ZodRawShape
-    ? (
-        // @ts-expect-error
-        args: objectOutputType<Args, ZodType>,
-        extra: RequestHandlerExtra<ServerRequest, ServerNotification>,
-      ) => CallToolResult | Promise<CallToolResult>
-    : (
-        extra: RequestHandlerExtra<ServerRequest, ServerNotification>,
-      ) => CallToolResult | Promise<CallToolResult>;
-
-export function registerMcpServerTool<
-  InputArgs extends ZodObject,
-  OutputArgs extends ZodObject,
->(
-  name: string,
-  config: {
-    title: string;
-    description: string;
-    inputSchema: InputArgs;
-    outputSchema: OutputArgs;
-    annotations: ToolAnnotations & { baklavaCategory: string };
-  },
-  cb: (
-    args: z.infer<InputArgs>,
-  ) => z.infer<OutputArgs> | Promise<z.infer<OutputArgs>>,
-): RegisteredTool {
-  return mcpServer.registerTool(
-    name,
-    {
-      ...config,
-      inputSchema: zodShape(config.inputSchema),
-      outputSchema: zodShape(config.outputSchema),
-    } as never,
-    (args) => {
-      const result = cb(args as never);
-      if (result instanceof Promise) {
-        return result.then<CallToolResult>((data) => ({
-          content: [],
-          structuredContent: data,
-        }));
-      }
-      return {
-        content: [],
-        structuredContent: result,
-      } satisfies CallToolResult;
-    },
-  );
-}
-
-export function getMcpServerTools(server: McpServer) {
-  // @ts-expect-error We need to access a private property to list all registered tools.
-  return server._registeredTools as Record<
-    string,
-    McpToolConfig & { enabled: boolean }
-  >;
-}
-
-export function getMcpServerToolsJson(server: McpServer) {
-  const tools = getMcpServerTools(server);
-  return Object.entries(tools)
-    .filter(([, tool]) => tool.enabled)
-    .map(([name, tool]) => ({
-      name,
-      title: tool.title,
-      description: tool.description,
-      inputSchema: tool.inputSchema
-        ? toJSONSchema(tool.inputSchema)
-        : EMPTY_OBJECT_JSON_SCHEMA,
-      ...(tool.outputSchema && {
-        outputSchema: toJSONSchema(tool.outputSchema),
-      }),
-    }));
-}
+export const mcpClient = new Client({ name: "maki-client", version: "0.1.0" });
 
 export async function mcpClientListAllTools(
   mcpClient: Client,
@@ -151,8 +38,6 @@ export async function mcpClientListAllTools(
   }
   return tools;
 }
-
-const mcpClient = new Client({ name: "maki-client", version: "0.1.0" });
 
 export async function registerAllToolsInBaklava() {
   const tools = await mcpClientListAllTools(mcpClient);
@@ -200,12 +85,10 @@ export async function registerAllToolsInBaklava() {
         for (const k in inputs as object) {
           const v = (inputs as any)[k];
           if (v !== undefined) continue;
-          if (tool.inputSchema.required?.includes(k))
-            return Object.fromEntries(
-              Object.entries(tool.outputSchema?.properties ?? {}).map(
-                ([k, v]) => [k, null],
-              ),
-            );
+          if (tool.inputSchema.required?.includes(k)) {
+            const keys = Object.keys(tool.outputSchema?.properties ?? {});
+            return Object.fromEntries(keys.map((k) => [k, null]));
+          }
         }
         const result = await mcpClient.callTool({
           name: tool.name,
@@ -336,8 +219,4 @@ export async function registerAllToolsInBaklava() {
       registerToolNode(editorInstance);
     }
   }
-}
-
-export function initializeMcpClient() {
-  mcpClient.connect(new MemoryClientTransport(serverTransport));
 }

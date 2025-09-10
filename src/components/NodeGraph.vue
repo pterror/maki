@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import "@baklavajs/themes/dist/syrup-dark.css";
 import { BaklavaEditor, Components, NodeInterfaceType } from "baklavajs";
-import { useFullBaklava } from "../lib/nodes/full";
+import { useFullBaklava } from "../lib/nodes/fullWeb";
 import {
   computed,
   nextTick,

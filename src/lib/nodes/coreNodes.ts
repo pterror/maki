@@ -1,7 +1,7 @@
-import { Integer, zInteger } from "./interfaceTypes";
-import { registerMcpServerTool } from "./mcp";
 import { z } from "zod/v4";
-import { zFormattedString } from "./zodHelpers";
+import { registerMcpServerTool } from "../mcpServer.ts";
+import { zFormattedString } from "./zodHelpers.ts";
+import { Integer, zInteger } from "../type.ts";
 
 // Note that inputs can be inlined, so these are not strictly necessary for the core functionality,
 // but they are useful for literals that need to stay in sync across multiple nodes.

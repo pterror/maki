@@ -1,6 +1,6 @@
 import { z } from "zod/v4";
-import { zFunction } from "./zodHelpers";
-import { registerMcpServerTool } from "./mcp";
+import { zFunction } from "./zodHelpers.ts";
+import { registerMcpServerTool } from "../mcpServer.ts";
 
 export const DatabaseQueryConditionComparisonOperator = z
   .literal(["=", "!=", ">", "<", ">=", "<=", "LIKE"])

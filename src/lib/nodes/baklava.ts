@@ -22,12 +22,12 @@ import {
   textInputInterface,
   textInterface,
   unknownType,
-} from "./interfaceTypes";
-import { unsafeEntries } from "../core";
-import { camelCaseToPascalCase, camelCaseToTitleCase } from "../string";
-import { normalizeJsonSchema, toNormalizedJsonSchema } from "./zodHelpers";
+} from "./interfaceTypes.ts";
+import { unsafeEntries } from "../core.ts";
+import { camelCaseToPascalCase, camelCaseToTitleCase } from "../string.ts";
+import { normalizeJsonSchema, toNormalizedJsonSchema } from "./zodHelpers.ts";
 import type { z, ZodType } from "zod/v4";
-import { allEditorsNeedingDerivedNodes } from "./derivedNodes";
+import { allEditorsNeedingDerivedNodes } from "./allEditorsNeedingDerivedNodes.ts";
 
 export const coreTypeNames = new Set<string>();
 const interfaceTypesById = new Map<string, NodeInterfaceType<any>>();
