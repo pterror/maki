@@ -4,6 +4,7 @@ from .core import assert_unchecked
 from .pydantic_types import GeneratorType, TensorType, FloatTensorType, ImageType
 import torch
 from PIL.Image import Image
+from fastmcp import FastMCP
 
 from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion import (
     StableDiffusionPipeline,
@@ -41,7 +42,8 @@ from diffusers.pipelines.stable_diffusion_3.pipeline_stable_diffusion_3_img2img 
 from diffusers.pipelines.stable_diffusion_3.pipeline_stable_diffusion_3_inpaint import (
     StableDiffusion3InpaintPipeline,
 )
-from fastmcp import FastMCP
+from diffusers.pipelines.flux.pipeline_flux import FluxPipeline
+from diffusers.pipelines.flux.pipeline_output import FluxPipelineOutput
 
 # TODO: Check that this correctly gets generated as a union in JSON Schema
 # If not, we should just define it as `Image`.
@@ -121,7 +123,7 @@ def stable_diffusion_text_to_image(
 
 
 @mcp.tool
-def stable_diffusion_img2img(
+def stable_diffusion_image_to_image(
     model_id_or_path: str,
     prompt: str | List[str],
     image: PipelineImageInput,
@@ -330,7 +332,7 @@ def stable_diffusion_xl_text_to_image(
 
 
 @mcp.tool
-def stable_diffusion_xl_img2img(
+def stable_diffusion_xl_image_to_image(
     model_id_or_path: str,
     prompt: str | List[str],
     image: PipelineImageInput,
@@ -597,7 +599,7 @@ def stable_diffusion_3_text_to_image(
 
 
 @mcp.tool
-def stable_diffusion_3_img2img(
+def stable_diffusion_3_image_to_image(
     model_id_or_path: str,
     prompt: str | List[str],
     image: PipelineImageInput,
@@ -750,6 +752,74 @@ def stable_diffusion_3_inpaint(
     if not isinstance(output_image, Image):
         raise ValueError("Expected image to be a PIL Image")
     return output_image
+
+
+def flux_text_to_image(
+    model_id_or_path: str,
+    prompt: str | List[str],
+    prompt_2: str | List[str] | None = None,
+    negative_prompt: str | List[str] | None = None,
+    negative_prompt_2: str | List[str] | None = None,
+    true_cfg_scale: float = 1,
+    height: int | None = None,
+    width: int | None = None,
+    num_inference_steps: int = 28,
+    sigmas: List[float] | None = None,
+    guidance_scale: float = 3.5,
+    num_images_per_prompt: int | None = 1,
+    generator: GeneratorType | List[GeneratorType] | None = None,
+    latents: FloatTensorType | None = None,
+    prompt_embeds: FloatTensorType | None = None,
+    pooled_prompt_embeds: FloatTensorType | None = None,
+    ip_adapter_image: PipelineImageInput | None = None,
+    ip_adapter_image_embeds: List[TensorType] | None = None,
+    negative_ip_adapter_image: PipelineImageInput | None = None,
+    negative_ip_adapter_image_embeds: List[TensorType] | None = None,
+    negative_prompt_embeds: FloatTensorType | None = None,
+    negative_pooled_prompt_embeds: FloatTensorType | None = None,
+    output_type: str | None = "pil",
+    return_dict: bool = True,
+    joint_attention_kwargs: Dict[str, Any] | None = None,
+    max_sequence_length: int = 512,
+) -> ImageType:
+    """Generate an image from a prompt using FLUX.1 [schnell]"""
+    pipeline = FluxPipeline.from_pretrained(  # pyright: ignore[reportUnknownMemberType]
+        model_id_or_path, torch_dtype=torch.bfloat16
+    ).to("cuda")
+    result = pipeline(  # pyright: ignore[reportUnknownVariableType]
+        prompt=prompt,
+        prompt_2=prompt_2,
+        negative_prompt=assert_unchecked(negative_prompt),
+        negative_prompt_2=negative_prompt_2,
+        true_cfg_scale=true_cfg_scale,
+        height=height,
+        width=width,
+        num_inference_steps=num_inference_steps,
+        sigmas=sigmas,
+        guidance_scale=guidance_scale,
+        num_images_per_prompt=num_images_per_prompt,
+        generator=generator,
+        latents=latents,
+        prompt_embeds=prompt_embeds,
+        pooled_prompt_embeds=pooled_prompt_embeds,
+        ip_adapter_image=ip_adapter_image,
+        ip_adapter_image_embeds=ip_adapter_image_embeds,
+        negative_ip_adapter_image=negative_ip_adapter_image,
+        negative_ip_adapter_image_embeds=negative_ip_adapter_image_embeds,
+        negative_prompt_embeds=negative_prompt_embeds,
+        negative_pooled_prompt_embeds=negative_pooled_prompt_embeds,
+        output_type=output_type,
+        return_dict=return_dict,
+        joint_attention_kwargs=joint_attention_kwargs,
+        max_sequence_length=max_sequence_length,
+    )
+    if isinstance(result, FluxPipelineOutput):
+        image = result.images[0]
+    else:
+        image = result[0]  # pyright: ignore[reportUnknownVariableType]
+    if not isinstance(image, Image):
+        raise ValueError("Expected image to be a PIL Image")
+    return image
 
 
 if __name__ == "__main__":
