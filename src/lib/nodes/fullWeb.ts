@@ -1,3 +1,5 @@
+import { Client } from "@modelcontextprotocol/sdk/client";
+import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { reactive } from "vue";
 import {
   applyResult,
@@ -11,12 +13,13 @@ import {
   registerDerivedInterfaceTypes,
 } from "./interfaceTypes.ts";
 import { registerDerivedNodes } from "./derived.ts";
-import { mcpClient, registerAllToolsInBaklava } from "../mcpClient.ts";
+import { registerAllToolsInBaklava } from "../mcpClient.ts";
 import {
   MemoryClientTransport,
   MemoryServerTransport,
 } from "../memoryTransport.ts";
 import { mcpServer } from "../mcpServer.ts";
+import { MCP_HTTP_PORT } from "../ports.ts";
 
 // All modules containing nodes.
 import "./coreNodes.ts";
@@ -56,11 +59,24 @@ export function setupBaklava(
   registerDerivedInterfaceTypes(interfaceTypes);
   const serverTransport = new MemoryServerTransport();
   const serverPromise = mcpServer.connect(serverTransport);
-  const clientPromise = mcpClient.connect(
+  const mcpLocalClient = new Client({ name: "maki-client", version: "0.1.0" });
+  const localClientPromise = mcpLocalClient.connect(
     new MemoryClientTransport(serverTransport),
   );
-  const promise = Promise.all([serverPromise, clientPromise]).then(
-    registerAllToolsInBaklava,
+  const mcpRemoteClient = new Client({ name: "maki-client", version: "0.1.0" });
+  const remoteClientPromise = mcpRemoteClient.connect(
+    new StreamableHTTPClientTransport(
+      new URL(`http://localhost:${MCP_HTTP_PORT}`),
+    ),
   );
-  return { interfaceTypes, promise };
+  const promise = Promise.all([
+    serverPromise,
+    localClientPromise.then(() => {
+      registerAllToolsInBaklava(mcpLocalClient);
+    }),
+    remoteClientPromise.then(() => {
+      registerAllToolsInBaklava(mcpRemoteClient);
+    }),
+  ]);
+  return { interfaceTypes, mcpClient: mcpLocalClient, promise };
 }

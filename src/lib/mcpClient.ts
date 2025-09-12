@@ -24,8 +24,6 @@ import { allEditorsNeedingDerivedNodes } from "./nodes/allEditorsNeedingDerivedN
 import { kebabCaseToPascalCase } from "./string.ts";
 import type { JSONSchema } from "zod/v4/core";
 
-export const mcpClient = new Client({ name: "maki-client", version: "0.1.0" });
-
 export async function mcpClientListAllTools(
   mcpClient: Client,
 ): Promise<readonly Tool[]> {
@@ -39,7 +37,7 @@ export async function mcpClientListAllTools(
   return tools;
 }
 
-export async function registerAllToolsInBaklava() {
+export async function registerAllToolsInBaklava(mcpClient: Client) {
   const tools = await mcpClientListAllTools(mcpClient);
   for (const tool of tools) {
     if (tool.inputSchema.properties) {

@@ -1,9 +1,8 @@
 from typing import Any, List, Dict, Tuple
 
 from .core import assert_unchecked
-from .pydantic_types import GeneratorType, TensorType, ImageType
+from .pydantic_types import GeneratorType, TensorType, FloatTensorType, ImageType
 import torch
-from torch import FloatTensor
 from PIL.Image import Image
 
 from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion import (
@@ -534,11 +533,11 @@ def stable_diffusion_3_text_to_image(
     negative_prompt_3: str | List[str] | None = None,
     num_images_per_prompt: int | None = 1,
     generator: GeneratorType | List[GeneratorType] | None = None,
-    latents: FloatTensor | None = None,
-    prompt_embeds: FloatTensor | None = None,
-    negative_prompt_embeds: FloatTensor | None = None,
-    pooled_prompt_embeds: FloatTensor | None = None,
-    negative_pooled_prompt_embeds: FloatTensor | None = None,
+    latents: FloatTensorType | None = None,
+    prompt_embeds: FloatTensorType | None = None,
+    negative_prompt_embeds: FloatTensorType | None = None,
+    pooled_prompt_embeds: FloatTensorType | None = None,
+    negative_pooled_prompt_embeds: FloatTensorType | None = None,
     ip_adapter_image: PipelineImageInput | None = None,
     ip_adapter_image_embeds: TensorType | None = None,
     output_type: str | None = "pil",
@@ -615,11 +614,11 @@ def stable_diffusion_3_img2img(
     negative_prompt_3: str | List[str] | None = None,
     num_images_per_prompt: int | None = 1,
     generator: GeneratorType | List[GeneratorType] | None = None,
-    latents: FloatTensor | None = None,
-    prompt_embeds: FloatTensor | None = None,
-    negative_prompt_embeds: FloatTensor | None = None,
-    pooled_prompt_embeds: FloatTensor | None = None,
-    negative_pooled_prompt_embeds: FloatTensor | None = None,
+    latents: FloatTensorType | None = None,
+    prompt_embeds: FloatTensorType | None = None,
+    negative_prompt_embeds: FloatTensorType | None = None,
+    pooled_prompt_embeds: FloatTensorType | None = None,
+    negative_pooled_prompt_embeds: FloatTensorType | None = None,
     output_type: str | None = "pil",
     ip_adapter_image: PipelineImageInput | None = None,
     ip_adapter_image_embeds: TensorType | None = None,

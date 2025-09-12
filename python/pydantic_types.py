@@ -1,4 +1,4 @@
-from torch import Generator, Tensor
+from torch import Generator, Tensor, FloatTensor
 from PIL.Image import Image
 
 from typing import Annotated, Any
@@ -12,7 +12,7 @@ from pydantic import (
 from pydantic.json_schema import JsonSchemaValue
 
 
-def custom_pydantic_annotation(cls: type, json_schema: JsonSchemaValue) -> type:
+def custom_pydantic_annotation(json_schema: JsonSchemaValue) -> type:
     class _PydanticAnnotation:
         @classmethod
         def __get_pydantic_core_schema__(
@@ -20,16 +20,13 @@ def custom_pydantic_annotation(cls: type, json_schema: JsonSchemaValue) -> type:
             _source_type: Any,
             _handler: GetCoreSchemaHandler,
         ) -> core_schema.CoreSchema:
-            return core_schema.json_or_python_schema(
-                json_schema=json_schema,  # pyright: ignore[reportArgumentType]
-                python_schema=core_schema.is_instance_schema(cls),
-            )
+            return core_schema.is_instance_schema(cls)
 
         @classmethod
         def __get_pydantic_json_schema__(
-            cls, _core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+            cls, _core_schema: core_schema.CoreSchema, _handler: GetJsonSchemaHandler
         ) -> JsonSchemaValue:
-            return handler(json_schema)  # pyright: ignore[reportArgumentType]
+            return json_schema
 
     return _PydanticAnnotation
 
@@ -37,16 +34,19 @@ def custom_pydantic_annotation(cls: type, json_schema: JsonSchemaValue) -> type:
 # We now create an `Annotated` wrapper that we'll use as the annotation for fields on `BaseModel`s, etc.
 GeneratorType = Annotated[
     Generator,
-    custom_pydantic_annotation(
-        Generator, {"type": "object", "format": "torch-generator"}
-    ),
+    custom_pydantic_annotation({"type": "object", "format": "torch-generator"}),
 ]
 
 TensorType = Annotated[
     Tensor,
-    custom_pydantic_annotation(Tensor, {"type": "object", "format": "torch-tensor"}),
+    custom_pydantic_annotation({"type": "object", "format": "torch-tensor"}),
+]
+
+FloatTensorType = Annotated[
+    FloatTensor,
+    custom_pydantic_annotation({"type": "object", "format": "torch-float-tensor"}),
 ]
 
 ImageType = Annotated[
-    Image, custom_pydantic_annotation(Image, {"type": "object", "format": "pil-image"})
+    Image, custom_pydantic_annotation({"type": "object", "format": "pil-image"})
 ]
