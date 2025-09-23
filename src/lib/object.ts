@@ -1,6 +1,8 @@
 import type { ReplaceNumberWithInteger } from "./type.ts";
 
-export function unsafeReplaceOptionalWithUndefined<T>(value: T): {
+export function unsafeReplaceOptionalWithUndefined<T extends object>(
+  value: T,
+): {
   [K in keyof T]-?: T[K];
 } {
   return value as ReturnType<typeof unsafeReplaceOptionalWithUndefined<T>>;

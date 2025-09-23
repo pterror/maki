@@ -2,6 +2,7 @@ import { bedrock } from "@ai-sdk/amazon-bedrock";
 import { anthropic } from "@ai-sdk/anthropic";
 import { assemblyai } from "@ai-sdk/assemblyai";
 import { azure } from "@ai-sdk/azure";
+import { baseten } from "@ai-sdk/baseten";
 import { cerebras } from "@ai-sdk/cerebras";
 import { cohere } from "@ai-sdk/cohere";
 import { deepgram } from "@ai-sdk/deepgram";
@@ -32,6 +33,7 @@ import {
   experimental_generateImage as generateImage,
   experimental_transcribe as transcribe,
   experimental_generateSpeech as generateSpeech,
+  embed,
 } from "ai";
 import { assertStrict } from "../core.ts";
 import {
@@ -48,6 +50,8 @@ import {
   TextEmbeddingModel,
   TranscriptionModel,
   SpeechModel,
+  TextEmbeddingParameters,
+  TextEmbeddingResult,
 } from "./aiGenerationTypes.ts";
 import { registerMcpServerTool } from "../mcpServer.ts";
 
@@ -60,7 +64,14 @@ registerMcpServerTool(
     outputSchema: GenerateTextResult,
     annotations: { baklavaCategory: "AI Generation" },
   },
-  generateText,
+  (args) =>
+    generateText(
+      args satisfies {
+        [K in keyof Parameters<typeof generateText>[0]]?:
+          | Parameters<typeof generateText>[0][K]
+          | undefined;
+      } as Parameters<typeof generateText>[0],
+    ),
 );
 
 registerMcpServerTool(
@@ -68,11 +79,11 @@ registerMcpServerTool(
   {
     title: "Text Embedding",
     description: "Embeds text into a vector representation.",
-    inputSchema: GenerateTextParameters,
-    outputSchema: GenerateTextResult,
+    inputSchema: TextEmbeddingParameters,
+    outputSchema: TextEmbeddingResult,
     annotations: { baklavaCategory: "AI Generation" },
   },
-  generateText,
+  embed,
 );
 
 registerMcpServerTool(
@@ -409,6 +420,82 @@ registerMcpServerTool(
     model: assertStrict(
       azure.transcriptionModel,
       "Azure does not support transcription",
+    )(modelId),
+  }),
+);
+
+registerMcpServerTool(
+  "baseten-language-model",
+  {
+    title: "Baseten Language Model",
+    description: "Provides access to Baseten language models.",
+    inputSchema: z.object({ modelId: z.string() }),
+    outputSchema: z.object({ model: LanguageModel }),
+    annotations: { baklavaCategory: "AI Models" },
+  },
+  ({ modelId }) => ({
+    model: baseten.languageModel(modelId),
+  }),
+);
+
+registerMcpServerTool(
+  "baseten-text-embedding-model",
+  {
+    title: "Baseten Text Embedding Model",
+    description: "Provides access to Baseten text embedding models.",
+    inputSchema: z.object({ modelId: z.string() }),
+    outputSchema: z.object({ model: TextEmbeddingModel }),
+    annotations: { baklavaCategory: "AI Models" },
+  },
+  ({ modelId }) => ({
+    model: baseten.textEmbeddingModel(modelId),
+  }),
+);
+
+registerMcpServerTool(
+  "baseten-image-model",
+  {
+    title: "Baseten Image Model",
+    description: "Provides access to Baseten image generation models.",
+    inputSchema: z.object({ modelId: z.string() }),
+    outputSchema: z.object({ model: ImageModel }),
+    annotations: { baklavaCategory: "AI Models" },
+  },
+  ({ modelId }) => ({
+    model: baseten.imageModel(modelId),
+  }),
+);
+
+registerMcpServerTool(
+  "baseten-speech-model",
+  {
+    title: "Baseten Speech Model",
+    description: "Provides access to Baseten speech synthesis models.",
+    inputSchema: z.object({ modelId: z.string() }),
+    outputSchema: z.object({ model: SpeechModel }),
+    annotations: { baklavaCategory: "AI Models" },
+  },
+  ({ modelId }) => ({
+    model: assertStrict(
+      baseten.speechModel,
+      "Baseten does not support speech synthesis",
+    )(modelId),
+  }),
+);
+
+registerMcpServerTool(
+  "baseten-transcription-model",
+  {
+    title: "Baseten Transcription Model",
+    description: "Provides access to Baseten transcription models.",
+    inputSchema: z.object({ modelId: z.string() }),
+    outputSchema: z.object({ model: TranscriptionModel }),
+    annotations: { baklavaCategory: "AI Models" },
+  },
+  ({ modelId }) => ({
+    model: assertStrict(
+      baseten.transcriptionModel,
+      "Baseten does not support transcription",
     )(modelId),
   }),
 );
