@@ -107,10 +107,8 @@ export function upsertBaklavaType(
   const jsonSchema = normalizeJsonSchema(structuredClone(type));
   const id = JSON.stringify(jsonSchema);
   const existing = interfaceTypesById.get(id);
-  console.log(jsonSchema, id, existing);
   if (existing) return existing;
   const typeName = getTypeNameFromSchema(type);
-  console.log(typeName);
   if (typeName === undefined) {
     console.error("Issue with type:", type, `(id: ${id})`);
     throw new Error("This Zod type is missing a name.");

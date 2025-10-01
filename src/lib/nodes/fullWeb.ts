@@ -69,12 +69,8 @@ export function setupBaklava(
   );
   const promise = Promise.allSettled([
     serverPromise,
-    localClientPromise.then(() => {
-      registerAllToolsInBaklava(mcpLocalClient);
-    }),
-    remoteClientPromise.then(() => {
-      registerAllToolsInBaklava(mcpRemoteClient);
-    }),
+    localClientPromise.then(() => registerAllToolsInBaklava(mcpLocalClient)),
+    remoteClientPromise.then(() => registerAllToolsInBaklava(mcpRemoteClient)),
   ]).then((results) => {
     for (const result of results) {
       if (result.status === "rejected") {
