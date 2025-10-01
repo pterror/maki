@@ -16,18 +16,37 @@ import {
   type BaklavaInterfaceTypesOptions,
   type SelectInterfaceItem,
 } from "baklavajs";
-import { withCustomJsonSchemaFormat, zInstanceof } from "./zodHelpers.ts";
-import { registerCoreType } from "./baklava.ts";
+import {
+  toNormalizedJsonSchema,
+  withCustomJsonSchemaFormat,
+} from "./zodHelpers.ts";
 import { Integer, zInteger } from "../type.ts";
-import { z, type ZodType } from "zod/v4";
+import { z, ZodType } from "zod/v4";
 import type { JSONSchema } from "zod/v4/core";
 import { reactive, type Reactive } from "vue";
+
+export const coreTypeNames = new Set<string>();
+export const interfaceTypesById = new Map<string, NodeInterfaceType<any>>();
+
+export function registerCoreType<T extends ZodType>(type: T, name: string) {
+  const jsonSchema = toNormalizedJsonSchema(type);
+  const id = JSON.stringify(jsonSchema);
+  if (interfaceTypesById.has(id)) {
+    throw new Error(
+      `A core type with the same schema as ${name} is already registered.`,
+    );
+  }
+  const interfaceType = nodeInterfaceType<z.infer<T>>(name, jsonSchema);
+  coreTypeNames.add(name);
+  interfaceTypesById.set(id, interfaceType);
+  return interfaceType;
+}
 
 const interfaceTypeNames = reactive(new Set<string>());
 export const allInterfaceTypeNames: Reactive<ReadonlySet<string>> =
   interfaceTypeNames;
 // TODO: Reconsider whether this constant is really a good architecture decision.
-// It would I better to have a more explicit way to register derived types,
+// It would be better to have a more explicit way to register derived types,
 // for example by creating an event system where derived types can register themselves
 // when a new core type is registered.
 // The problem with that approach is that we still need to keep track of all the
@@ -42,14 +61,9 @@ export function unsafeAsOptionalNodeInterfaceType<T>(
   return type as NodeInterfaceType<T | undefined>;
 }
 
-export let unknownType!: NodeInterfaceType<unknown>;
-export let unknownListType!: NodeInterfaceType<unknown[]>;
-export let unknownStringDictType!: NodeInterfaceType<Record<string, unknown>>;
-unknownListType = registerCoreType(z.array(z.unknown()), "list[unknown]");
-unknownStringDictType = registerCoreType(
-  z.record(z.string(), z.unknown()),
-  "stringDict[unknown]",
-);
+let unknownType!: NodeInterfaceType<unknown>;
+let unknownListType!: NodeInterfaceType<unknown[]>;
+let unknownStringDictType!: NodeInterfaceType<Record<string, unknown>>;
 
 export interface NodeInterfaceTypeOptions {
   isList?: boolean;
@@ -179,20 +193,19 @@ export function getAllStringDictTypes(): NodeInterfaceType<
 }
 
 unknownType = registerCoreType(z.unknown(), "unknown");
-export const undefinedType = registerCoreType(
+unknownListType = registerCoreType(z.array(z.unknown()), "list[unknown]");
+unknownStringDictType = registerCoreType(
+  z.record(z.string(), z.unknown()),
+  "stringDict[unknown]",
+);
+const undefinedType = registerCoreType(
   withCustomJsonSchemaFormat(z.undefined(), "undefined"),
   "undefined",
 );
-export const stringType = registerCoreType(z.string(), "string");
-export const integerType = registerCoreType(zInteger, "integer");
-export const numberType = registerCoreType(z.number(), "number");
-export const bigintType = registerCoreType(
-  withCustomJsonSchemaFormat(z.bigint(), "bigint"),
-  "bigint",
-);
-export const booleanType = registerCoreType(z.boolean(), "boolean");
-export const dateType = registerCoreType(zInstanceof(Date), "date");
-export const regexType = registerCoreType(zInstanceof(RegExp), "regex");
+const stringType = registerCoreType(z.string(), "string");
+const integerType = registerCoreType(zInteger, "integer");
+const numberType = registerCoreType(z.number(), "number");
+const booleanType = registerCoreType(z.boolean(), "boolean");
 
 integerType.addConversion(numberType, (v) => v);
 
@@ -202,14 +215,14 @@ export function registerCoreInterfaceTypes(
 ) {
   const types = new BaklavaInterfaceTypes(editor, options);
   types.addTypes(
-    ...(unknownType ? [unknownType] : []),
+    unknownType!,
+    unknownListType!,
+    unknownStringDictType!,
     undefinedType,
     stringType,
     integerType,
     numberType,
     booleanType,
-    dateType,
-    regexType,
   );
   return types;
 }

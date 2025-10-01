@@ -7,52 +7,41 @@ import {
 import type { JSONSchema } from "zod/v4/core";
 import {
   allInterfaceTypesRegistriesNeedingDerivedTypes,
-  booleanType,
   checkboxInterface,
   integerInterface,
-  integerType,
+  interfaceTypesById,
   listType,
   nodeInterface,
   nodeInterfaceType,
   numberInterface,
-  numberType,
   selectInterface,
   stringDictType,
-  stringType,
   textInputInterface,
   textInterface,
-  unknownType,
 } from "./interfaceTypes.ts";
 import { unsafeEntries } from "../core.ts";
 import { camelCaseToPascalCase, camelCaseToTitleCase } from "../string.ts";
-import { normalizeJsonSchema, toNormalizedJsonSchema } from "./zodHelpers.ts";
-import type { z, ZodType } from "zod/v4";
+import { normalizeJsonSchema } from "./zodHelpers.ts";
 import { allEditorsNeedingDerivedNodes } from "./allEditorsNeedingDerivedNodes.ts";
-
-export const coreTypeNames = new Set<string>();
-const interfaceTypesById = new Map<string, NodeInterfaceType<any>>();
-
-export function registerCoreType<T extends ZodType>(type: T, name: string) {
-  const jsonSchema = toNormalizedJsonSchema(type);
-  const id = JSON.stringify(jsonSchema);
-  const interfaceType = nodeInterfaceType<z.infer<T>>(name, jsonSchema);
-  coreTypeNames.add(name);
-  interfaceTypesById.set(id, interfaceType);
-  return interfaceType;
-}
+import { getTypeNameFromSchema } from "../jsonSchema.ts";
 
 export function nodeInterfaceTypeToNodeInterface(
   key: string,
   value: NodeInterfaceType<any>,
 ): NodeInterface<any> {
-  if (value === stringType) {
-    return textInputInterface(key);
-  } else if (value === integerType) {
-    return integerInterface(key);
-  } else if (value === numberType) {
-    return numberInterface(key);
-  } else if (value === booleanType) {
-    return checkboxInterface(key);
+  switch (value.name) {
+    case "string": {
+      return textInputInterface(key);
+    }
+    case "integer": {
+      return integerInterface(key);
+    }
+    case "number": {
+      return numberInterface(key);
+    }
+    case "boolean": {
+      return checkboxInterface(key);
+    }
   }
   return nodeInterface(key, value);
 }
@@ -62,7 +51,7 @@ export function jsonSchemaToNodeInterface(
   value: JSONSchema._JSONSchema,
 ) {
   if (typeof value === "boolean") {
-    return nodeInterface(key, unknownType) as NodeInterface<any>;
+    return nodeInterface(key, upsertBaklavaType({})) as NodeInterface<any>;
   }
   switch (value.type) {
     case "boolean": {
@@ -93,7 +82,7 @@ export function jsonSchemaToOutputNodeInterface(
   value: JSONSchema._JSONSchema,
 ) {
   if (typeof value === "boolean") {
-    return nodeInterface(key, unknownType) as NodeInterface<any>;
+    return nodeInterface(key, upsertBaklavaType({})) as NodeInterface<any>;
   }
   switch (value.type) {
     case "string": {
@@ -112,27 +101,7 @@ export function upsertBaklavaType(
   const id = JSON.stringify(jsonSchema);
   const existing = interfaceTypesById.get(id);
   if (existing) return existing;
-  const typeName =
-    type.title ??
-    type.$ref ??
-    (() => {
-      const itemType = Array.isArray(type.items)
-        ? undefined
-        : (type.items ?? type.additionalItems);
-      if (type.type === "array" && typeof itemType === "object") {
-        return `list[${upsertBaklavaType(itemType).name}]`;
-      }
-      if (
-        type.type === "object" &&
-        typeof type.additionalProperties === "object"
-      ) {
-        return `stringDict[${upsertBaklavaType(type.additionalProperties).name}]`;
-      }
-      if (type.type !== "object" && type.type !== "array") {
-        // It is a primitive, its base type will be close enough.
-        return type.type;
-      }
-    })();
+  const typeName = getTypeNameFromSchema(type);
   if (typeName === undefined) {
     console.error("Issue with type:", type, `(id: ${id})`);
     throw new Error("This Zod type is missing a name.");
@@ -152,9 +121,9 @@ export function upsertBaklavaType(
           : type.items;
         if (itemsSchema) {
           const actualInterfaceType = listType(
-            typeof itemsSchema === "object"
-              ? upsertBaklavaType(itemsSchema)
-              : unknownType,
+            upsertBaklavaType(
+              typeof itemsSchema === "object" ? itemsSchema : {},
+            ),
           );
           interfaceTypesById.set(id, actualInterfaceType);
         }
@@ -199,9 +168,7 @@ export function upsertBaklavaType(
             () =>
               nodeInterface(
                 `Item ${index + 1}`,
-                typeof item === "boolean"
-                  ? unknownType
-                  : upsertBaklavaType(item),
+                upsertBaklavaType(typeof item === "boolean" ? {} : item),
               ),
           ]),
         ),
@@ -233,7 +200,7 @@ export function upsertBaklavaType(
       if (!type.properties) {
         if (type.additionalProperties) {
           if (type.additionalProperties === true) {
-            const actualInterfaceType = stringDictType(unknownType);
+            const actualInterfaceType = stringDictType(upsertBaklavaType({}));
             interfaceTypesById.set(id, actualInterfaceType);
           } else if (typeof type.additionalProperties === "object") {
             const actualInterfaceType = stringDictType(
@@ -289,7 +256,7 @@ export function upsertBaklavaType(
                     () =>
                       nodeInterface(
                         camelCaseToTitleCase(key),
-                        value === true ? unknownType : upsertBaklavaType(value),
+                        upsertBaklavaType(value === true ? {} : value),
                       ),
                   ],
                 ],

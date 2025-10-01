@@ -10,9 +10,6 @@ import {
   textInputInterface,
   integerInterface,
   selectInterface,
-  stringType,
-  unknownListType,
-  unknownStringDictType,
 } from "./interfaceTypes.ts";
 import { jsonSchemaToNodeInterface, upsertBaklavaType } from "./baklava.ts";
 import { toRaw } from "vue";
@@ -22,10 +19,22 @@ export const CreateListNode = defineDynamicNode({
   type: "List (Literal)",
   inputs: {
     size: () => integerInterface("size"),
-    type: () => selectInterface("type", stringType, ["unknown"], "unknown"),
+    type: () =>
+      selectInterface(
+        "type",
+        upsertBaklavaType({ type: "string" }) as NodeInterfaceType<string>,
+        ["unknown"],
+        "unknown",
+      ),
   },
   outputs: {
-    items: () => nodeInterface("items", unknownListType),
+    items: () =>
+      nodeInterface(
+        "items",
+        upsertBaklavaType({ type: "array", items: {} }) as NodeInterfaceType<
+          readonly unknown[]
+        >,
+      ),
   },
   onPlaced() {
     // @ts-expect-error We are intentionally accessing a private property.
@@ -74,10 +83,23 @@ export const CreateStringDictNode = defineDynamicNode({
   type: "String Dict (Literal)",
   inputs: {
     size: () => integerInterface("size"),
-    type: () => selectInterface("type", stringType, ["unknown"], "unknown"),
+    type: () =>
+      selectInterface(
+        "type",
+        upsertBaklavaType({ type: "string" }) as NodeInterfaceType<string>,
+        ["unknown"],
+        "unknown",
+      ),
   },
   outputs: {
-    items: () => nodeInterface("items", unknownStringDictType),
+    items: () =>
+      nodeInterface(
+        "items",
+        upsertBaklavaType({
+          type: "object",
+          additionalProperties: {},
+        }) as NodeInterfaceType<Record<string, unknown>>,
+      ),
   },
   onPlaced() {
     // @ts-expect-error We are intentionally accessing a private property.

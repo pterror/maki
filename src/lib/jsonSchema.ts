@@ -444,3 +444,43 @@ export function substituteGenericTypesIntoSchema(
     return s;
   });
 }
+
+export function getTypeNameFromSchema(
+  schema: JSONSchema._JSONSchema,
+): string | undefined {
+  if (typeof schema === "boolean") {
+    if (schema) return "unknown";
+    return "never";
+  }
+  if (schema.title) return schema.title;
+  if (schema.$ref) return schema.$ref.replace(/^#\/definitions\//, "");
+  const itemType = Array.isArray(schema.items)
+    ? undefined
+    : (schema.items ?? schema.additionalItems);
+  if (schema.type === "array" && typeof itemType === "object") {
+    const itemTypeName = getTypeNameFromSchema(itemType);
+    return `list[${itemTypeName ?? "unknown"}]`;
+  }
+  if (
+    schema.type === "object" &&
+    typeof schema.additionalProperties === "object"
+  ) {
+    const valueTypeName = getTypeNameFromSchema(schema.additionalProperties);
+    return `stringDict[${valueTypeName ?? "unknown"}]`;
+  }
+  if (schema.anyOf || schema.oneOf) {
+    return (schema.anyOf ?? schema.oneOf ?? [])
+      .map((s) => getTypeNameFromSchema(s) ?? "unknown")
+      .join(" | ");
+  }
+  if (schema.allOf) {
+    return schema.allOf
+      .map((s) => getTypeNameFromSchema(s) ?? "unknown")
+      .join(" & ");
+  }
+  if (schema.type !== "object" && schema.type !== "array") {
+    // It is a primitive, its base type will be close enough.
+    return schema.type;
+  }
+  return undefined;
+}

@@ -1,23 +1,23 @@
 <script setup lang="ts">
 import "@baklavajs/themes/dist/syrup-dark.css";
-import { BaklavaEditor, Components, NodeInterfaceType } from "baklavajs";
+import { BaklavaEditor, Components } from "baklavajs";
 import { useFullBaklava } from "../lib/nodes/fullWeb";
 import {
   computed,
   nextTick,
   onMounted,
   onUnmounted,
-  toRaw,
   useTemplateRef,
 } from "vue";
 import { debounce } from "../lib/debounce";
-import BaklavaSidebar from "./BaklavaSidebar.vue";
 import BaklavaNodeInterface from "./BaklavaNodeInterface.vue";
 import { ellipsis } from "../lib/string";
 import { escapeCssIdentifier } from "../lib/css";
-import { coreTypeNames } from "../lib/nodes/baklava";
 import BaklavaNodePalette from "./BaklavaNodePalette.vue";
-import { allInterfaceTypeNames } from "../lib/nodes/interfaceTypes";
+import {
+  allInterfaceTypeNames,
+  coreTypeNames,
+} from "../lib/nodes/interfaceTypes";
 
 const { Node: BaklavaNode } = Components;
 

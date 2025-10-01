@@ -69,7 +69,7 @@ export function setupBaklava(
       new URL(`http://localhost:${MCP_HTTP_PORT}`),
     ),
   );
-  const promise = Promise.all([
+  const promise = Promise.allSettled([
     serverPromise,
     localClientPromise.then(() => {
       registerAllToolsInBaklava(mcpLocalClient);
@@ -77,6 +77,13 @@ export function setupBaklava(
     remoteClientPromise.then(() => {
       registerAllToolsInBaklava(mcpRemoteClient);
     }),
-  ]);
+  ]).then((results) => {
+    for (const result of results) {
+      if (result.status === "rejected") {
+        // TODO: Show logs in tray.
+        console.error("Error setting up MCP connection:", result.reason);
+      }
+    }
+  });
   return { interfaceTypes, mcpClient: mcpLocalClient, promise };
 }
