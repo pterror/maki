@@ -4,33 +4,35 @@ import {
   defineDynamicNode,
   DynamicNode,
   SelectInterface,
+  NodeInterface,
+  setType,
+  IntegerInterface,
+  TextInputInterface,
 } from "baklavajs";
-import {
-  nodeInterface,
-  textInputInterface,
-  integerInterface,
-  selectInterface,
-} from "./interfaceTypes.ts";
 import { jsonSchemaToNodeInterface, upsertBaklavaType } from "./baklava.ts";
 import { toRaw } from "vue";
 import { allEditorsNeedingDerivedNodes } from "./allEditorsNeedingDerivedNodes.ts";
+import { zInteger } from "../type.ts";
+import { toJSONSchema } from "zod/v4";
 
 export const CreateListNode = defineDynamicNode({
   type: "List (Literal)",
   inputs: {
-    size: () => integerInterface("size"),
+    size: () =>
+      new IntegerInterface("size", 0).use(
+        setType,
+        upsertBaklavaType(toJSONSchema(zInteger)) as NodeInterfaceType<number>,
+      ),
     type: () =>
-      selectInterface(
-        "type",
+      new SelectInterface("type", "unknown", ["unknown"]).use(
+        setType,
         upsertBaklavaType({ type: "string" }) as NodeInterfaceType<string>,
-        ["unknown"],
-        "unknown",
       ),
   },
   outputs: {
     items: () =>
-      nodeInterface(
-        "items",
+      new NodeInterface<readonly unknown[]>("items", null!).use(
+        setType,
         upsertBaklavaType({ type: "array", items: {} }) as NodeInterfaceType<
           readonly unknown[]
         >,
@@ -42,7 +44,7 @@ export const CreateListNode = defineDynamicNode({
       | Map<string, NodeInterfaceType<any>>
       | undefined;
     const typeInterface = this.inputs.type as SelectInterface;
-    typeInterface.items = [...(interfaceTypes?.keys() ?? [])];
+    typeInterface.items = [...(interfaceTypes?.keys() ?? [])].sort();
   },
   onUpdate({ size, type }) {
     const self = this as unknown as DynamicNode<unknown, unknown>;
@@ -82,19 +84,21 @@ export function registerListNode(editor: Editor) {
 export const CreateStringDictNode = defineDynamicNode({
   type: "String Dict (Literal)",
   inputs: {
-    size: () => integerInterface("size"),
+    size: () =>
+      new IntegerInterface("size", 0).use(
+        setType,
+        upsertBaklavaType(toJSONSchema(zInteger)) as NodeInterfaceType<number>,
+      ),
     type: () =>
-      selectInterface(
-        "type",
+      new SelectInterface("type", "unknown", ["unknown"]).use(
+        setType,
         upsertBaklavaType({ type: "string" }) as NodeInterfaceType<string>,
-        ["unknown"],
-        "unknown",
       ),
   },
   outputs: {
     items: () =>
-      nodeInterface(
-        "items",
+      new NodeInterface<Record<string, unknown>>("items", null!).use(
+        setType,
         upsertBaklavaType({
           type: "object",
           additionalProperties: {},
@@ -107,7 +111,7 @@ export const CreateStringDictNode = defineDynamicNode({
       | Map<string, NodeInterfaceType<any>>
       | undefined;
     const typeInterface = this.inputs.type as SelectInterface;
-    typeInterface.items = [...(interfaceTypes?.keys() ?? [])];
+    typeInterface.items = [...(interfaceTypes?.keys() ?? [])].sort();
   },
   onUpdate({ size, type }) {
     const self = this as unknown as DynamicNode<unknown, unknown>;
@@ -126,7 +130,16 @@ export const CreateStringDictNode = defineDynamicNode({
         Array(size)
           .fill(null)
           .flatMap((_, i) => [
-            [`key${i}`, () => textInputInterface(`key${i}`)],
+            [
+              `key${i}`,
+              () =>
+                new TextInputInterface(`key${i}`, "").use(
+                  setType,
+                  upsertBaklavaType({
+                    type: "string",
+                  }) as NodeInterfaceType<string>,
+                ),
+            ],
             [
               `value${i}`,
               () => jsonSchemaToNodeInterface(`value${i}`, newType),

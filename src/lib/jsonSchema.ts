@@ -468,7 +468,7 @@ export function getTypeNameFromSchema(
     const valueTypeName = getTypeNameFromSchema(schema.additionalProperties);
     return `stringDict[${valueTypeName ?? "unknown"}]`;
   }
-  if (schema.anyOf || schema.oneOf) {
+  if (schema.anyOf ?? schema.oneOf) {
     return (schema.anyOf ?? schema.oneOf ?? [])
       .map((s) => getTypeNameFromSchema(s) ?? "unknown")
       .join(" | ");
@@ -477,6 +477,14 @@ export function getTypeNameFromSchema(
     return schema.allOf
       .map((s) => getTypeNameFromSchema(s) ?? "unknown")
       .join(" & ");
+  }
+  if (schema.not) {
+    const notTypeName = getTypeNameFromSchema(schema.not);
+    return notTypeName ? `not ${notTypeName}` : undefined;
+  }
+  if (Object.keys(schema).length === 0) {
+    // An empty schema matches anything, so "unknown" is the appropriate type.
+    return "unknown";
   }
   if (schema.type !== "object" && schema.type !== "array") {
     // It is a primitive, its base type will be close enough.

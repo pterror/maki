@@ -1,23 +1,26 @@
 import {
+  CheckboxInterface,
   defineNode,
   Editor,
+  IntegerInterface,
   NodeInterface,
+  NumberInterface,
+  SelectInterface,
+  setType,
+  TextInputInterface,
+  TextInterface,
   type NodeInterfaceType,
 } from "baklavajs";
 import type { JSONSchema } from "zod/v4/core";
 import {
   allInterfaceTypesRegistriesNeedingDerivedTypes,
-  checkboxInterface,
-  integerInterface,
   interfaceTypesById,
   listType,
-  nodeInterface,
   nodeInterfaceType,
-  numberInterface,
-  selectInterface,
+  setUnknownListType,
+  setUnknownStringDictType,
+  setUnknownType,
   stringDictType,
-  textInputInterface,
-  textInterface,
 } from "./interfaceTypes.ts";
 import { unsafeEntries } from "../core.ts";
 import { camelCaseToPascalCase, camelCaseToTitleCase } from "../string.ts";
@@ -27,71 +30,75 @@ import { getTypeNameFromSchema } from "../jsonSchema.ts";
 
 export function nodeInterfaceTypeToNodeInterface(
   key: string,
-  value: NodeInterfaceType<any>,
+  interfaceType: NodeInterfaceType<any>,
 ): NodeInterface<any> {
-  switch (value.name) {
+  switch (interfaceType.name) {
     case "string": {
-      return textInputInterface(key);
+      return new TextInputInterface(key, "").use(setType, interfaceType);
     }
     case "integer": {
-      return integerInterface(key);
+      return new IntegerInterface(key, 0).use(setType, interfaceType);
     }
     case "number": {
-      return numberInterface(key);
+      return new NumberInterface(key, 0).use(setType, interfaceType);
     }
     case "boolean": {
-      return checkboxInterface(key);
+      return new CheckboxInterface(key, false).use(setType, interfaceType);
     }
   }
-  return nodeInterface(key, value);
+  return new NodeInterface(key, null).use(setType, interfaceType);
 }
 
 export function jsonSchemaToNodeInterface(
   key: string,
   value: JSONSchema._JSONSchema,
-) {
-  if (typeof value === "boolean") {
-    return nodeInterface(key, upsertBaklavaType({})) as NodeInterface<any>;
-  }
-  switch (value.type) {
-    case "boolean": {
-      return checkboxInterface(key);
-    }
-    case "string": {
-      if (value.enum) {
-        return selectInterface(
-          key,
-          upsertBaklavaType(value),
-          value.enum.map((value) => ({ text: String(value), value })),
-        );
+): NodeInterface<any> {
+  const interfaceType = upsertBaklavaType(
+    typeof value === "boolean" ? {} : value,
+  ) as NodeInterfaceType<any>;
+  if (typeof value !== "boolean") {
+    switch (value.type) {
+      case "boolean": {
+        return new CheckboxInterface(key, false).use(setType, interfaceType);
       }
-      return textInputInterface(key);
-    }
-    case "integer": {
-      return integerInterface(key);
-    }
-    case "number": {
-      return numberInterface(key);
+      case "string": {
+        if (value.enum) {
+          return new SelectInterface(
+            key,
+            value.enum[0],
+            value.enum.map((value) => ({ text: String(value), value })),
+          ).use(setType, interfaceType);
+        }
+        return new TextInputInterface(key, "").use(setType, interfaceType);
+      }
+      case "integer": {
+        return new IntegerInterface(key, 0).use(setType, interfaceType);
+      }
+      case "number": {
+        return new NumberInterface(key, 0).use(setType, interfaceType);
+      }
     }
   }
-  return nodeInterface(key, upsertBaklavaType(value));
+  return new NodeInterface(key, null).use(setType, interfaceType);
 }
 
 export function jsonSchemaToOutputNodeInterface(
   key: string,
   value: JSONSchema._JSONSchema,
 ) {
-  if (typeof value === "boolean") {
-    return nodeInterface(key, upsertBaklavaType({})) as NodeInterface<any>;
-  }
-  switch (value.type) {
-    case "string": {
-      if (value.format === "text-display") {
-        return textInterface(key);
+  const interfaceType = upsertBaklavaType(
+    typeof value === "boolean" ? {} : value,
+  ) as NodeInterfaceType<any>;
+  if (typeof value !== "boolean") {
+    switch (value.type) {
+      case "string": {
+        if (value.format === "text-display") {
+          return new TextInterface(key, "").use(setType, interfaceType);
+        }
       }
     }
   }
-  return nodeInterface(key, upsertBaklavaType(value));
+  return new NodeInterface(key, null).use(setType, interfaceType);
 }
 
 export function upsertBaklavaType(
@@ -100,8 +107,10 @@ export function upsertBaklavaType(
   const jsonSchema = normalizeJsonSchema(structuredClone(type));
   const id = JSON.stringify(jsonSchema);
   const existing = interfaceTypesById.get(id);
+  console.log(jsonSchema, id, existing);
   if (existing) return existing;
   const typeName = getTypeNameFromSchema(type);
+  console.log(typeName);
   if (typeName === undefined) {
     console.error("Issue with type:", type, `(id: ${id})`);
     throw new Error("This Zod type is missing a name.");
@@ -139,7 +148,11 @@ export function upsertBaklavaType(
           ]),
         ),
         outputs: {
-          value: () => nodeInterface("Value", interfaceType),
+          value: () =>
+            new NodeInterface<unknown>("Value", null).use(
+              setType,
+              interfaceType,
+            ),
         },
         calculate(inputs) {
           return {
@@ -160,14 +173,18 @@ export function upsertBaklavaType(
       const DeconstructNode = defineNode({
         type: `Deconstruct${camelCaseToPascalCase(typeName)}Node`,
         inputs: {
-          value: () => nodeInterface("Value", interfaceType),
+          value: () =>
+            new NodeInterface<unknown>("Value", null).use(
+              setType,
+              interfaceType,
+            ),
         },
         outputs: Object.fromEntries(
           typeItems.map((item, index) => [
             `item${index + 1}`,
             () =>
-              nodeInterface(
-                `Item ${index + 1}`,
+              new NodeInterface<unknown>(`Item ${index + 1}`, null).use(
+                setType,
                 upsertBaklavaType(typeof item === "boolean" ? {} : item),
               ),
           ]),
@@ -230,7 +247,11 @@ export function upsertBaklavaType(
           ),
         ),
         outputs: {
-          value: () => nodeInterface("Value", interfaceType),
+          value: () =>
+            new NodeInterface<unknown>("Value", null).use(
+              setType,
+              interfaceType,
+            ),
         },
       });
       function registerConstructNode(editor: Editor) {
@@ -244,7 +265,11 @@ export function upsertBaklavaType(
       const DeconstructNode = defineNode({
         type: `Deconstruct${camelCaseToPascalCase(typeName)}Node`,
         inputs: {
-          value: () => nodeInterface("Value", interfaceType),
+          value: () =>
+            new NodeInterface<unknown>("Value", null).use(
+              setType,
+              interfaceType,
+            ),
         },
         outputs: Object.fromEntries(
           unsafeEntries(type.properties).flatMap(([key, value]) =>
@@ -254,8 +279,11 @@ export function upsertBaklavaType(
                   [
                     key,
                     () =>
-                      nodeInterface(
+                      new NodeInterface<unknown>(
                         camelCaseToTitleCase(key),
+                        null,
+                      ).use(
+                        setType,
                         upsertBaklavaType(value === true ? {} : value),
                       ),
                   ],
@@ -294,3 +322,16 @@ export function upsertBaklavaType(
   }
   return interfaceType;
 }
+
+setUnknownType(upsertBaklavaType({}) as NodeInterfaceType<unknown>);
+setUnknownListType(
+  upsertBaklavaType({ type: "array", items: {} }) as NodeInterfaceType<
+    unknown[]
+  >,
+);
+setUnknownStringDictType(
+  upsertBaklavaType({
+    type: "object",
+    additionalProperties: {},
+  }) as NodeInterfaceType<Record<string, unknown>>,
+);

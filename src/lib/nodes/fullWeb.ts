@@ -3,15 +3,13 @@ import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/
 import { reactive } from "vue";
 import {
   applyResult,
+  BaklavaInterfaceTypes,
   DependencyEngine,
   useBaklava,
   type BaklavaInterfaceTypesOptions,
   type IBaklavaViewModel,
 } from "baklavajs";
-import {
-  registerCoreInterfaceTypes,
-  registerDerivedInterfaceTypes,
-} from "./interfaceTypes.ts";
+import { registerDerivedInterfaceTypes } from "./interfaceTypes.ts";
 import { registerDerivedNodes } from "./derived.ts";
 import { registerAllToolsInBaklava } from "../mcpClient.ts";
 import {
@@ -51,7 +49,7 @@ export function setupBaklava(
   baklava: IBaklavaViewModel,
   options: Required<BaklavaInterfaceTypesOptions>,
 ) {
-  const interfaceTypes = registerCoreInterfaceTypes(baklava.editor, options);
+  const interfaceTypes = new BaklavaInterfaceTypes(baklava.editor, options);
   // @ts-expect-error We are making changes to a protected member here.
   baklava.editor.graph._nodes = reactive(baklava.editor.graph._nodes);
   baklava.editor.graph.interfaceTypes = interfaceTypes;

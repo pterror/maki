@@ -14,10 +14,7 @@ import BaklavaNodeInterface from "./BaklavaNodeInterface.vue";
 import { ellipsis } from "../lib/string";
 import { escapeCssIdentifier } from "../lib/css";
 import BaklavaNodePalette from "./BaklavaNodePalette.vue";
-import {
-  allInterfaceTypeNames,
-  coreTypeNames,
-} from "../lib/nodes/interfaceTypes";
+import { allInterfaceTypeNames } from "../lib/nodes/interfaceTypes";
 
 const { Node: BaklavaNode } = Components;
 
@@ -86,12 +83,20 @@ onUnmounted(() => {
   baklava.editor.nodeEvents.removeOutput.unsubscribe(token);
 });
 
+const coreTypeNames: Record<string, true> = {
+  unknown: true,
+  string: true,
+  number: true,
+  integer: true,
+  boolean: true,
+};
+
 // TODO: add sidebar toggle to toolbar?
 const nodeColors = computed(() => {
   let styles = "";
   for (const nodeTypeName of allInterfaceTypeNames) {
     // Skip generics, which should be distinguished by shape.
-    if (/[[\]]/.test(nodeTypeName) || coreTypeNames.has(nodeTypeName)) {
+    if (/[[\]]/.test(nodeTypeName) || coreTypeNames[nodeTypeName]) {
       continue;
     }
     const escaped = escapeCssIdentifier(nodeTypeName);
@@ -99,7 +104,7 @@ const nodeColors = computed(() => {
     styles += `
       .baklava-node-interface[data-interface-type="${escaped}"],
       .baklava-node-interface[data-interface-type*="[${escaped}]"] {
-        --baklava-node-interface-port-color: oklch(70% 0.2 ${hue}deg);
+        --baklava-node-interface-port-color: oklch(70% 20% ${hue}deg);
       }
     `;
   }

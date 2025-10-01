@@ -1,46 +1,8 @@
-import {
-  BaklavaInterfaceTypes,
-  ButtonInterface,
-  CheckboxInterface,
-  Editor,
-  IntegerInterface,
-  NodeInterface,
-  NodeInterfaceType,
-  NumberInterface,
-  SelectInterface,
-  setType,
-  SliderInterface,
-  TextareaInputInterface,
-  TextInputInterface,
-  TextInterface,
-  type BaklavaInterfaceTypesOptions,
-  type SelectInterfaceItem,
-} from "baklavajs";
-import {
-  toNormalizedJsonSchema,
-  withCustomJsonSchemaFormat,
-} from "./zodHelpers.ts";
-import { Integer, zInteger } from "../type.ts";
-import { z, ZodType } from "zod/v4";
+import { BaklavaInterfaceTypes, NodeInterfaceType } from "baklavajs";
 import type { JSONSchema } from "zod/v4/core";
 import { reactive, type Reactive } from "vue";
 
-export const coreTypeNames = new Set<string>();
 export const interfaceTypesById = new Map<string, NodeInterfaceType<any>>();
-
-export function registerCoreType<T extends ZodType>(type: T, name: string) {
-  const jsonSchema = toNormalizedJsonSchema(type);
-  const id = JSON.stringify(jsonSchema);
-  if (interfaceTypesById.has(id)) {
-    throw new Error(
-      `A core type with the same schema as ${name} is already registered.`,
-    );
-  }
-  const interfaceType = nodeInterfaceType<z.infer<T>>(name, jsonSchema);
-  coreTypeNames.add(name);
-  interfaceTypesById.set(id, interfaceType);
-  return interfaceType;
-}
 
 const interfaceTypeNames = reactive(new Set<string>());
 export const allInterfaceTypeNames: Reactive<ReadonlySet<string>> =
@@ -64,6 +26,17 @@ export function unsafeAsOptionalNodeInterfaceType<T>(
 let unknownType!: NodeInterfaceType<unknown>;
 let unknownListType!: NodeInterfaceType<unknown[]>;
 let unknownStringDictType!: NodeInterfaceType<Record<string, unknown>>;
+export function setUnknownType(type: NodeInterfaceType<unknown>) {
+  unknownType = type;
+}
+export function setUnknownListType(type: NodeInterfaceType<unknown[]>) {
+  unknownListType = type;
+}
+export function setUnknownStringDictType(
+  type: NodeInterfaceType<Record<string, unknown>>,
+) {
+  unknownStringDictType = type;
+}
 
 export interface NodeInterfaceTypeOptions {
   isList?: boolean;
@@ -192,41 +165,6 @@ export function getAllStringDictTypes(): NodeInterfaceType<
   });
 }
 
-unknownType = registerCoreType(z.unknown(), "unknown");
-unknownListType = registerCoreType(z.array(z.unknown()), "list[unknown]");
-unknownStringDictType = registerCoreType(
-  z.record(z.string(), z.unknown()),
-  "stringDict[unknown]",
-);
-const undefinedType = registerCoreType(
-  withCustomJsonSchemaFormat(z.undefined(), "undefined"),
-  "undefined",
-);
-const stringType = registerCoreType(z.string(), "string");
-const integerType = registerCoreType(zInteger, "integer");
-const numberType = registerCoreType(z.number(), "number");
-const booleanType = registerCoreType(z.boolean(), "boolean");
-
-integerType.addConversion(numberType, (v) => v);
-
-export function registerCoreInterfaceTypes(
-  editor: Editor,
-  options: Required<BaklavaInterfaceTypesOptions>,
-) {
-  const types = new BaklavaInterfaceTypes(editor, options);
-  types.addTypes(
-    unknownType!,
-    unknownListType!,
-    unknownStringDictType!,
-    undefinedType,
-    stringType,
-    integerType,
-    numberType,
-    booleanType,
-  );
-  return types;
-}
-
 export function registerDerivedInterfaceTypes(
   types: BaklavaInterfaceTypes,
 ): void {
@@ -237,72 +175,4 @@ export function registerDerivedInterfaceTypes(
     types.addTypes(type);
   }
   allInterfaceTypesRegistriesNeedingDerivedTypes.add(new WeakRef(types));
-}
-
-export function buttonInterface(name: string, callback: () => void) {
-  return new ButtonInterface(name, callback).use(setType, undefinedType);
-}
-
-export function textInterface(name: string, defaultValue = "") {
-  return new TextInterface(name, defaultValue)
-    .use(setType, stringType)
-    .setPort(true);
-}
-
-export function textInputInterface(name: string, defaultValue = "") {
-  return new TextInputInterface(name, defaultValue).use(setType, stringType);
-}
-
-export function textareaInputInterface(name: string, defaultValue = "") {
-  return new TextareaInputInterface(name, defaultValue).use(
-    setType,
-    stringType,
-  );
-}
-
-export function numberInterface(name: string, defaultValue = 0) {
-  return new NumberInterface(name, defaultValue).use(setType, numberType);
-}
-
-export function integerInterface(name: string, defaultValue = Integer(0)) {
-  return new IntegerInterface(name, defaultValue).use(
-    setType,
-    integerType as unknown as NodeInterfaceType<number>,
-  );
-}
-
-export function sliderInterface(
-  name: string,
-  defaultValue: number,
-  min: number,
-  max: number,
-) {
-  return new SliderInterface(name, defaultValue, min, max).use(
-    setType,
-    numberType,
-  );
-}
-
-export function checkboxInterface(name: string, defaultValue = false) {
-  return new CheckboxInterface(name, defaultValue).use(setType, booleanType);
-}
-
-export function selectInterface<T>(
-  name: string,
-  type: NodeInterfaceType<T>,
-  options: SelectInterfaceItem<T>[],
-  defaultValue: NoInfer<T> = (typeof options[0] === "object" &&
-  "value" in options[0]
-    ? options[0].value
-    : options[0]) as T,
-) {
-  return new SelectInterface(name, defaultValue, options).use(setType, type);
-}
-
-export function nodeInterface<T>(
-  name: string,
-  type: NodeInterfaceType<T>,
-  defaultValue: NoInfer<T> = undefined!,
-) {
-  return new NodeInterface(name, defaultValue).use(setType, type);
 }
