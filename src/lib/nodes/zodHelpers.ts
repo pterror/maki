@@ -7,15 +7,31 @@ export function normalizeJsonSchema(schema: JSONSchema.JSONSchema) {
   delete schema.description;
   delete schema["x-generic"];
   switch (schema.type) {
-    case "object":
+    case "object": {
       if (schema.properties) {
         for (const [, childSchema] of unsafeEntries(schema.properties)) {
           if (typeof childSchema === "boolean") continue;
           normalizeJsonSchema(childSchema);
         }
       }
+      if (schema.additionalProperties === true) {
+        delete schema.additionalProperties;
+      }
+      if (Object.keys(schema.properties ?? {}).length === 0) {
+        delete schema.properties;
+      }
+      if (schema.required?.length === 0) {
+        delete schema.required;
+      }
+      if (schema.minProperties === 0) {
+        delete schema.minProperties;
+      }
+      if (Object.keys(schema).length === 1 && schema.type === "object") {
+        delete schema.type;
+      }
       break;
-    case "array":
+    }
+    case "array": {
       if (Array.isArray(schema.items)) {
         for (const childSchema of schema.items) {
           if (typeof childSchema === "boolean") continue;
@@ -24,7 +40,11 @@ export function normalizeJsonSchema(schema: JSONSchema.JSONSchema) {
       } else if (typeof schema.items === "object") {
         normalizeJsonSchema(schema.items);
       }
+      if (schema.minItems === 0) {
+        delete schema.minItems;
+      }
       break;
+    }
   }
   if (schema.allOf) {
     for (const childSchema of schema.allOf) {

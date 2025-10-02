@@ -468,6 +468,7 @@ dependencies = [
     { name = "diffusers" },
     { name = "fastmcp" },
     { name = "pydantic" },
+    { name = "starlette" },
     { name = "torch" },
     { name = "transformers" },
 ]
@@ -482,6 +483,7 @@ requires-dist = [
     { name = "diffusers", specifier = ">=0.35.1,<0.36.0" },
     { name = "fastmcp", specifier = ">=2.12.2,<3.0.0" },
     { name = "pydantic", specifier = ">=2.11.7,<3.0.0" },
+    { name = "starlette", specifier = ">=0.47.3" },
     { name = "torch", specifier = ">=2.8.0,<3.0.0" },
     { name = "transformers", specifier = ">=4.56.1,<5.0.0" },
 ]

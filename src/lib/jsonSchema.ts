@@ -452,14 +452,26 @@ export function getTypeNameFromSchema(
     if (schema) return "unknown";
     return "never";
   }
-  if (schema.title) return schema.title;
+  // Title does not count as a name, as it is used in Huggingface diffusers' pydantic annotations
+  // to refer to the key name.
   if (schema.$ref) return schema.$ref.replace(/^#\/definitions\//, "");
+  if (schema.format) return schema.format;
+  if (schema.enum) return schema.enum.map((e) => JSON.stringify(e)).join(" | ");
   const itemType = Array.isArray(schema.items)
     ? undefined
     : (schema.items ?? schema.additionalItems);
   if (schema.type === "array" && typeof itemType === "object") {
     const itemTypeName = getTypeNameFromSchema(itemType);
     return `list[${itemTypeName ?? "unknown"}]`;
+  }
+  if (
+    schema.type === "array" &&
+    Array.isArray(schema.prefixItems) &&
+    ((schema.minItems === schema.prefixItems.length &&
+      schema.maxItems === schema.prefixItems.length) ||
+      schema.additionalItems === false)
+  ) {
+    return `[${schema.prefixItems.map((item) => getTypeNameFromSchema(item) ?? "unknown").join(", ")}]`;
   }
   if (
     schema.type === "object" &&

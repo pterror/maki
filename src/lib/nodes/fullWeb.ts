@@ -64,7 +64,7 @@ export function setupBaklava(
   const mcpRemoteClient = new Client({ name: "maki-client", version: "0.1.0" });
   const remoteClientPromise = mcpRemoteClient.connect(
     new StreamableHTTPClientTransport(
-      new URL(`http://localhost:${MCP_HTTP_PORT}`),
+      new URL(`http://localhost:${MCP_HTTP_PORT}/mcp`),
     ),
   );
   const promise = Promise.allSettled([
