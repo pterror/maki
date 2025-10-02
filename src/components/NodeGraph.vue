@@ -15,6 +15,8 @@ import { ellipsis } from "../lib/string";
 import { escapeCssIdentifier } from "../lib/css";
 import BaklavaNodePalette from "./BaklavaNodePalette.vue";
 import { allInterfaceTypeNames } from "../lib/nodes/interfaceTypes";
+import { hashString } from "../lib/hash";
+import { parseTypeName, walkTypeName } from "../lib/jsonSchema";
 
 const { Node: BaklavaNode } = Components;
 
@@ -83,30 +85,43 @@ onUnmounted(() => {
   baklava.editor.nodeEvents.removeOutput.unsubscribe(token);
 });
 
-const coreTypeNames: Record<string, true> = {
-  unknown: true,
-  string: true,
-  number: true,
-  integer: true,
-  boolean: true,
-};
-
 // TODO: add sidebar toggle to toolbar?
 const nodeColors = computed(() => {
   let styles = "";
+  let seenTypes = new Set<string>([
+    "unknown",
+    "string",
+    "number",
+    "integer",
+    "boolean",
+    "list",
+    "stringDict",
+  ]);
   for (const nodeTypeName of allInterfaceTypeNames) {
-    // Skip generics, which should be distinguished by shape.
-    if (/[[\]]/.test(nodeTypeName) || coreTypeNames[nodeTypeName]) {
+    if (nodeTypeName.startsWith("#")) {
+      console.error(
+        `Skipping interface type name starting with #: '${nodeTypeName}'`,
+      );
       continue;
     }
-    const escaped = escapeCssIdentifier(nodeTypeName);
-    const hue = Math.floor(Math.random() * 360);
-    styles += `
-      .baklava-node-interface[data-interface-type="${escaped}"],
-      .baklava-node-interface[data-interface-type*="[${escaped}]"] {
-        --baklava-node-interface-port-color: oklch(70% 20% ${hue}deg);
-      }
-    `;
+    try {
+      walkTypeName(parseTypeName(nodeTypeName), (child) => {
+        if (!("name" in child)) return;
+        if (seenTypes.has(child.name)) return;
+        seenTypes.add(child.name);
+        const escaped = escapeCssIdentifier(child.name);
+        const hue = hashString(child.name) % 360;
+        styles += `
+.baklava-node-interface[data-interface-type="${escaped}"],
+.baklava-node-interface[data-interface-type*="[${escaped}]"],
+.baklava-node-interface[data-interface-type^="${escaped} |"] {
+  --baklava-node-interface-port-color: oklch(70% 40% ${hue}deg);
+}
+`;
+      });
+    } catch (error) {
+      console.error("Error while walking type name:", error);
+    }
   }
   return styles;
 });

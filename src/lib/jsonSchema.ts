@@ -445,6 +445,230 @@ export function substituteGenericTypesIntoSchema(
   });
 }
 
+type AnyType =
+  | OpaqueType
+  | StringLiteralType
+  | GenericType
+  | TupleType
+  | IntersectionType
+  | UnionType;
+type Type<Kind extends AnyType["type"] = AnyType["type"]> = Extract<
+  AnyType,
+  { type: Kind }
+>;
+
+interface OpaqueType {
+  readonly type: "opaque";
+  readonly name: string;
+}
+
+interface StringLiteralType {
+  readonly type: "string";
+  readonly name: string;
+}
+
+interface GenericType {
+  readonly type: "generic";
+  readonly name: string;
+  readonly children: Type[];
+}
+
+interface TupleType {
+  readonly type: "tuple";
+  readonly children: Type[];
+}
+
+interface IntersectionType {
+  readonly type: "intersection";
+  readonly children: Type[];
+}
+
+interface UnionType {
+  readonly type: "union";
+  readonly children: Type[];
+}
+
+interface TypeParseResult<Kind extends AnyType["type"] = AnyType["type"]> {
+  readonly type: Type<Kind>;
+  readonly index: number;
+}
+
+export function parseTypeName(typeName: string): Type {
+  const result = parseTypeIntersection(typeName, 0);
+  if (!result) {
+    throw new Error(`Failed to parse type name '${typeName}'`);
+  }
+  if (result.index < typeName.length) {
+    throw new Error(
+      `Failed to parse type name '${typeName}': cannot parse '${typeName.slice(result.index)}'`,
+    );
+  }
+  return result.type;
+}
+
+export function walkTypeName(type: Type, callback: (type: Type) => void) {
+  callback(type);
+  if ("children" in type) {
+    type.children?.forEach((child) => walkTypeName(child, callback));
+  }
+}
+
+function parseTypeTerm(
+  typeName: string,
+  index: number,
+): TypeParseResult | undefined {
+  // Try to parse as opaque or generic first, then as tuple.
+  const type = parseOpaqueType(typeName, index);
+  if (type) {
+    const genericParams = parseTupleType(typeName, type.index);
+    if (genericParams) {
+      return {
+        type: {
+          type: "generic",
+          name: type.type.name,
+          children: genericParams.type.children,
+        },
+        index: genericParams.index,
+      };
+    } else {
+      return { type: type.type, index: type.index };
+    }
+  }
+  const result =
+    parseStringLiteralType(typeName, index) ?? parseTupleType(typeName, index);
+  if (!result) return;
+  return { type: result.type, index: result.index };
+}
+
+function parseTypeUnion(
+  typeName: string,
+  index: number,
+): TypeParseResult | undefined {
+  const types: Type[] = [];
+  let currentIndex = index;
+  while (true) {
+    const type = parseTypeTerm(typeName, currentIndex);
+    if (!type) break;
+    types.push(type.type);
+    currentIndex = type.index;
+    // Expect either a pipe or end of input.
+    if (typeName[currentIndex] === " ") {
+      currentIndex += 1;
+    }
+    if (typeName[currentIndex] === "|") {
+      currentIndex += 1;
+      if (typeName[currentIndex] === " ") {
+        currentIndex += 1;
+      }
+    } else {
+      break;
+    }
+  }
+  if (!types[0]) return;
+  if (types.length === 1) {
+    return { type: types[0], index: currentIndex };
+  }
+  return { type: { type: "union", children: types }, index: currentIndex };
+}
+
+function parseTypeIntersection(
+  typeName: string,
+  index: number,
+): TypeParseResult | undefined {
+  const types: Type[] = [];
+  let currentIndex = index;
+  while (true) {
+    const type = parseTypeUnion(typeName, currentIndex);
+    if (!type) break;
+    types.push(type.type);
+    currentIndex = type.index;
+    // Expect either an ampersand or end of input.
+    if (typeName[currentIndex] === " ") {
+      currentIndex += 1;
+    }
+    if (typeName[currentIndex] === "&") {
+      currentIndex += 1;
+      if (typeName[currentIndex] === " ") {
+        currentIndex += 1;
+      }
+    } else {
+      break;
+    }
+  }
+  if (!types[0]) return;
+  if (types.length === 1) {
+    return { type: types[0], index: currentIndex };
+  }
+  return {
+    type: { type: "intersection", children: types },
+    index: currentIndex,
+  };
+}
+
+function parseOpaqueType(
+  typeName: string,
+  index: number,
+): TypeParseResult<"opaque"> | undefined {
+  const match = typeName
+    .slice(index)
+    .match(/^[a-zA-Z0-9_-](?:[a-zA-Z0-9_ -]*[a-zA-Z0-9_-])?/);
+  if (!match?.[0]) return;
+  return {
+    type: { type: "opaque", name: match[0] },
+    index: index + match[0].length,
+  };
+}
+
+function parseStringLiteralType(
+  typeName: string,
+  index: number,
+): TypeParseResult<"string"> | undefined {
+  const regex = /"(?:[^"\\]|\\.)*"/y;
+  regex.lastIndex = index;
+  const match = regex.exec(typeName);
+  if (!match?.[0]) return;
+  return {
+    type: { type: "string", name: JSON.parse(match[0]) },
+    index: index + match[0].length,
+  };
+}
+
+function parseTupleType(
+  typeName: string,
+  index: number,
+): TypeParseResult<"tuple"> | undefined {
+  if (typeName[index] !== "[") return;
+  let children: Type[] = [];
+  index += 1;
+  let first = true;
+  while (index < typeName.length) {
+    if (!first) {
+      // Expect either a comma or closing bracket.
+      if (typeName[index] === "]") {
+        // End of children.
+        break;
+      }
+      if (typeName[index] === "," && typeName[index + 1] === " ") {
+        // Next child.
+        index += 2;
+      }
+    }
+    first = false;
+    const child = parseTypeUnion(typeName, index);
+    if (!child) {
+      throw new Error(
+        `Failed to parse tuple type name '${typeName}': cannot parse '${typeName.slice(index)}'`,
+      );
+    }
+    children.push(child.type);
+    index = child.index;
+  }
+  return {
+    type: { type: "tuple", children },
+    index: index + 1,
+  };
+}
+
 export function getTypeNameFromSchema(
   schema: JSONSchema._JSONSchema,
 ): string | undefined {
@@ -454,6 +678,7 @@ export function getTypeNameFromSchema(
   }
   // Title does not count as a name, as it is used in Huggingface diffusers' pydantic annotations
   // to refer to the key name.
+  if (schema.title && schema.type === "object") return schema.title;
   if (schema.$ref) return schema.$ref.replace(/^#\/definitions\//, "");
   if (schema.format) return schema.format;
   if (schema.enum) return schema.enum.map((e) => JSON.stringify(e)).join(" | ");

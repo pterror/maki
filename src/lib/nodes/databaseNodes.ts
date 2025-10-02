@@ -130,8 +130,8 @@ export const DatabaseSelectCommand = z
       .describe("Join conditions for the query"),
   })
   .meta({
-    title: "DatabaseQuery",
-    description: "A SQL query to be executed against a database",
+    title: "DatabaseSelectCommand",
+    description: "Command to select data from a database table",
   });
 export type DatabaseSelectCommand = z.infer<typeof DatabaseSelectCommand>;
 
