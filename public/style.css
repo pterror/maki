@@ -1,3 +1,9 @@
+.baklava-node .__content {
+  display: flex;
+  flex-flow: row-reverse nowrap;
+  justify-content: space-between;
+}
+
 .baklava-node-interface .__port {
   .__tooltip {
     display: flex;
@@ -7,6 +13,7 @@
 
   .__type {
     color: var(--baklava-node-interface-port-color);
+    word-break: keep-all;
   }
 }
 
@@ -38,29 +45,29 @@
 .baklava-node-interface[data-interface-type="unknown"],
 .baklava-node-interface[data-interface-type*="[unknown]"],
 .baklava-node-interface[data-interface-type^="unknown |"] {
-  --baklava-node-interface-port-color: oklch(70% 0.05 240);
+  --baklava-node-interface-port-color: oklch(70% 5% 240);
 }
 
 .baklava-node-interface[data-interface-type="string"],
 .baklava-node-interface[data-interface-type*="[string]"],
 .baklava-node-interface[data-interface-type^="string |"] {
-  --baklava-node-interface-port-color: oklch(70% 0.2 180);
+  --baklava-node-interface-port-color: oklch(70% 40% 180);
 }
 
 .baklava-node-interface[data-interface-type="number"],
 .baklava-node-interface[data-interface-type*="[number]"],
 .baklava-node-interface[data-interface-type^="number |"] {
-  --baklava-node-interface-port-color: oklch(70% 0.2 320);
+  --baklava-node-interface-port-color: oklch(70% 40% 320);
 }
 
 .baklava-node-interface[data-interface-type="integer"],
 .baklava-node-interface[data-interface-type*="[integer]"],
 .baklava-node-interface[data-interface-type^="integer |"] {
-  --baklava-node-interface-port-color: oklch(70% 0.2 310);
+  --baklava-node-interface-port-color: oklch(70% 40% 310);
 }
 
 .baklava-node-interface[data-interface-type="boolean"],
 .baklava-node-interface[data-interface-type*="[boolean]"],
 .baklava-node-interface[data-interface-type^="boolean |"] {
-  --baklava-node-interface-port-color: oklch(70% 0.2 280);
+  --baklava-node-interface-port-color: oklch(70% 40% 280);
 }

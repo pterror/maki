@@ -45,6 +45,16 @@ export function normalizeJsonSchema(schema: JSONSchema.JSONSchema) {
       }
       break;
     }
+    case "integer": {
+      if (
+        schema.minimum === Number.MIN_SAFE_INTEGER &&
+        schema.maximum === Number.MAX_SAFE_INTEGER
+      ) {
+        delete schema.minimum;
+        delete schema.maximum;
+      }
+      break;
+    }
   }
   if (schema.allOf) {
     for (const childSchema of schema.allOf) {

@@ -13,7 +13,8 @@ mcp.mount(diffusers_mcp)
 mcp.mount(
     FastMCP.as_proxy(
         StdioTransport(
-            command="node", args=[str(Path(__file__).parent / "src" / "server.ts")]
+            command="node",
+            args=[str(Path(__file__).parent.parent / "src" / "server.ts")],
         )
     )
 )

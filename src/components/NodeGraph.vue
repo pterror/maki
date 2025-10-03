@@ -16,13 +16,13 @@ import { escapeCssIdentifier } from "../lib/css";
 import BaklavaNodePalette from "./BaklavaNodePalette.vue";
 import { allInterfaceTypeNames } from "../lib/nodes/interfaceTypes";
 import { hashString } from "../lib/hash";
-import { parseTypeName, walkTypeName } from "../lib/jsonSchema";
 
 const { Node: BaklavaNode } = Components;
 
 const { baklava, promise } = useFullBaklava();
 baklava.settings.displayValueOnHover = true;
 baklava.settings.sidebar.enabled = false;
+baklava.settings.nodes.defaultWidth = 440;
 const token = Symbol();
 const editorRef = useTemplateRef("editorRef");
 
@@ -98,30 +98,18 @@ const nodeColors = computed(() => {
     "stringDict",
   ]);
   for (const nodeTypeName of allInterfaceTypeNames) {
-    if (nodeTypeName.startsWith("#")) {
-      console.error(
-        `Skipping interface type name starting with #: '${nodeTypeName}'`,
-      );
-      continue;
-    }
-    try {
-      walkTypeName(parseTypeName(nodeTypeName), (child) => {
-        if (!("name" in child)) return;
-        if (seenTypes.has(child.name)) return;
-        seenTypes.add(child.name);
-        const escaped = escapeCssIdentifier(child.name);
-        const hue = hashString(child.name) % 360;
-        styles += `
+    if (/[#|]/.test(nodeTypeName)) continue;
+    if (seenTypes.has(nodeTypeName)) continue;
+    seenTypes.add(nodeTypeName);
+    const escaped = escapeCssIdentifier(nodeTypeName);
+    const hue = hashString(nodeTypeName) % 360;
+    styles += `
 .baklava-node-interface[data-interface-type="${escaped}"],
 .baklava-node-interface[data-interface-type*="[${escaped}]"],
 .baklava-node-interface[data-interface-type^="${escaped} |"] {
-  --baklava-node-interface-port-color: oklch(70% 40% ${hue}deg);
+  --baklava-node-interface-port-color: oklch(80% 50% ${hue}deg);
 }
 `;
-      });
-    } catch (error) {
-      console.error("Error while walking type name:", error);
-    }
   }
   return styles;
 });

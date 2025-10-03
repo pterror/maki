@@ -92,7 +92,9 @@ export async function registerAllToolsInBaklava(mcpClient: Client) {
           name: tool.name,
           arguments: inputs as never,
         });
-        return result.structuredContent;
+        if (result.structuredContent) return result.structuredContent;
+        const keys = Object.keys(tool.outputSchema?.properties ?? {});
+        return Object.fromEntries(keys.map((k) => [k, null]));
       },
     } satisfies INodeDefinition<unknown, unknown>;
     const ToolNode = isGeneric

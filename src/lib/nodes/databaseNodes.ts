@@ -115,9 +115,7 @@ export const DatabaseSelectCommand = z
   .object({
     table: z.string().describe("Name of the table to query"),
     columns: z.array(z.string()).describe("Columns to select from the table"),
-    where: DatabaseQueryCondition.optional().describe(
-      "Conditions to filter the results",
-    ),
+    where: DatabaseQueryCondition.optional(),
     orderBy: z.string().optional().describe("Column to order the results by"),
     limit: z.int().optional().describe("Maximum number of results to return"),
     offset: z
@@ -139,7 +137,6 @@ export const DatabaseInsertCommand = z
   .object({
     table: z.string().describe("Name of the table to insert into"),
     columns: z.array(z.string()).describe("Columns of the objects to insert"),
-    // TODO: `z.looseObject({})`
     values: z.array(z.unknown()).describe("Values to insert into the table"),
   })
   .meta({
@@ -152,11 +149,8 @@ export const DatabaseUpdateCommand = z
   .object({
     table: z.string().describe("Name of the table to update"),
     columns: z.array(z.string()).describe("Columns to update"),
-    // TODO: `z.looseObject({})`
     set: z.record(z.string(), z.unknown()).describe("Values to update"),
-    where: DatabaseQueryCondition.optional().describe(
-      "Conditions to filter which rows to update",
-    ),
+    where: DatabaseQueryCondition.optional(),
   })
   .meta({
     title: "DatabaseUpdateCommand",
@@ -167,9 +161,7 @@ export type DatabaseUpdateCommand = z.infer<typeof DatabaseUpdateCommand>;
 export const DatabaseDeleteCommand = z
   .object({
     table: z.string().describe("Name of the table to delete from"),
-    where: DatabaseQueryCondition.optional().describe(
-      "Conditions to filter which rows to delete",
-    ),
+    where: DatabaseQueryCondition.optional(),
   })
   .meta({
     title: "DatabaseDeleteCommand",
